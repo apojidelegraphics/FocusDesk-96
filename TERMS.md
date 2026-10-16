@@ -171,4 +171,4 @@ Apoji Delegraphics may update this document for new versions of the Products. Th
 
 ---
 
-© 2026 Apoji Delegraphics. FocusDesk 96 is designed by Apoji Studios.
+© 2026 Apoji Delegraphics and Apoji Studios. Source code released under the MIT License.

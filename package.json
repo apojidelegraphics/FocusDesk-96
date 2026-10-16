@@ -5,7 +5,7 @@
   "description": "FocusDesk 96 — a Windows 95-style study and productivity desktop, as a native app for macOS, Windows and Linux.",
   "main": "main.js",
   "author": {
-    "name": "Lucas",
+    "name": "Apoji Delegraphics",
     "email": "noreply@users.noreply.github.com"
   },
   "license": "MIT",
@@ -40,7 +40,7 @@
   "build": {
     "appId": "com.apojistudios.focusdesk96",
     "productName": "FocusDesk 96",
-    "copyright": "Copyright © Lucas / Apoji Studios",
+    "copyright": "Copyright © 2026 Apoji Delegraphics and Apoji Studios",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -103,7 +103,7 @@
       ],
       "category": "Education",
       "icon": "build/icon.png",
-      "maintainer": "Lucas <noreply@users.noreply.github.com>",
+      "maintainer": "Apoji Delegraphics <noreply@users.noreply.github.com>",
       "artifactName": "FocusDesk-96-${version}.${ext}"
     }
   }
