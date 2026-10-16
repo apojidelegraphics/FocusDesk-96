@@ -272,6 +272,7 @@ function bootPayload() {
     dprefs: dprefs,
     hotkeyOk: hotkeyOk,
     trayOk: !!tray,
+    titleBar: compactActive,
   };
 }
 
@@ -481,7 +482,8 @@ function registerIpc() {
 /* ---------------------------------------------------------------------------
  * Desktop 1.1: native notifications, quick capture, tray, launch at login
  * ------------------------------------------------------------------------- */
-const DEFAULT_DPREFS = { notifications: true, hotkey: true, closeToTray: false, launchAtLogin: false, startHidden: false };
+const DEFAULT_DPREFS = { notifications: true, hotkey: true, closeToTray: false, launchAtLogin: false, startHidden: false, compactTitle: false };
+let compactActive = false; // was the current window built with the slim title bar? (Windows only, set at creation)
 const HOTKEY = "CommandOrControl+Shift+Space";
 let dprefs = Object.assign({}, DEFAULT_DPREFS);
 let tray = null;
@@ -705,6 +707,15 @@ function registerDesktopIpc() {
     return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, trayOk: !!tray, login: login };
   });
 
+  ipcMain.handle("focusdesk:popupMenu", (e, p) => {
+    assertTrusted(e);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const m = Menu.getApplicationMenu();
+    if (!win || !m) return { ok: false };
+    m.popup({ window: win, x: Math.round(Number(p && p.x) || 0), y: Math.round(Number(p && p.y) || 0) });
+    return { ok: true };
+  });
+
   ipcMain.handle("focusdesk:openCapture", (e, p) => {
     assertTrusted(e);
     const k = p && p.kind;
@@ -810,6 +821,9 @@ function createWindow(hidden) {
   const st = loadWindowState();
   const keepHidden = !!hidden || (firstWindow && launchedHidden());
   firstWindow = false;
+  // Windows only: the menu moves into a ⋯ button in a slim custom title bar (opt-in, applies on restart).
+  const compact = (process.platform === "win32" && dprefs.compactTitle) || process.env.FD_TEST_TITLEBAR === "1";
+  compactActive = compact;
   const iconPath = path.join(__dirname, "build", "icon.png");
   const win = new BrowserWindow({
     width: st.width,
@@ -821,6 +835,9 @@ function createWindow(hidden) {
     show: false,
     backgroundColor: "#008080",
     title: APP_TITLE,
+    ...(process.platform === "win32" && compact
+      ? { titleBarStyle: "hidden", titleBarOverlay: { color: "#000080", symbolColor: "#ffffff", height: 32 } }
+      : {}),
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -830,6 +847,9 @@ function createWindow(hidden) {
     },
   });
   mainWindow = win;
+  if (compact) win.setMenuBarVisibility(false);
+  win.on("enter-full-screen", () => win.webContents.send("focusdesk:fs", true));
+  win.on("leave-full-screen", () => win.webContents.send("focusdesk:fs", false));
   if (st.maximized) win.maximize();
   if (st.fullScreen) win.setFullScreen(true);
   win.once("ready-to-show", () => {

@@ -3803,3 +3803,41 @@ html.grey .mig-status { color:#909090; }
     font-size: 10px;
   }
 }
+
+/* ===== Windows slim title bar: menu behind a ⋯ button (opt-in) ===== */
+#dt-titlebar { display: none; }
+html.dt-tb #dt-titlebar {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  z-index: 99997;
+  align-items: center;
+  gap: 8px;
+  padding: 0 140px 0 6px;
+  background: #000080;
+  color: #fff;
+  font: bold 12px Tahoma, "Segoe UI", Arial, sans-serif;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+html.dt-tb #wall,
+html.dt-tb #desktop { top: 32px; }
+html.dt-tb.dt-tb-off #dt-titlebar { display: none; }
+html.dt-tb.dt-tb-off #wall,
+html.dt-tb.dt-tb-off #desktop { top: 0; }
+#dt-menu {
+  -webkit-app-region: no-drag;
+  width: 30px;
+  height: 24px;
+  padding: 0;
+  font: bold 16px/1 Tahoma, Arial, sans-serif;
+  background: #c0c0c0;
+  color: #000;
+  border: 2px solid;
+  border-color: #fff #404040 #404040 #fff;
+  cursor: default;
+}
+#dt-menu:active { border-color: #404040 #fff #fff #404040; }

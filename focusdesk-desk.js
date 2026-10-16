@@ -80,6 +80,37 @@
     if (typeof window.__focusdeskCmd === "function") window.__focusdeskCmd(cmd);
   });
 
+  /* Slim title bar (Windows, opt-in): the app menu lives behind a ⋯ button. */
+  if (init.titleBar) {
+    var root = document.documentElement;
+    root.classList.add("dt-tb");
+    var mountBar = function () {
+      var bar = document.createElement("div");
+      bar.id = "dt-titlebar";
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "dt-menu";
+      btn.title = "Menu";
+      btn.setAttribute("aria-label", "Menu");
+      btn.textContent = "\u22ef";
+      btn.addEventListener("click", function () {
+        var r = btn.getBoundingClientRect();
+        fd.popupMenu(r.left, r.bottom);
+      });
+      var t = document.createElement("span");
+      t.className = "dt-title";
+      t.textContent = "FocusDesk 96";
+      bar.appendChild(btn);
+      bar.appendChild(t);
+      root.appendChild(bar);
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mountBar);
+    else mountBar();
+    fd.onFullscreen(function (on) {
+      root.classList.toggle("dt-tb-off", !!on);
+    });
+  }
+
   /* ---------- 2. file-backed localStorage ---------- */
   var mem = Object.create(null);
   var latestData = init.data || null;

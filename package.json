@@ -1,7 +1,7 @@
 {
   "name": "focusdesk-96",
   "productName": "FocusDesk 96",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "FocusDesk 96 — a Windows 95-style study and productivity desktop, as a native app for macOS, Windows and Linux.",
   "main": "main.js",
   "author": {

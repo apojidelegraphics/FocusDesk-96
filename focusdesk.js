@@ -21,10 +21,19 @@ window.addEventListener("error", function (e) {
   "use strict";
 
   var VERSION_BROWSER = "2.7";
-  var VERSION_DESKTOP = "1.1.0";
+  var VERSION_DESKTOP = "1.1.1";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
+    {
+      v: "1.1.1",
+      date: "October 2026",
+      title: "Windows: menu in the title bar",
+      apps: [],
+      notes: [
+        "Windows: Control Panel \u2192 Desktop now has an option to move File, Edit, View and Help into a \u22ef button in a slim title bar, like Spotify. Restart FocusDesk to apply it.",
+      ],
+    },
     {
       v: "1.1.0",
       date: "October 2026",
@@ -13007,6 +13016,7 @@ window.addEventListener("error", function (e) {
                     P = window.__focusdeskDPrefs || P;
                     paintNote();
                     if (key === "launchAtLogin" && r && r.login && !r.login.ok) note.textContent = r.login.reason || "Couldn't change the startup setting.";
+                    if (key === "compactTitle") note.textContent = "Restart FocusDesk to apply the title bar change.";
                   });
                 },
               }),
@@ -13026,6 +13036,9 @@ window.addEventListener("error", function (e) {
               opt("closeToTray", "Keep running in the " + tray + " when I close the window", false),
               opt("launchAtLogin", "Open FocusDesk when I log in", false),
               opt("startHidden", "…and start hidden in the " + tray, false),
+              window.__focusdeskPlatform === "win32"
+                ? opt("compactTitle", "Put File, Edit, View and Help in a \u22ef button in the title bar (restart to apply)", false)
+                : null,
               el("div", { class: "row", style: "gap:6px" }, el("button", { class: "btn sm", onclick: function () { window.__focusdeskOpenCapture("task"); } }, "Quick capture…")),
               note
             )

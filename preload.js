@@ -31,6 +31,14 @@ contextBridge.exposeInMainWorld("focusdesk", {
   // desktop 1.1: notifications, quick capture, tray, startup
   notify: (title, body) => ipcRenderer.invoke("focusdesk:notify", { title, body }),
   setDesktopPrefs: (p) => ipcRenderer.invoke("focusdesk:setDesktopPrefs", p),
+  popupMenu: (x, y) => ipcRenderer.invoke("focusdesk:popupMenu", { x, y }),
+  onFullscreen: (cb) => {
+    ipcRenderer.on("focusdesk:fs", (e, on) => {
+      try {
+        cb(!!on);
+      } catch (err) {}
+    });
+  },
   openCapture: (kind) => ipcRenderer.invoke("focusdesk:openCapture", { kind }),
   setTimerStatus: (t) => ipcRenderer.send("focusdesk:timerStatus", t),
   captureDone: (r) => ipcRenderer.send("focusdesk:captureDone", r),
