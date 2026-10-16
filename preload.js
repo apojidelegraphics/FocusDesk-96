@@ -28,6 +28,27 @@ contextBridge.exposeInMainWorld("focusdesk", {
   openFile: (accept, opts) => ipcRenderer.invoke("focusdesk:openFile", Object.assign({}, opts, { accept })),
   openBackupFolder: () => ipcRenderer.invoke("focusdesk:openBackupFolder"),
 
+  // desktop 1.1: notifications, quick capture, tray, startup
+  notify: (title, body) => ipcRenderer.invoke("focusdesk:notify", { title, body }),
+  setDesktopPrefs: (p) => ipcRenderer.invoke("focusdesk:setDesktopPrefs", p),
+  openCapture: (kind) => ipcRenderer.invoke("focusdesk:openCapture", { kind }),
+  setTimerStatus: (t) => ipcRenderer.send("focusdesk:timerStatus", t),
+  captureDone: (r) => ipcRenderer.send("focusdesk:captureDone", r),
+  onCapture: (cb) => {
+    ipcRenderer.on("focusdesk:capture", (e, p) => {
+      try {
+        cb(p);
+      } catch (err) {}
+    });
+  },
+  onCommand: (cb) => {
+    ipcRenderer.on("focusdesk:cmd", (e, c) => {
+      try {
+        cb(c);
+      } catch (err) {}
+    });
+  },
+
   // quit/close handshake: main asks the page to flush, the page answers when done
   onFlushRequest: (cb) => {
     ipcRenderer.on("focusdesk:flush", () => {

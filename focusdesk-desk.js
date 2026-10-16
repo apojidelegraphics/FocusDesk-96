@@ -44,6 +44,42 @@
       "\nA daily backup may be in the backups folder inside it.";
   }
 
+  /* ---------- desktop 1.1 bridges ---------- */
+  window.__focusdeskPlatform = init.platform || "";
+  window.__focusdeskDPrefs = init.dprefs || {};
+  window.__focusdeskDStatus = { hotkeyOk: !!init.hotkeyOk, trayOk: !!init.trayOk };
+  window.__focusdeskNotify = function (title, body) {
+    try {
+      fd.notify(String(title || "FocusDesk 96"), String(body || ""));
+    } catch (e) {}
+  };
+  window.__focusdeskSetPrefs = function (p) {
+    return fd.setDesktopPrefs(p).then(function (r) {
+      if (r && r.prefs) {
+        window.__focusdeskDPrefs = r.prefs;
+        window.__focusdeskDStatus = { hotkeyOk: !!r.hotkeyOk, trayOk: !!r.trayOk, login: r.login };
+      }
+      return r;
+    });
+  };
+  window.__focusdeskOpenCapture = function (kind) {
+    return fd.openCapture(kind || "task");
+  };
+  var lastTick = "";
+  window.__focusdeskTimer = function (t) {
+    var key = [t.running, t.mode, t.left, t.paused].join(":");
+    if (key === lastTick) return;
+    lastTick = key;
+    fd.setTimerStatus({ running: !!t.running, paused: !!t.paused, mode: t.mode, left: t.left });
+  };
+  fd.onCapture(function (p) {
+    var r = typeof window.__focusdeskCapture === "function" ? window.__focusdeskCapture(p.kind, p.text) : null;
+    if (r && r.msg) fd.captureDone({ msg: r.msg });
+  });
+  fd.onCommand(function (cmd) {
+    if (typeof window.__focusdeskCmd === "function") window.__focusdeskCmd(cmd);
+  });
+
   /* ---------- 2. file-backed localStorage ---------- */
   var mem = Object.create(null);
   var latestData = init.data || null;

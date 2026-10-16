@@ -14,7 +14,7 @@
  *  - Every file write is atomic: write a temp file, fsync it, rename over the target.
  */
 
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen } = require("electron");
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen, globalShortcut, Tray, nativeImage, Notification } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const fsp = fs.promises;
@@ -42,6 +42,7 @@ const FILES = {
   settings: path.join(DATA_DIR, "settings.json"),
   keys: path.join(DATA_DIR, "keys.json"),
   window: path.join(DATA_DIR, "window-state.json"),
+  desktop: path.join(DATA_DIR, "desktop.json"),
 };
 const INDEX_FILE = path.join(__dirname, "index.html");
 const KEEP_BACKUPS = 7;
@@ -144,9 +145,18 @@ async function writeKind(kind) {
 }
 
 let flushChain = Promise.resolve();
+let writing = 0; // writes currently in flight
 /** Writes everything that is dirty. Calls are serialized; resolves once disk is current. */
 function flushDirty() {
   const run = async () => {
+    writing++;
+    try {
+      await runOnce();
+    } finally {
+      writing--;
+    }
+  };
+  const runOnce = async () => {
     let firstError = null;
     for (const kind of Object.keys(dirty)) {
       if (!dirty[kind]) continue;
@@ -243,6 +253,7 @@ async function loadAll() {
   mem.wall = wall && typeof wall.dataUrl === "string" && wall.dataUrl ? wall.dataUrl : null;
   mem.settings = cleanStringMap(await loadJson(FILES.settings, isPlainObject));
   mem.keys = cleanStringMap(await loadJson(FILES.keys, isPlainObject));
+  dprefs = Object.assign({}, DEFAULT_DPREFS, cleanDprefs(await loadJson(FILES.desktop, isPlainObject)));
   await ensureDailyBackup();
 }
 
@@ -258,6 +269,9 @@ function bootPayload() {
     dirs: { data: DATA_DIR, backups: BACKUP_DIR, migrate: MIGRATE_DIR },
     platform: process.platform,
     appVersion: app.getVersion(),
+    dprefs: dprefs,
+    hotkeyOk: hotkeyOk,
+    trayOk: !!tray,
   };
 }
 
@@ -465,6 +479,263 @@ function registerIpc() {
 }
 
 /* ---------------------------------------------------------------------------
+ * Desktop 1.1: native notifications, quick capture, tray, launch at login
+ * ------------------------------------------------------------------------- */
+const DEFAULT_DPREFS = { notifications: true, hotkey: true, closeToTray: false, launchAtLogin: false, startHidden: false };
+const HOTKEY = "CommandOrControl+Shift+Space";
+let dprefs = Object.assign({}, DEFAULT_DPREFS);
+let tray = null;
+let captureWin = null;
+let hotkeyOk = false;
+let firstWindow = true;
+
+function cleanDprefs(p) {
+  const out = {};
+  if (p && typeof p === "object")
+    for (const k of Object.keys(DEFAULT_DPREFS)) if (typeof p[k] === "boolean") out[k] = p[k];
+  return out;
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+/** Resolves with the main window's webContents once it has loaded (creating a hidden one if needed). */
+function whenMainReady() {
+  return new Promise((resolve) => {
+    if (!mainWindow || mainWindow.isDestroyed()) createWindow(true);
+    const wc = mainWindow.webContents;
+    if (!wc.isLoading()) return resolve(wc);
+    wc.once("did-finish-load", () => resolve(wc));
+  });
+}
+
+function notifyNative(title, body, ignoreFocus) {
+  if (!dprefs.notifications || !Notification.isSupported()) return false;
+  // If you're already looking at FocusDesk, the in-app dialog is enough.
+  if (!ignoreFocus && mainWindow && !mainWindow.isDestroyed() && mainWindow.isFocused()) return false;
+  try {
+    const n = new Notification({ title: title, body: body });
+    n.on("click", showMainWindow);
+    n.show();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function openCapture(kind) {
+  if (captureWin && !captureWin.isDestroyed()) {
+    captureWin.webContents.send("capture:init", { kind: kind });
+    captureWin.show();
+    captureWin.focus();
+    return;
+  }
+  const a = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+  const w = 560,
+    h = 126;
+  const win = new BrowserWindow({
+    width: w,
+    height: h,
+    x: Math.round(a.x + (a.width - w) / 2),
+    y: Math.round(a.y + a.height * 0.22),
+    frame: false,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    backgroundColor: "#c0c0c0",
+    title: "Quick Capture",
+    webPreferences: {
+      preload: path.join(__dirname, "capture-preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  captureWin = win;
+  win.setMenuBarVisibility(false);
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (ev) => ev.preventDefault());
+  win.loadFile(path.join(__dirname, "capture.html"));
+  win.webContents.once("did-finish-load", () => {
+    win.webContents.send("capture:init", { kind: kind });
+    win.show();
+    win.focus();
+  });
+  let armed = false;
+  setTimeout(() => {
+    armed = true;
+  }, 500);
+  win.on("blur", () => {
+    if (armed && !win.isDestroyed()) win.close(); // clicking away dismisses it
+  });
+  win.on("closed", () => {
+    if (captureWin === win) captureWin = null;
+  });
+}
+
+function registerHotkey() {
+  try {
+    globalShortcut.unregister(HOTKEY);
+  } catch (_) {}
+  hotkeyOk = false;
+  if (!dprefs.hotkey) return;
+  try {
+    hotkeyOk = globalShortcut.register(HOTKEY, () => openCapture("task")) && globalShortcut.isRegistered(HOTKEY);
+  } catch (_) {
+    hotkeyOk = false;
+  }
+}
+
+const mmss = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+function updateTrayTimer(t) {
+  if (!tray) return;
+  const active = t && (t.running || t.paused);
+  const label = active ? (t.running ? (t.mode === "focus" ? "Focus " : "Break ") : "Paused ") + mmss(Math.max(0, t.left)) : "";
+  try {
+    tray.setToolTip(label ? "FocusDesk 96 \u2014 " + label : "FocusDesk 96");
+    if (process.platform === "darwin") tray.setTitle(t && t.running ? " " + mmss(Math.max(0, t.left)) : "");
+  } catch (_) {}
+}
+
+function ensureTray() {
+  if (tray) return;
+  try {
+    const img = nativeImage.createFromPath(path.join(__dirname, "assets", "tray.png"));
+    if (img.isEmpty()) return;
+    tray = new Tray(img);
+    tray.setToolTip("FocusDesk 96");
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: "Open FocusDesk 96", click: showMainWindow },
+        {
+          label: "Start focus session",
+          click: async () => {
+            const wc = await whenMainReady();
+            wc.send("focusdesk:cmd", "focus");
+          },
+        },
+        { label: "Add quick task\u2026", click: () => openCapture("task") },
+        { type: "separator" },
+        {
+          label: "Quit FocusDesk 96",
+          click: () => {
+            isQuitting = true;
+            app.quit();
+          },
+        },
+      ])
+    );
+    tray.on("click", () => {
+      if (process.platform !== "darwin") showMainWindow();
+    });
+  } catch (e) {
+    console.error("[focusdesk] tray unavailable:", e);
+    tray = null;
+  }
+}
+
+function applyLoginItem() {
+  if (!app.isPackaged) return { ok: false, reason: "Only available in the installed app." };
+  try {
+    if (process.platform === "linux") {
+      const dir = path.join(app.getPath("home"), ".config", "autostart");
+      const f = path.join(dir, "focusdesk-96.desktop");
+      if (dprefs.launchAtLogin) {
+        fs.mkdirSync(dir, { recursive: true });
+        const exe = process.env.APPIMAGE || process.execPath;
+        fs.writeFileSync(f, '[Desktop Entry]\nType=Application\nName=FocusDesk 96\nExec="' + exe + '" --hidden\nX-GNOME-Autostart-enabled=true\n');
+      } else fs.rmSync(f, { force: true });
+    } else {
+      app.setLoginItemSettings({ openAtLogin: dprefs.launchAtLogin, args: ["--hidden"] });
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: String((e && e.message) || e) };
+  }
+}
+
+function launchedHidden() {
+  return (
+    dprefs.startHidden &&
+    !!tray &&
+    (process.argv.indexOf("--hidden") >= 0 || (process.platform === "darwin" && app.getLoginItemSettings().wasOpenedAtLogin))
+  );
+}
+
+function applyDesktopPrefs() {
+  ensureTray();
+  registerHotkey();
+  applyLoginItem();
+}
+
+function registerDesktopIpc() {
+  const isCaptureSender = (e) => captureWin && !captureWin.isDestroyed() && e.sender === captureWin.webContents;
+  const trusted = (e) => {
+    try {
+      assertTrusted(e);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  ipcMain.handle("focusdesk:notify", (e, p) => {
+    assertTrusted(e);
+    return { ok: notifyNative(String((p && p.title) || "FocusDesk 96").slice(0, 100), String((p && p.body) || "").slice(0, 300), false) };
+  });
+
+  ipcMain.handle("focusdesk:setDesktopPrefs", async (e, p) => {
+    assertTrusted(e);
+    dprefs = Object.assign({}, dprefs, cleanDprefs(p));
+    await atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2));
+    registerHotkey();
+    ensureTray();
+    const login = applyLoginItem();
+    return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, trayOk: !!tray, login: login };
+  });
+
+  ipcMain.handle("focusdesk:openCapture", (e, p) => {
+    assertTrusted(e);
+    const k = p && p.kind;
+    openCapture(["task", "note", "reminder", "event"].indexOf(k) >= 0 ? k : "task");
+    return { ok: true };
+  });
+
+  ipcMain.on("focusdesk:timerStatus", (e, t) => {
+    if (!trusted(e) || !t || typeof t !== "object") return;
+    updateTrayTimer({ running: !!t.running, paused: !!t.paused, mode: t.mode === "focus" ? "focus" : "break", left: Number(t.left) || 0 });
+  });
+
+  ipcMain.on("focusdesk:captureDone", (e, r) => {
+    if (trusted(e) && r && typeof r.msg === "string") notifyNative("FocusDesk 96", r.msg.slice(0, 200), true);
+  });
+
+  ipcMain.on("capture:cancel", (e) => {
+    if (isCaptureSender(e)) captureWin.close();
+  });
+  ipcMain.on("capture:submit", async (e, p) => {
+    if (!isCaptureSender(e)) return;
+    const kind = p && p.kind;
+    const text = p && typeof p.text === "string" ? p.text.trim().slice(0, 500) : "";
+    captureWin.close();
+    if (!text || ["task", "note", "reminder", "event"].indexOf(kind) < 0) return;
+    const wc = await whenMainReady();
+    wc.send("focusdesk:capture", { kind: kind, text: text });
+  });
+}
+
+/* ---------------------------------------------------------------------------
  * Window + close flow
  * ------------------------------------------------------------------------- */
 let mainWindow = null;
@@ -535,8 +806,10 @@ function askRendererToFlush(win) {
   });
 }
 
-function createWindow() {
+function createWindow(hidden) {
   const st = loadWindowState();
+  const keepHidden = !!hidden || (firstWindow && launchedHidden());
+  firstWindow = false;
   const iconPath = path.join(__dirname, "build", "icon.png");
   const win = new BrowserWindow({
     width: st.width,
@@ -559,7 +832,9 @@ function createWindow() {
   mainWindow = win;
   if (st.maximized) win.maximize();
   if (st.fullScreen) win.setFullScreen(true);
-  win.once("ready-to-show", () => win.show());
+  win.once("ready-to-show", () => {
+    if (!keepHidden) win.show();
+  });
 
   // Links open in the real browser; the app window itself never navigates away.
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -577,6 +852,11 @@ function createWindow() {
   win.on("close", (ev) => {
     saveWindowState(win);
     if (readyToClose) return;
+    if (dprefs.closeToTray && tray && !isQuitting) {
+      ev.preventDefault();
+      win.hide(); // keep running in the tray / menu bar
+      return;
+    }
     ev.preventDefault();
     if (closing) return;
     closing = true;
@@ -640,6 +920,7 @@ function buildMenu() {
   template.push({
     label: "File",
     submenu: [
+      { label: "Quick Capture\u2026", click: () => openCapture("task") },
       { label: "Open Backups Folder", click: () => shell.openPath(DATA_DIR) },
       { type: "separator" },
       isMac ? { role: "close" } : { role: "quit" },
@@ -689,9 +970,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
+    showMainWindow();
   });
   app.on("before-quit", () => {
     isQuitting = true;
@@ -700,7 +979,15 @@ if (!app.requestSingleInstanceLock()) {
     if (process.platform !== "darwin") app.quit();
   });
   app.on("activate", () => {
-    if (app.isReady() && BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (app.isReady()) showMainWindow();
+  });
+  app.on("will-quit", (e) => {
+    globalShortcut.unregisterAll();
+    // The page's last save can land just as the final window closes: let it finish.
+    if (writing > 0 || Object.keys(dirty).some((k) => dirty[k])) {
+      e.preventDefault();
+      flushDirty().catch(() => {}).then(() => app.exit(0));
+    }
   });
 
   app
@@ -717,7 +1004,9 @@ if (!app.requestSingleInstanceLock()) {
         return;
       }
       registerIpc();
+      registerDesktopIpc();
       buildMenu();
+      applyDesktopPrefs();
       createWindow();
     })
     .catch((e) => {

@@ -21,10 +21,24 @@ window.addEventListener("error", function (e) {
   "use strict";
 
   var VERSION_BROWSER = "2.7";
-  var VERSION_DESKTOP = "1.0.0";
+  var VERSION_DESKTOP = "1.1.0";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
+    {
+      v: "1.1.0",
+      date: "October 2026",
+      title: "Desktop 1.1: notifications, quick capture, tray",
+      apps: ["breaker", "achievements"],
+      notes: [
+        "Everything in browser version 2.7: Habit Breaker, LaTeX and images in notes and cards, cloze and image-occlusion flash cards, focus session log, achievements, and the grade what-if.",
+        "Native notifications: reminders and finished focus sessions appear in your system's notification center when FocusDesk isn't in front. Your system's Do Not Disturb is respected.",
+        "Quick capture: press Cmd+Shift+Space (Ctrl+Shift+Space on Windows and Linux) from anywhere. Tab switches between Task, Note, Reminder and Event, Enter saves, Esc cancels. Try \u201ccall mom tomorrow at 5pm\u201d.",
+        "Menu bar / system tray icon with the focus timer countdown, a shortcut to start a session, and quick task capture.",
+        "Control Panel \u2192 Desktop: keep running in the tray when the window is closed, open at login, start hidden, and switch notifications or the hotkey off.",
+        "Update checker finds new releases and, in the browser version, the new browser zip. The 5 MB storage meter is gone on desktop because your data is plain files.",
+      ],
+    },
     {
       v: "2.7",
       date: "October 2026",
@@ -7674,6 +7688,7 @@ window.addEventListener("error", function (e) {
     r.fired = true;
     save();
     chime();
+    desktopNotify("Reminder", r.text);
     msgBox({
       title: "Reminder",
       icon: "bell",
@@ -7803,6 +7818,8 @@ window.addEventListener("error", function (e) {
       );
     } else tt.hidden = true;
     if (wins.timer && wins.timer.refresh) wins.timer.refresh();
+    if (window.__focusdeskTimer)
+      window.__focusdeskTimer({ running: !!T.running, paused: !T.running && T.left < T.total, mode: T.mode, left: T.left });
   }
   setInterval(function () {
     if (!T.running) return;
@@ -7816,6 +7833,10 @@ window.addEventListener("error", function (e) {
   }, 250);
   function timerDone() {
     chime();
+    desktopNotify(
+      T.mode === "focus" ? "Focus session complete" : "Break is over",
+      T.mode === "focus" ? "Nice work! Time for a break." : "Ready for another focus session?"
+    );
     if (T.mode === "focus") {
       var k = ymd(new Date()),
         d = S.stats[k] || (S.stats[k] = { sessions: 0, minutes: 0 });
@@ -12959,6 +12980,58 @@ window.addEventListener("error", function (e) {
       drawAbout();
     });
     var aboutBox = el("fieldset", null, el("legend", null, "About"), aboutInfo);
+    var deskBox = window.__focusdeskIsDesktop
+      ? (function () {
+          var P = window.__focusdeskDPrefs || {},
+            mac = window.__focusdeskPlatform === "darwin",
+            tray = mac ? "menu bar" : "system tray",
+            note = el("div", { class: "dim", style: "padding:0" });
+          function paintNote() {
+            var st = window.__focusdeskDStatus || {},
+              bits = [];
+            if (P.hotkey !== false && !st.hotkeyOk) bits.push("The quick capture hotkey is in use by another app, so it isn't active.");
+            if (!st.trayOk) bits.push("No " + tray + " is available on this system, so tray options won't work.");
+            note.textContent = bits.join(" ");
+          }
+          function opt(key, label, dflt) {
+            return el(
+              "label",
+              { class: "row", style: "gap:6px;align-items:center" },
+              el("input", {
+                type: "checkbox",
+                checked: dflt ? P[key] !== false : !!P[key],
+                onchange: function () {
+                  var o = {};
+                  o[key] = this.checked;
+                  window.__focusdeskSetPrefs(o).then(function (r) {
+                    P = window.__focusdeskDPrefs || P;
+                    paintNote();
+                    if (key === "launchAtLogin" && r && r.login && !r.login.ok) note.textContent = r.login.reason || "Couldn't change the startup setting.";
+                  });
+                },
+              }),
+              label
+            );
+          }
+          paintNote();
+          return el(
+            "fieldset",
+            null,
+            el("legend", null, "Desktop"),
+            el(
+              "div",
+              { class: "col", style: "gap:4px" },
+              opt("notifications", "Native notifications for reminders and finished focus sessions", true),
+              opt("hotkey", "Quick capture hotkey: " + (mac ? "Cmd" : "Ctrl") + "+Shift+Space", true),
+              opt("closeToTray", "Keep running in the " + tray + " when I close the window", false),
+              opt("launchAtLogin", "Open FocusDesk when I log in", false),
+              opt("startHidden", "…and start hidden in the " + tray, false),
+              el("div", { class: "row", style: "gap:6px" }, el("button", { class: "btn sm", onclick: function () { window.__focusdeskOpenCapture("task"); } }, "Quick capture…")),
+              note
+            )
+          );
+        })()
+      : null;
     var updBox = el(
       "fieldset",
       null,
@@ -13607,6 +13680,7 @@ window.addEventListener("error", function (e) {
         iconsBox,
         aboutBox,
         updBox,
+        deskBox,
         el(
           "fieldset",
           null,
@@ -19217,6 +19291,94 @@ window.addEventListener("error", function (e) {
         console.error(e);
       }
     }, 1500);
+  }
+
+  /* ================= DESKTOP 1.1: native notifications + quick capture ================= */
+  function desktopNotify(title, body) {
+    if (window.__focusdeskNotify)
+      try {
+        window.__focusdeskNotify(title, body);
+      } catch (e) {}
+  }
+  /* "call mom tomorrow at 5pm", "in 30 min", "at 7:15 pm" -> { text, d (Date|null), hasTime } */
+  function captureWhen(text) {
+    var now = new Date(),
+      t = String(text),
+      d = null,
+      hasTime = false,
+      m;
+    if ((m = /\bin\s+(\d{1,3})\s*(min|mins|minutes?|h|hr|hrs|hours?)\b/i.exec(t))) {
+      d = new Date(now.getTime() + (/^h/i.test(m[2]) ? +m[1] * 60 : +m[1]) * 60000);
+      hasTime = true;
+      t = t.replace(m[0], " ");
+    } else {
+      var dayOff = null,
+        h = 0,
+        mi = 0;
+      if ((m = /\btomorrow\b/i.exec(t))) {
+        dayOff = 1;
+        t = t.replace(m[0], " ");
+      } else if ((m = /\btoday\b/i.exec(t))) {
+        dayOff = 0;
+        t = t.replace(m[0], " ");
+      }
+      var tm = /\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i.exec(t) || /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i.exec(t);
+      if (tm) {
+        h = +tm[1];
+        mi = tm[2] ? +tm[2] : 0;
+        var ap = tm[3] && tm[3].toLowerCase();
+        if (ap === "pm" && h < 12) h += 12;
+        if (ap === "am" && h === 12) h = 0;
+        if (h <= 23 && mi <= 59) {
+          hasTime = true;
+          t = t.replace(tm[0], " ");
+        }
+      }
+      if (dayOff != null || hasTime) {
+        d = new Date(now);
+        d.setDate(d.getDate() + (dayOff || 0));
+        if (hasTime) d.setHours(h, mi, 0, 0);
+        else d.setHours(9, 0, 0, 0);
+        if (dayOff == null && d.getTime() < now.getTime()) d.setDate(d.getDate() + 1); // "at 8am" said at 3pm means tomorrow
+      }
+    }
+    t = t.replace(/\s+/g, " ").trim();
+    return { text: t || String(text).trim(), d: d, hasTime: hasTime };
+  }
+  if (window.__focusdeskIsDesktop) {
+    window.__focusdeskCapture = function (kind, text) {
+      text = String(text || "").trim();
+      if (!text) return { ok: false, msg: "" };
+      var w = captureWhen(text),
+        label = clip(w.text, 300),
+        now = Date.now(),
+        msg;
+      if (kind === "task") {
+        if (S.tasks.length >= 500) return { ok: false, msg: "Your task list is full (500)." };
+        S.tasks.push({ id: uid(), text: label, done: false, pri: "normal", due: w.d ? w.d.getTime() : null, created: now, repeat: "none" });
+        msg = "Task added: " + clip(label, 60);
+      } else if (kind === "note") {
+        S.notes.unshift({ id: uid(), text: clip(text, 300000), updated: now });
+        msg = "Note saved: " + clip(text, 60);
+      } else if (kind === "reminder") {
+        S.reminders.push({ id: uid(), text: label, at: w.d ? w.d.getTime() : now + 3600000, done: false, fired: false, repeat: "none" });
+        msg = "Reminder set for " + whenStr(w.d ? w.d.getTime() : now + 3600000) + ": " + clip(label, 50);
+      } else if (kind === "event") {
+        var ed = w.d || new Date();
+        S.events.push({ id: uid(), title: label, date: ymd(ed), time: w.hasTime ? pad(ed.getHours()) + ":" + pad(ed.getMinutes()) : "", kind: "other", repeat: "none" });
+        msg = "Event added for " + ymd(ed) + ": " + clip(label, 50);
+      } else return { ok: false, msg: "" };
+      save();
+      refreshAll();
+      return { ok: true, msg: msg };
+    };
+    window.__focusdeskCmd = function (cmd) {
+      if (cmd === "focus") {
+        openApp("timer");
+        if (T.mode !== "focus") setMode("focus");
+        if (!T.running) startPause();
+      }
+    };
   }
 
   /* ================= APP: COUNTDOWNS ================= */
