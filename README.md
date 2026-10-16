@@ -213,9 +213,11 @@ FocusDesk 96 is the first product to come from both sides at once.
 
 ## License
 
-MIT © 2026 Lucas / Apoji Studios. See [LICENSE](LICENSE).
+MIT © 2026 Apoji Delegraphics and Apoji Studios. See [LICENSE](LICENSE).
 
 See [TERMS.md](TERMS.md) for the full terms of use, privacy notes, and brand rules.
+
+Third-party software is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Credits
 
@@ -228,6 +230,6 @@ Full browser-version history lives in the app's own Notepad under
 
 *FocusDesk 96 is a product of Apoji Delegraphics, designed by Apoji Studios.*
 
-*© 2026 Apoji Delegraphics. All rights reserved.*
+*© 2026 Apoji Delegraphics and Apoji Studios. Released under the MIT License.*
 
 *Lucas Roland, CEO*
