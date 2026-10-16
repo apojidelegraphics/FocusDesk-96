@@ -1,4 +1,4 @@
-# FocusDesk 96 — Desktop Edition, v1.0.0
+# FocusDesk 96 — Desktop Edition.
 
 The complete FocusDesk 96 study environment, now as a native desktop app
 for macOS, Windows, and Linux. Same features. Real files on your computer
