@@ -52,9 +52,33 @@ jobs:
           path: ${{ matrix.files }}
           if-no-files-found: error
 
+  browser:
+    name: Browser version (zip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the browser-version zip
+        shell: bash
+        run: |
+          VER=$(grep -oP 'var VERSION_BROWSER = "\K[^"]+' focusdesk.js)
+          DIR="FocusDesk-96-Browser-$VER"
+          mkdir -p "$DIR" dist
+          cp focusdesk.js focusdesk.css apojilogo.js "$DIR"/
+          # same page, minus the desktop-only script tag
+          grep -v 'focusdesk-desk.js\|Desktop edition only' index.html > "$DIR/index.html"
+          sed "s/__VERSION__/$VER/g" scripts/browser-readme.txt > "$DIR/READ ME FIRST.txt"
+          zip -r "dist/$DIR.zip" "$DIR"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-Browser
+          path: dist/*.zip
+          if-no-files-found: error
+
   release:
     name: Draft release
-    needs: build
+    needs: [build, browser]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

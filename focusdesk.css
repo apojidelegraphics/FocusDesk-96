@@ -3732,3 +3732,74 @@ html.grey .mig-item:hover { background:#3a3a5a; }
 html.grey .mig-item.sel { background:#2a3a5a; }
 html.grey .mig-hint { color:#909090; }
 html.grey .mig-status { color:#909090; }
+/* ===== 2.7: LaTeX, images, cloze, occlusion, breaker, achievements ===== */
+.tex { font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif; font-size: 1.08em; line-height: 1.35; white-space: nowrap; }
+.tex-block { display: block; text-align: center; margin: 8px 0; font-size: 1.22em; overflow-x: auto; white-space: nowrap; }
+.tex sup, .tex sub { font-size: 0.72em; line-height: 0; }
+.tx-op { padding: 0 0.22em; }
+.tx-frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 0.12em; }
+.tx-num { padding: 0 0.2em; border-bottom: 1px solid currentColor; line-height: 1.15; }
+.tx-den { padding: 0 0.2em; line-height: 1.15; }
+.tx-sqrt { display: inline-flex; align-items: stretch; vertical-align: middle; }
+.tx-rad { font-size: 1.1em; line-height: 1.1; }
+.tx-rcl { border-top: 1px solid currentColor; padding: 0 0.15em; margin-top: 0.1em; }
+.tx-idx { font-size: 0.6em; align-self: flex-start; margin-right: -0.25em; }
+.tx-scr { display: inline-flex; flex-direction: column; vertical-align: middle; font-size: 0.72em; line-height: 1.15; }
+.tx-lim { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.15; }
+.tx-limsup, .tx-limsub { font-size: 0.72em; }
+.tx-bigop { font-size: 1.5em; line-height: 1; vertical-align: middle; }
+.tx-rm { font-style: normal; }
+.tx-text { font-style: normal; white-space: pre; }
+.tx-acc { display: inline-flex; flex-direction: column; align-items: center; line-height: 0.95; }
+.tx-over { border-top: 1px solid currentColor; }
+.tx-under { border-bottom: 1px solid currentColor; }
+.tx-mat { display: inline-flex; align-items: center; vertical-align: middle; }
+.tx-mt { border-collapse: collapse; margin: 0 0.15em; }
+.tx-mt td { padding: 0.1em 0.45em; text-align: center; }
+.tx-cases td { text-align: left; }
+.tx-mdel { font-size: 2em; font-weight: 200; line-height: 1; }
+.tx-sp { display: inline-block; }
+.tx-err { color: #c00000; }
+.md-img { max-width: 100%; height: auto; border: 1px solid #c0c0c0; }
+.rich { text-align: left; }
+.rich p { margin: 3px 0; }
+.cloze-blank { background: #000080; color: #fff; padding: 0 0.4em; }
+.cloze-ans { background: #ffff99; color: #006000; font-weight: bold; padding: 0 0.25em; border-bottom: 2px solid #006000; }
+.occ-wrap, .occ-stage { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.occ-stage { display: block; min-height: 40px; background: #fff; border: 2px inset #808080; touch-action: none; cursor: crosshair; }
+.occ-img { max-width: 100%; max-height: 340px; display: block; user-select: none; -webkit-user-drag: none; }
+.occ-box { position: absolute; box-sizing: border-box; }
+.occ-hide { background: #000080; border: 2px solid #fff; color: #fff; display: flex; align-items: center; justify-content: center; font: bold 14px sans-serif; line-height: 1; }
+.occ-other { border: 1px dashed #808080; }
+.occ-ans { border: 2px solid #00a000; background: rgba(0, 255, 0, 0.18); }
+.occ-edit { border: 2px solid #c00000; background: rgba(255, 0, 0, 0.25); color: #fff; font: bold 12px sans-serif; line-height: 1; padding: 1px 3px; }
+.hb-cell.slip { background: #c00000; color: #fff; }
+.ach-row { display: flex; gap: 10px; align-items: center; padding: 6px 4px; border-bottom: 1px solid #d0d0d0; }
+.ach-row.locked { opacity: 0.45; }
+.ach-row.locked .ach-badge { filter: grayscale(1); }
+.ach-badge { flex: none; }
+.tod-bars { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
+.tod-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; font-size: 9px; }
+.tod-bar { width: 100%; background: #000080; min-height: 1px; }
+.tod-bar.best { background: #008000; }
+
+/* ===== branding: parent company line on the boot screen ===== */
+#boot .devby {
+  position: absolute;
+  bottom: 22px;
+  right: 22px;
+  font: 11px Tahoma, Arial, sans-serif;
+  color: #fff;
+  letter-spacing: 1.5px;
+  text-shadow: 1px 1px 0 #0a3fa8, 0 0 4px #0a3fa8;
+  opacity: 0.95;
+  pointer-events: none;
+  user-select: none;
+}
+@media (max-width: 560px) {
+  #boot .devby {
+    bottom: 14px;
+    right: 14px;
+    font-size: 10px;
+  }
+}
