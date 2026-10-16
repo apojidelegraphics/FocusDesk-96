@@ -1,0 +1,11 @@
+--- a/index.html	2026-10-16 00:48:00.171250760 +0000
++++ b/index.html	2026-10-16 00:52:04.988496757 +0000
+@@ -68,6 +68,8 @@
+       <p>Starting up…</p>
+     </div>
+     <script src="apojilogo.js"></script>
++    <!-- Desktop edition only: file-backed storage + native dialogs. Does nothing in a browser. -->
++    <script src="focusdesk-desk.js"></script>
+     <script src="focusdesk.js"></script>
+   </body>
+ </html>

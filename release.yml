@@ -1,0 +1,71 @@
+name: Release
+
+# Push a tag like v1.0.0 to build installers for all three platforms
+# and attach them to a DRAFT GitHub release for you to review and publish.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macOS,   os: macos-latest,   script: "build:mac",   files: "dist/*.dmg" }
+          - { name: Windows, os: windows-latest, script: "build:win",   files: "dist/*.exe" }
+          - { name: Linux,   os: ubuntu-latest,  script: "build:linux", files: "dist/*.AppImage" }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the tag matches package.json
+        shell: bash
+        run: |
+          PKG="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$PKG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build installer
+        run: npm run ${{ matrix.script }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false" # builds are intentionally unsigned
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.name }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  release:
+    name: Draft release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: dist/*

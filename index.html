@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#008080" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="FocusDesk 96" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAiklEQVR42u1WQQrAIAxLhw/zZ4s/05d1p8EQx2TgdNqeFKoNSawFVg8BoD0BbL0ZcOdC9VsiRGQwBlJKAIAYY9OC3vtBPZAHs72SZS1ZdwNHfQUGwNW3zHKf0F3K+cEkmM0DYLjRmpMywGU9kP9W0zNgM6G8OKOlyeniHfkVAwZAnrRuXcsk6A7gAOSpGcwB7rGPAAAAAElFTkSuQmCC"
+    />
+    <title>FocusDesk 96</title>
+    <link rel="stylesheet" href="focusdesk.css" />
+  </head>
+  <body>
+    <div id="wall"></div>
+    <div id="desktop"><div id="icons"></div></div>
+    <div id="startmenu" hidden>
+      <div class="ban"><b>FocusDesk 96</b></div>
+      <div class="items" id="startitems"></div>
+    </div>
+    <div id="taskbar">
+      <button class="btn" id="startbtn" aria-label="Start menu">
+        <span class="flag"><i></i><i></i><i></i><i></i></span>Start
+      </button>
+      <div class="sep-v"></div>
+      <div id="tasks"></div>
+      <div id="tray">
+        <span
+          id="saveWarn"
+          hidden
+          title="Storage blocked — changes are NOT being saved."
+        ></span>
+        <span id="trayTimer" hidden></span>
+        <span
+          id="fsbtn"
+          title="Full screen (Alt+Enter)"
+          role="button"
+          tabindex="0"
+        ></span>
+        <span id="spk" title="Sound on/off"></span>
+        <span id="clock"></span>
+      </div>
+    </div>
+    <div id="saver"><canvas></canvas></div>
+    <div id="shutdown">
+      <div>
+        It's now safe to turn off<br />your computer.<small
+          >(click anywhere to restart FocusDesk 96)</small
+        >
+      </div>
+    </div>
+    <div id="boot">
+      <div id="bootlogo"></div>
+      <h1>FocusDesk 96<small>Study. Focus. Repeat.</small></h1>
+      <div class="bar" id="bootbar"></div>
+      <p>Starting up…</p>
+    </div>
+    <script src="apojilogo.js"></script>
+    <!-- Desktop edition only: file-backed storage + native dialogs. Does nothing in a browser. -->
+    <script src="focusdesk-desk.js"></script>
+    <script src="focusdesk.js"></script>
+  </body>
+</html>
