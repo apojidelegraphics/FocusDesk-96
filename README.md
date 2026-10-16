@@ -71,8 +71,11 @@ Grab the installer for your platform from the
 These builds are unsigned. That's normal for indie software and doesn't mean
 anything is wrong.
 
-- **macOS** — right-click the app → Open → Open. Do this once. Subsequent launches work normally.
-  On macOS 15 and later, if that doesn't offer an Open button: open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to FocusDesk 96.
+- **macOS** — after dragging the app to Applications, open Terminal and run:
+xattr -cr "/Applications/FocusDesk 96.app"
+codesign --force --deep --sign - "/Applications/FocusDesk 96.app"
+xattr -cr "/Applications/FocusDesk 96.app"
+Then open it normally. You only need to do this once.
 - **Windows** — if SmartScreen appears, click "More info" → "Run anyway".
 - **Linux** — mark the AppImage executable: `chmod +x FocusDesk-96-1.0.0.AppImage`.
 
@@ -165,7 +168,7 @@ release. Review it on the Releases page and publish when you're happy.
 
 ## License
 
-MIT © 2026 Lucas / Apoji Studios. See [LICENSE](LICENSE).
+MIT © 2026 Lucas Roland / Apoji Studios. See [LICENSE](LICENSE).
 
 ## Credits
 
