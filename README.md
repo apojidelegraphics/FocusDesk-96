@@ -4,6 +4,16 @@ The complete FocusDesk 96 study environment, now as a native desktop app
 for macOS, Windows, and Linux. Same features. Real files on your computer
 instead of browser storage. Portable, backupable, and fully yours.
 
+[![Latest release](https://img.shields.io/github/v/release/apojidelegraphics/FocusDesk-96?include_prereleases)](https://github.com/apojidelegraphics/FocusDesk-96/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+> 📸 **Screenshot placeholder** — drop an image at `docs/screenshot.png` and replace this line with
+> `![FocusDesk 96](docs/screenshot.png)`.
+
+FocusDesk 96 is a complete study and productivity environment built as a Windows 95-style
+desktop: windows, a taskbar, a Start menu, and a little assistant called Clipy. It has no
+accounts and no cloud. Everything runs on your computer.
+
 ## What's inside
 
 **Study tools**
@@ -49,9 +59,10 @@ instead of browser storage. Portable, backupable, and fully yours.
 
 ## Download
 
-Grab the installer for your platform from the assets below:
+Grab the installer for your platform from the
+[latest release](https://github.com/apojidelegraphics/FocusDesk-96/releases/latest):
 
-- **macOS** — `.dmg`
+- **macOS** — `.dmg` (Apple Silicon `arm64` and Intel `x64`)
 - **Windows** — `.exe`
 - **Linux** — `.AppImage`
 
@@ -61,6 +72,7 @@ These builds are unsigned. That's normal for indie software and doesn't mean
 anything is wrong.
 
 - **macOS** — right-click the app → Open → Open. Do this once. Subsequent launches work normally.
+  On macOS 15 and later, if that doesn't offer an Open button: open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to FocusDesk 96.
 - **Windows** — if SmartScreen appears, click "More info" → "Run anyway".
 - **Linux** — mark the AppImage executable: `chmod +x FocusDesk-96-1.0.0.AppImage`.
 
@@ -73,6 +85,87 @@ Your data lives in:
 - **Linux** — `~/.config/FocusDesk 96/`
 
 Back that folder up and you've backed up everything.
+
+Inside it:
+
+| File / folder | What it is |
+| --- | --- |
+| `data.json` | All your FocusDesk data, pretty-printed and human-readable |
+| `wall.json` | Your desktop wallpaper (kept separate because it can be large) |
+| `settings.json` | Small app settings, such as custom note templates |
+| `keys.json` | Your AI assistant API keys (see the note below) |
+| `backups/` | Automatic daily backups, one per day, the newest 7 kept |
+| `migrate/` | A copy of every file the Migrate app exports |
+| `window-state.json` | Window size and position |
+
+**Back up or move to another computer:** quit FocusDesk, copy the folder (or just `data.json`),
+and put it in the same place on the other machine. Syncing the folder with Dropbox or similar
+works too; just don't run FocusDesk on two computers at the same moment.
+
+**Restore a backup:** quit FocusDesk, then copy a file from `backups/` over `data.json`. Or use
+**Control Panel → Restore from file…** inside the app and pick the backup.
+
+**Open the folder:** use **File → Open Backups Folder** in the app.
+
+All writes are atomic (written to a temporary file, then swapped in), so a crash or power cut
+can't leave you with a half-written file. If a data file is ever unreadable, FocusDesk sets it
+aside as `*.corrupt-<timestamp>`, starts fresh, and tells you.
+
+> **API keys are stored unencrypted in `keys.json` in your user data folder. Keep that file private.**
+> It's a separate file so you can share `data.json` without sharing your keys. Backup files made
+> from inside the app never include keys.
+
+## Development
+
+You need [Node.js](https://nodejs.org/) 20 or newer.
+
+```sh
+git clone git@github.com:apojidelegraphics/FocusDesk-96.git
+cd FocusDesk-96
+npm install
+npm start
+```
+
+`npm start` launches the app with your real user data folder. To develop against a throwaway
+copy instead, set a different config location first, for example
+`XDG_CONFIG_HOME=/tmp/fd-dev npm start` on Linux.
+
+How it fits together:
+
+- `focusdesk.js`, `focusdesk.css`, `index.html`: the app. It is still plain vanilla JavaScript
+  and still runs on its own in a browser (browser version 2.6.1).
+- `main.js`: Electron main process. Files, backups, dialogs, menus, window state.
+- `preload.js`: the small `window.focusdesk` API. The page never touches `fs` itself.
+- `focusdesk-desk.js`: desktop shim loaded before `focusdesk.js`. It swaps `localStorage` for
+  files and browser downloads and file pickers for native dialogs.
+
+## Building
+
+Installers are built with [electron-builder](https://www.electron.build/). Build on the OS you
+are targeting:
+
+```sh
+npm run build:mac     # .dmg   (run on macOS)
+npm run build:win     # .exe   (run on Windows)
+npm run build:linux   # .AppImage (run on Linux)
+```
+
+Output goes to `dist/`. The app icon is generated from `apojilogo.js` automatically before each
+build (`scripts/build-icon.js`).
+
+**Releasing:** bump `version` in `package.json`, commit, then push a matching tag:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The GitHub Actions workflow builds all three installers and attaches them to a **draft**
+release. Review it on the Releases page and publish when you're happy.
+
+## License
+
+MIT © 2026 Lucas / Apoji Studios. See [LICENSE](LICENSE).
 
 ## Credits
 
