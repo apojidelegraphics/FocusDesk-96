@@ -7,8 +7,9 @@ instead of browser storage. Portable, backupable, and fully yours.
 [![Latest release](https://img.shields.io/github/v/release/apojidelegraphics/FocusDesk-96?include_prereleases)](https://github.com/apojidelegraphics/FocusDesk-96/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> 📸 **Screenshot placeholder** — drop an image at `docs/screenshot.png` and replace this line with
-> `![FocusDesk 96](docs/screenshot.png)`.
+![FocusDesk 96](docs/screenshot.png)
+
+![FocusDesk 96 boot screen](docs/boot.png)
 
 FocusDesk 96 is a complete study and productivity environment built as a Windows 95-style
 desktop: windows, a taskbar, a Start menu, and a little assistant called Clipy. It has no
