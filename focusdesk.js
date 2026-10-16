@@ -19145,6 +19145,32 @@ window.addEventListener("error", function (e) {
           url = /^https:\/\/github\.com\//.test(rel.html_url || "") ? rel.html_url : "https://github.com/" + REPO + "/releases";
         if (!tag) throw new Error("no release");
         var isDesk = !!window.__focusdeskIsDesktop;
+        /* Browser copies compare against the Browser zip attached to the release. */
+        var brz = null;
+        if (!isDesk)
+          (rel.assets || []).forEach(function (a) {
+            var m = /^FocusDesk-96-Browser-(\d+(?:\.\d+)*)\.zip$/.exec((a && a.name) || "");
+            if (m && /^https:\/\/github\.com\//.test(a.browser_download_url || "") && (!brz || verCmp(brz.v, m[1]) < 0))
+              brz = { v: m[1], url: a.browser_download_url };
+          });
+        if (brz) {
+          if (verCmp(VERSION, brz.v) < 0) {
+            if (manual)
+              msgBox({
+                title: "Update Available",
+                icon: "bulb",
+                width: 380,
+                text:
+                  "Browser version " + brz.v + " is available (you have " + VERSION + ").\n\nThis downloads the BROWSER version as a zip. Unzip it and open index.html. Before you switch, use Control Panel \u2192 Save backup file so your data is safe.",
+                buttons: [
+                  { label: "Download zip", fn: function () { window.open(brz.url, "_blank", "noopener"); } },
+                  { label: "Later" },
+                ],
+              });
+          } else if (manual)
+            msgBox({ title: "Updates", icon: "info", text: "You're up to date. Browser version " + VERSION + " is the newest." });
+          return;
+        }
         if (isDesk && verCmp(VERSION, tag) < 0) {
           if (!manual && S.prefs.updSeen === tag) return;
           S.prefs.updSeen = tag;
