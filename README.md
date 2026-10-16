@@ -214,6 +214,7 @@ FocusDesk 96 is the first product to come from both sides at once.
 ## License
 
 MIT © 2026 Lucas / Apoji Studios. See [LICENSE](LICENSE).
+See [TERMS.md](TERMS.md) for the full terms of use, privacy notes, and brand rules.
 
 ## Credits
 
