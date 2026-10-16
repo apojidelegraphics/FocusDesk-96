@@ -66,6 +66,7 @@ Grab the installer for your platform from the
 - **macOS** — `.dmg` (Apple Silicon `arm64` and Intel `x64`)
 - **Windows** — `.exe`
 - **Linux** — `.AppImage`
+- **Browser (Chrome, Edge, Firefox)**: `FocusDesk-96-Browser-2.7.zip`. This is the **browser version** saved to your computer: unzip it and open `index.html`. It is not the desktop app, and it keeps data in your browser rather than in files, so use Control Panel → Save backup file regularly.
 
 ## First launch
 
