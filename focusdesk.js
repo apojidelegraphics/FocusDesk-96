@@ -20,11 +20,26 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.6.1";
+  var VERSION_BROWSER = "2.7";
   var VERSION_DESKTOP = "1.0.0";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
+    {
+      v: "2.7",
+      date: "October 2026",
+      title: "Habit Breaker, LaTeX, cloze cards and more (beta)",
+      apps: ["breaker", "achievements"],
+      notes: [
+        "New: Habit Breaker. Track habits you want to quit. Same day grid and streaks, but the goal is a run of clean days. Log slips with a note about what triggered them, and get a message when you beat your own record.",
+        "Notepad now renders LaTeX: $x^2$ inline and $$...$$ for blocks. Paste or drop images straight into a note; they save with the note and export with the .md file.",
+        "Flash cards support LaTeX and images too, plus cloze deletion ({{c1::answer}}) and image occlusion cards you draw over a diagram.",
+        "Every Focus Timer session is now logged with its time of day. Study Stats shows your best hours to focus and Weekly Review lists each session.",
+        "New: Achievements. About 30 badges for streaks, hours, cards, habits, games and more.",
+        "Grade Calculator: slide to see \u201cif I get X on the rest\u201d, with best, likely and worst semester GPA.",
+        "Control Panel can check GitHub for a newer desktop release.",
+      ],
+    },
     {
       v: "1.0.0",
       date: "October 2026",
@@ -415,8 +430,15 @@ window.addEventListener("error", function (e) {
       "",
       "## Credits",
       "",
-      "FocusDesk 96 is made by **Apoji Studios**.",
-      "Version: " + VERSION,
+      "**FocusDesk 96** is a product of Apoji Delegraphics.",
+      "",
+      "- **Designed by** Apoji Studios",
+      "- **Engineered by** Apoji Delegraphics",
+      "- **Version:** " + VERSION,
+      "",
+      "Apoji Studios makes things that look and feel good. Apoji Delegraphics",
+      "makes sure they work, stay secure, and hold up under pressure. FocusDesk 96",
+      "is the first product to come from both sides at once.",
       "",
       "Made with care for students everywhere.",
     ].join("\n");
@@ -488,6 +510,7 @@ window.addEventListener("error", function (e) {
     "bib",
     "stickies",
     "habits",
+    "breakers",
     "countdowns",
     "links",
   ];
@@ -579,6 +602,10 @@ window.addEventListener("error", function (e) {
       bib: [],
       stickies: [],
       habits: [],
+      breakers: [],
+      images: {},
+      sessions: [],
+      ach: {},
       countdowns: [],
       games: {},
       links: [],
@@ -721,7 +748,7 @@ window.addEventListener("error", function (e) {
         return isStr(c.q) && isStr(c.a);
       })
       .map(function (c) {
-        return {
+        var r = {
           id: isStr(c.id) ? c.id : uid(),
           deck: isStr(c.deck) && c.deck ? clip(c.deck, 40) : "General",
           q: clip(c.q, 1000),
@@ -733,6 +760,26 @@ window.addEventListener("error", function (e) {
           reps: isNum(c.reps) ? Math.max(0, Math.floor(c.reps)) : 0,
           lapses: isNum(c.lapses) ? Math.max(0, Math.floor(c.lapses)) : 0,
         };
+        if (isNum(c.cloze) && c.cloze > 0) r.cloze = Math.min(99, Math.floor(c.cloze));
+        if (isObj(c.occ) && isStr(c.occ.img) && Array.isArray(c.occ.boxes)) {
+          var f01 = function (v) {
+            return isNum(v) ? Math.max(0, Math.min(1, v)) : 0;
+          };
+          r.occ = {
+            img: clip(c.occ.img, 40),
+            boxes: c.occ.boxes
+              .filter(isObj)
+              .slice(0, 60)
+              .map(function (b) {
+                return { x: f01(b.x), y: f01(b.y), w: f01(b.w), h: f01(b.h) };
+              }),
+            i: isNum(c.occ.i) ? Math.max(0, Math.floor(c.occ.i)) : 0,
+          };
+          if (!r.occ.boxes.length) delete r.occ;
+          else if (r.occ.i >= r.occ.boxes.length) r.occ.i = 0;
+        }
+        if (isStr(c.grp)) r.grp = clip(c.grp, 40);
+        return r;
       });
     o.tasks = arr("tasks")
       .filter(function (t) {
@@ -1234,6 +1281,9 @@ window.addEventListener("error", function (e) {
         return isStr(x) && x.length <= 24;
       });
     o.prefs.restoreSession = pp.restoreSession !== false;
+    o.prefs.updCheck = pp.updCheck !== false;
+    o.prefs.updLast = isNum(pp.updLast) ? pp.updLast : 0;
+    o.prefs.updSeen = isStr(pp.updSeen) ? clip(pp.updSeen, 20) : "";
 
     /* ---- Session (open windows) ---- */
     if (isObj(p.session) && Array.isArray(p.session.open)) {
@@ -1313,6 +1363,51 @@ window.addEventListener("error", function (e) {
           }
         });
     }
+    o.breakers = arr("breakers")
+      .filter(function (b) {
+        return isStr(b.name) && b.name.trim();
+      })
+      .map(function (b) {
+        var log = {};
+        if (isObj(b.log))
+          Object.keys(b.log)
+            .slice(0, 1200)
+            .forEach(function (k) {
+              if (!dateRe.test(k) || !b.log[k]) return;
+              log[k] = { note: isObj(b.log[k]) && isStr(b.log[k].note) ? clip(b.log[k].note, 200) : "" };
+            });
+        return {
+          id: isStr(b.id) ? b.id : uid(),
+          name: clip(b.name, 60),
+          start: isStr(b.start) && dateRe.test(b.start) ? b.start : ymd(new Date()),
+          log: log,
+          record: isNum(b.record) ? Math.max(0, Math.floor(b.record)) : 0,
+        };
+      })
+      .slice(0, 40);
+    o.images = {};
+    if (isObj(p.images))
+      Object.keys(p.images)
+        .slice(0, 200)
+        .forEach(function (k) {
+          var v = p.images[k];
+          if (/^[A-Za-z0-9_-]{1,40}$/.test(k) && isStr(v) && v.length < 2000000 && /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+\/=]+$/.test(v)) o.images[k] = v;
+        });
+    o.sessions = arr("sessions")
+      .filter(function (x) {
+        return isNum(x.t) && isNum(x.m);
+      })
+      .map(function (x) {
+        return { t: x.t, m: Math.max(1, Math.min(600, Math.round(x.m))), l: isStr(x.l) ? clip(x.l, 40) : "" };
+      })
+      .slice(-3000);
+    o.ach = {};
+    if (isObj(p.ach))
+      Object.keys(p.ach)
+        .slice(0, 100)
+        .forEach(function (k) {
+          if (isNum(p.ach[k])) o.ach[k] = p.ach[k];
+        });
     return o;
   }
 
@@ -1375,6 +1470,7 @@ window.addEventListener("error", function (e) {
   function save() {
     clearTimeout(saveT);
     saveT = setTimeout(flush, 200);
+    checkAchSoon();
   }
   window.addEventListener("pagehide", flush);
   if (window.__focusdeskIsDesktop) window.__focusdeskFlush = flush;
@@ -1628,6 +1724,7 @@ window.addEventListener("error", function (e) {
     bib: "Citation",
     stickies: "Sticky Note",
     habits: "Habit",
+    breakers: "Breaker habit",
     countdowns: "Countdown",
     links: "Favorite",
   };
@@ -1700,6 +1797,519 @@ window.addEventListener("error", function (e) {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
   }
+  /* ================= 2.7: IMAGES, LaTeX, RICH CARD FACES ================= */
+  function escAttr(t) {
+    return String(t)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  var IMG_RE = /!\[([^\]\n]*)\]\((img:[A-Za-z0-9_-]+|data:image\/(?:png|jpeg|gif|webp);base64,[A-Za-z0-9+\/=]+)\)/g;
+  var DMATH_INLINE_RE = /\$\$([^$\n]+?)\$\$/g;
+  var MATH_RE = /\$(?!\s)([^$\n]*[^$\s\\])\$(?!\d)/g;
+  function imgSrc(ref) {
+    return ref.indexOf("img:") === 0 ? S.images[ref.slice(4)] || "" : ref;
+  }
+  function imgHtml(alt, ref) {
+    var src = imgSrc(ref);
+    if (!src) return '<span class="dim">[missing image]</span>';
+    return '<img class="md-img" src="' + src + '" alt="' + escAttr(alt) + '">';
+  }
+  /* Shrinks to 1280px, keeps PNGs crisp when small, otherwise JPEG; stores a data URL in S.images. */
+  function addImageFile(file, cb) {
+    if (!file || !/^image\/(png|jpeg|gif|webp)$/.test(file.type)) {
+      cb(null, "Only PNG, JPEG, GIF or WebP images can be added.");
+      return;
+    }
+    if (Object.keys(S.images).length >= 200) {
+      cb(null, "You've reached the limit of 200 images.");
+      return;
+    }
+    var fr = new FileReader();
+    fr.onerror = function () {
+      cb(null, "Couldn't read that image.");
+    };
+    fr.onload = function () {
+      var im = new Image();
+      im.onerror = function () {
+        cb(null, "Couldn't read that image.");
+      };
+      im.onload = function () {
+        var sc = Math.min(1, 1280 / Math.max(im.width, im.height, 1)),
+          cw = Math.max(1, Math.round(im.width * sc)),
+          ch = Math.max(1, Math.round(im.height * sc)),
+          url = "";
+        var cv = document.createElement("canvas");
+        cv.width = cw;
+        cv.height = ch;
+        if (file.type !== "image/jpeg") {
+          cv.getContext("2d").drawImage(im, 0, 0, cw, ch);
+          url = cv.toDataURL("image/png");
+          if (url.length > 550000) url = "";
+        }
+        if (!url) {
+          var x2 = cv.getContext("2d");
+          x2.fillStyle = "#fff";
+          x2.fillRect(0, 0, cw, ch);
+          x2.drawImage(im, 0, 0, cw, ch);
+          var q = 0.85;
+          url = cv.toDataURL("image/jpeg", q);
+          while (url.length > 550000 && q > 0.4) {
+            q -= 0.15;
+            url = cv.toDataURL("image/jpeg", q);
+          }
+        }
+        if (url.length > 1500000) {
+          cb(null, "That image is too large, even after shrinking it.");
+          return;
+        }
+        var id = uid();
+        S.images[id] = url;
+        save();
+        cb(id);
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+  function insertAtCursor(inp, s) {
+    var a = inp.selectionStart == null ? inp.value.length : inp.selectionStart,
+      b = inp.selectionEnd == null ? a : inp.selectionEnd;
+    inp.value = inp.value.slice(0, a) + s + inp.value.slice(b);
+    inp.selectionStart = inp.selectionEnd = a + s.length;
+    inp.dispatchEvent(new Event("input"));
+  }
+  /* Paste or drop image files onto a text field; insert() receives the markdown. */
+  function attachImagePaste(node, insert) {
+    function take(files) {
+      var any = false;
+      Array.prototype.forEach.call(files || [], function (f) {
+        if (!/^image\//.test(f.type)) return;
+        any = true;
+        addImageFile(f, function (id, err) {
+          if (err) {
+            msgBox({ title: "Add Image", icon: "warn", text: err });
+            return;
+          }
+          var alt = (f.name || "image")
+            .replace(/\.[a-z0-9]+$/i, "")
+            .replace(/[\[\]\n]/g, "");
+          insert("![" + clip(alt, 40) + "](img:" + id + ")");
+        });
+      });
+      return any;
+    }
+    node.addEventListener("paste", function (e) {
+      var cd = e.clipboardData;
+      if (cd && cd.files && cd.files.length && take(cd.files)) e.preventDefault();
+    });
+    node.addEventListener("dragover", function (e) {
+      var ty = (e.dataTransfer && e.dataTransfer.types) || [];
+      if (Array.prototype.indexOf.call(ty, "Files") >= 0) e.preventDefault();
+    });
+    node.addEventListener("drop", function (e) {
+      var dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length && take(dt.files)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+  }
+  /* Notes keep images as img:ID references; exports inline them as data URLs. */
+  function inlineImages(text) {
+    return String(text).replace(/\]\(img:([A-Za-z0-9_-]+)\)/g, function (m, id) {
+      return S.images[id] ? "](" + S.images[id] + ")" : m;
+    });
+  }
+  function pruneImages() {
+    var used = {};
+    function scan(t) {
+      String(t || "").replace(/\(img:([A-Za-z0-9_-]+)\)/g, function (m, id) {
+        used[id] = 1;
+        return m;
+      });
+    }
+    function scanCard(c) {
+      if (!c) return;
+      scan(c.q);
+      scan(c.a);
+      if (c.occ) used[c.occ.img] = 1;
+    }
+    S.notes.forEach(function (n) {
+      scan(n.text);
+    });
+    S.cards.forEach(scanCard);
+    S.stickies.forEach(function (s) {
+      scan(s.text);
+    });
+    S.trash.forEach(function (t) {
+      if (!t.data) return;
+      if (t.kind === "cards") scanCard(t.data);
+      else scan(t.data.text);
+    });
+    Object.keys(S.images).forEach(function (id) {
+      if (!used[id]) delete S.images[id];
+    });
+  }
+
+  /* ---- a small LaTeX renderer (no libraries, works offline) ---- */
+  var TEX_SYM = {
+    alpha: "\u03b1", beta: "\u03b2", gamma: "\u03b3", delta: "\u03b4", epsilon: "\u03b5",
+    varepsilon: "\u03f5", zeta: "\u03b6", eta: "\u03b7", theta: "\u03b8", vartheta: "\u03d1",
+    iota: "\u03b9", kappa: "\u03ba", lambda: "\u03bb", mu: "\u03bc", nu: "\u03bd", xi: "\u03be",
+    pi: "\u03c0", rho: "\u03c1", sigma: "\u03c3", tau: "\u03c4", upsilon: "\u03c5",
+    phi: "\u03d5", varphi: "\u03c6", chi: "\u03c7", psi: "\u03c8", omega: "\u03c9",
+    Gamma: "\u0393", Delta: "\u0394", Theta: "\u0398", Lambda: "\u039b", Xi: "\u039e",
+    Pi: "\u03a0", Sigma: "\u03a3", Phi: "\u03a6", Psi: "\u03a8", Omega: "\u03a9",
+    infty: "\u221e", partial: "\u2202", nabla: "\u2207", emptyset: "\u2205", forall: "\u2200",
+    exists: "\u2203", neg: "\u00ac", ldots: "\u2026", cdots: "\u22ef", vdots: "\u22ee",
+    ddots: "\u22f1", degree: "\u00b0", circ: "\u2218", angle: "\u2220", perp: "\u22a5",
+    parallel: "\u2225", therefore: "\u2234", because: "\u2235", prime: "\u2032",
+    hbar: "\u210f", ell: "\u2113", Re: "\u211c", Im: "\u2111", aleph: "\u2135",
+    langle: "\u27e8", rangle: "\u27e9", lbrace: "{", rbrace: "}", vert: "|", Vert: "\u2016",
+    lfloor: "\u230a", rfloor: "\u230b", lceil: "\u2308", rceil: "\u2309",
+  };
+  var TEX_OPS = {
+    times: "\u00d7", cdot: "\u22c5", div: "\u00f7", pm: "\u00b1", mp: "\u2213",
+    le: "\u2264", leq: "\u2264", ge: "\u2265", geq: "\u2265", ne: "\u2260", neq: "\u2260",
+    approx: "\u2248", equiv: "\u2261", sim: "\u223c", propto: "\u221d", to: "\u2192",
+    rightarrow: "\u2192", leftarrow: "\u2190", Rightarrow: "\u21d2", Leftarrow: "\u21d0",
+    leftrightarrow: "\u2194", Leftrightarrow: "\u21d4", mapsto: "\u21a6", "in": "\u2208",
+    notin: "\u2209", subset: "\u2282", subseteq: "\u2286", supset: "\u2283", supseteq: "\u2287",
+    cup: "\u222a", cap: "\u2229", land: "\u2227", lor: "\u2228", ll: "\u226a", gg: "\u226b",
+    cong: "\u2245", ast: "\u2217", star: "\u22c6", oplus: "\u2295", otimes: "\u2297",
+    setminus: "\u2216",
+  };
+  var TEX_FN = "sin cos tan cot sec csc arcsin arccos arctan sinh cosh tanh log ln exp lim max min sup inf det gcd deg dim ker arg mod Pr limsup liminf".split(" ");
+  var TEX_LIM = { lim: 1, max: 1, min: 1, sup: 1, inf: 1, limsup: 1, liminf: 1 };
+  var TEX_BIG = {
+    sum: "\u2211", prod: "\u220f", int: "\u222b", iint: "\u222c", oint: "\u222e",
+    bigcup: "\u22c3", bigcap: "\u22c2", coprod: "\u2210",
+  };
+  var TEX_BIGLIM = { sum: 1, prod: 1, bigcup: 1, bigcap: 1, coprod: 1 };
+  var TEX_ENV = {
+    pmatrix: ["(", ")"], bmatrix: ["[", "]"], Bmatrix: ["{", "}"], vmatrix: ["|", "|"],
+    Vmatrix: ["\u2016", "\u2016"], matrix: ["", ""], cases: ["{", ""],
+  };
+  var TEX_BB = { R: "\u211d", Z: "\u2124", N: "\u2115", Q: "\u211a", C: "\u2102", P: "\u2119" };
+  var TEX_ACC = { hat: "^", widehat: "^", tilde: "~", widetilde: "~", vec: "\u2192", dot: "\u02d9", ddot: "\u00a8", check: "\u02c7", acute: "\u00b4", grave: "`" };
+  function texToHtml(src, block) {
+    var s = String(src || ""),
+      p = 0,
+      n = s.length,
+      big = false,
+      depth = 0;
+    function esc(t) {
+      return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function peek() {
+      return s.charAt(p);
+    }
+    function skipWs() {
+      while (p < n && /\s/.test(s.charAt(p))) p++;
+    }
+    function cmdName() {
+      var m = /^[A-Za-z]+/.exec(s.slice(p, p + 30));
+      if (m) {
+        p += m[0].length;
+        return m[0];
+      }
+      return s.charAt(p++);
+    }
+    function rawGroup() {
+      skipWs();
+      if (peek() === "{") {
+        var d = 1,
+          st = ++p;
+        while (p < n && d) {
+          var c = s.charAt(p++);
+          if (c === "{") d++;
+          else if (c === "}") d--;
+        }
+        return s.slice(st, d ? p : p - 1);
+      }
+      return s.charAt(p++);
+    }
+    function atEnd() {
+      var c = peek();
+      if (c === "}" || c === "&") return true;
+      if (c === "\\") {
+        if (s.charAt(p + 1) === "\\") return true;
+        if (/^\\(end|right)(?![A-Za-z])/.test(s.slice(p, p + 8))) return true;
+      }
+      return false;
+    }
+    function parseSeq() {
+      if (++depth > 40) throw new Error("too deep");
+      var out = "";
+      while (p < n && !atEnd()) out += parseScripted();
+      depth--;
+      return out;
+    }
+    function parseGroup() {
+      skipWs();
+      if (peek() === "{") {
+        p++;
+        var h = parseSeq();
+        if (peek() === "}") p++;
+        return h;
+      }
+      return parseAtom();
+    }
+    function scriptArg() {
+      skipWs();
+      if (peek() === "{") return parseGroup();
+      var c = s.charAt(p);
+      if (c === "\\") {
+        p++;
+        return parseCmd();
+      }
+      p++;
+      return /[A-Za-z]/.test(c) ? "<i>" + c + "</i>" : c === "-" ? "\u2212" : esc(c);
+    }
+    function parseScripted() {
+      big = false;
+      var h = parseAtom(),
+        isBig = big,
+        sub = "",
+        sup = "";
+      for (;;) {
+        skipWs();
+        var c = peek();
+        if (c === "^") {
+          p++;
+          sup = scriptArg();
+        } else if (c === "_") {
+          p++;
+          sub = scriptArg();
+        } else break;
+      }
+      if (!sub && !sup) return h;
+      if (isBig && block)
+        return (
+          '<span class="tx-lim"><span class="tx-limsup">' + sup + "</span><span>" + h +
+          '</span><span class="tx-limsub">' + sub + "</span></span>"
+        );
+      if (sub && sup)
+        return h + '<span class="tx-scr"><span>' + sup + "</span><span>" + sub + "</span></span>";
+      return h + (sup ? "<sup>" + sup + "</sup>" : "<sub>" + sub + "</sub>");
+    }
+    function parseAtom() {
+      skipWs();
+      var c = s.charAt(p);
+      if (!c) return "";
+      if (c === "{") {
+        p++;
+        var h = parseSeq();
+        if (peek() === "}") p++;
+        return '<span class="tx-g">' + h + "</span>";
+      }
+      if (c === "\\") {
+        p++;
+        return parseCmd();
+      }
+      p++;
+      if (/[A-Za-z]/.test(c)) return "<i>" + c + "</i>";
+      if (c === "+" || c === "=" || c === "<" || c === ">") return '<span class="tx-op">' + esc(c) + "</span>";
+      if (c === "-") return '<span class="tx-op">\u2212</span>';
+      if (c === "*") return "\u2217";
+      if (c === "'") return "\u2032";
+      return esc(c);
+    }
+    function parseEnv(name) {
+      var rows = [],
+        row = [],
+        guard = 0;
+      for (;;) {
+        row.push(parseSeq());
+        if (s.substr(p, 2) === "\\\\") {
+          p += 2;
+          rows.push(row);
+          row = [];
+        } else if (peek() === "&") p++;
+        else break;
+        if (++guard > 400) break;
+      }
+      if (row.length && !(row.length === 1 && !row[0] && rows.length)) rows.push(row);
+      if (/^\\end(?![A-Za-z])/.test(s.slice(p, p + 5))) {
+        p += 4;
+        rawGroup();
+      }
+      var dl = TEX_ENV[name] || ["", ""],
+        t = '<table class="tx-mt' + (name === "cases" ? " tx-cases" : "") + '">';
+      rows.forEach(function (r) {
+        t += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      t += "</table>";
+      return (
+        '<span class="tx-mat">' + (dl[0] ? '<span class="tx-mdel">' + dl[0] + "</span>" : "") + t +
+        (dl[1] ? '<span class="tx-mdel">' + dl[1] + "</span>" : "") + "</span>"
+      );
+    }
+    function parseCmd() {
+      var name = cmdName();
+      if (TEX_SYM[name] !== undefined) return esc(TEX_SYM[name]);
+      if (TEX_OPS[name] !== undefined) return '<span class="tx-op">' + esc(TEX_OPS[name]) + "</span>";
+      if (TEX_BIG[name]) {
+        big = !!TEX_BIGLIM[name];
+        return '<span class="tx-bigop">' + TEX_BIG[name] + "</span>";
+      }
+      if (TEX_FN.indexOf(name) >= 0) {
+        big = !!TEX_LIM[name];
+        return '<span class="tx-rm">' + name + "</span>\u2009";
+      }
+      if (TEX_ACC[name]) return '<span class="tx-acc"><span>' + TEX_ACC[name] + "</span><span>" + parseGroup() + "</span></span>";
+      switch (name) {
+        case "frac": case "dfrac": case "tfrac":
+          var a = parseGroup(), b = parseGroup();
+          return '<span class="tx-frac"><span class="tx-num">' + a + '</span><span class="tx-den">' + b + "</span></span>";
+        case "binom":
+          var x = parseGroup(), y = parseGroup();
+          return '<span class="tx-mdel">(</span><span class="tx-frac"><span>' + x + "</span><span>" + y + '</span></span><span class="tx-mdel">)</span>';
+        case "sqrt":
+          skipWs();
+          var idx = "";
+          if (peek() === "[") {
+            var e = s.indexOf("]", p);
+            if (e > 0) {
+              idx = s.slice(p + 1, e);
+              p = e + 1;
+            }
+          }
+          var r = parseGroup();
+          return '<span class="tx-sqrt">' + (idx ? '<sup class="tx-idx">' + esc(idx) + "</sup>" : "") + '<span class="tx-rad">\u221a</span><span class="tx-rcl">' + r + "</span></span>";
+        case "overline": case "bar":
+          return '<span class="tx-over">' + parseGroup() + "</span>";
+        case "underline":
+          return '<span class="tx-under">' + parseGroup() + "</span>";
+        case "text": case "textrm": case "mathrm": case "operatorname": case "mbox":
+          return '<span class="tx-text">' + esc(rawGroup()) + "</span>";
+        case "mathbf": case "boldsymbol": case "bf": case "bm":
+          return "<b>" + parseGroup() + "</b>";
+        case "mathit": case "mathcal": case "mathsf":
+          return parseGroup();
+        case "mathbb":
+          var bb = rawGroup();
+          return TEX_BB[bb] || "<b>" + esc(bb) + "</b>";
+        case "left":
+          skipWs();
+          var d0 = s.charAt(p++);
+          if (d0 === "\\") {
+            var dn = cmdName();
+            d0 = TEX_SYM[dn] || dn;
+          }
+          var inner = parseSeq(), d1 = "";
+          if (/^\\right(?![A-Za-z])/.test(s.slice(p, p + 7))) {
+            p += 6;
+            skipWs();
+            d1 = s.charAt(p++);
+            if (d1 === "\\") {
+              var dn2 = cmdName();
+              d1 = TEX_SYM[dn2] || dn2;
+            }
+          }
+          return '<span class="tx-dl">' + (d0 === "." ? "" : esc(d0)) + "</span>" + inner + '<span class="tx-dl">' + (d1 === "." ? "" : esc(d1)) + "</span>";
+        case "big": case "Big": case "bigg": case "Bigg": case "displaystyle": case "textstyle": case "limits": case "nolimits":
+          return "";
+        case "begin":
+          return parseEnv(rawGroup());
+        case ",": return '<span class="tx-sp" style="width:.17em"></span>';
+        case ":": return '<span class="tx-sp" style="width:.22em"></span>';
+        case ";": return '<span class="tx-sp" style="width:.28em"></span>';
+        case "!": return '<span class="tx-sp" style="width:-.17em;margin-left:-.17em"></span>';
+        case " ": return '<span class="tx-sp" style="width:.3em"></span>';
+        case "quad": return '<span class="tx-sp" style="width:1em"></span>';
+        case "qquad": return '<span class="tx-sp" style="width:2em"></span>';
+        case "\\": return "<br>";
+        case "|": return "\u2016";
+        case "{": case "}": case "%": case "$": case "&": case "#": case "_":
+          return esc(name);
+      }
+      return '<span class="tx-err">\\' + esc(name) + "</span>";
+    }
+    try {
+      var out = "";
+      while (p < n) {
+        out += parseSeq();
+        if (p < n) p++; // stray }, &, \end ... : skip it rather than loop forever
+      }
+      return (block ? '<div class="tex tex-block">' : '<span class="tex">') + out + (block ? "</div>" : "</span>");
+    } catch (e) {
+      return '<code class="tx-err">' + esc(s) + "</code>";
+    }
+  }
+
+  /* ---- card faces: plain / LaTeX / cloze / image occlusion ---- */
+  function richNode(t) {
+    t = String(t == null ? "" : t);
+    if (t.indexOf("$") < 0 && t.indexOf("![") < 0) return document.createTextNode(t);
+    var d = el("div", { class: "rich" });
+    d.innerHTML = mdToHtml(t);
+    return d;
+  }
+  function clozeRe() {
+    return /\{\{c(\d+)::([^{}]*?)(?:::([^{}]*?))?\}\}/g;
+  }
+  function clozeNums(t) {
+    var seen = {},
+      m,
+      re = clozeRe();
+    while ((m = re.exec(t))) seen[+m[1]] = 1;
+    return Object.keys(seen).map(Number).sort(function (a, b) {
+      return a - b;
+    });
+  }
+  function clozeFace(c, back) {
+    var tokens = [];
+    var txt = c.q.replace(clozeRe(), function (m, num, ans, hint) {
+      if (+num !== c.cloze) return ans;
+      tokens.push({ ans: ans, hint: hint });
+      return "\u0005" + (tokens.length - 1) + "\u0006";
+    });
+    var d = el("div", { class: "rich" });
+    d.innerHTML = mdToHtml(txt).replace(/\u0005(\d+)\u0006/g, function (m, i) {
+      var t = tokens[+i];
+      return back
+        ? '<span class="cloze-ans">' + citeEsc(t.ans) + "</span>"
+        : '<span class="cloze-blank">[' + (t.hint ? citeEsc(t.hint) : "\u2026") + "]</span>";
+    });
+    return d;
+  }
+  function occFace(c, back) {
+    var src = S.images[c.occ.img] || "",
+      wrap = el("div", { class: "occ-wrap" });
+    if (!src) {
+      wrap.append(el("div", { class: "dim" }, "[image missing]"));
+      return wrap;
+    }
+    wrap.append(el("img", { class: "occ-img", src: src, alt: "" }));
+    c.occ.boxes.forEach(function (b, j) {
+      var mine = j === c.occ.i;
+      wrap.append(
+        el(
+          "div",
+          {
+            class: "occ-box" + (mine ? (back ? " occ-ans" : " occ-hide") : " occ-other"),
+            style: "left:" + b.x * 100 + "%;top:" + b.y * 100 + "%;width:" + b.w * 100 + "%;height:" + b.h * 100 + "%",
+          },
+          mine && !back ? "?" : ""
+        )
+      );
+    });
+    return wrap;
+  }
+  function cardFace(c, back) {
+    if (c.occ) return occFace(c, back);
+    if (c.cloze) return clozeFace(c, back);
+    return richNode(back ? c.a : c.q);
+  }
+  function cardLabel(c) {
+    if (c.occ) return "[Image occlusion " + (c.occ.i + 1) + " of " + c.occ.boxes.length + "]";
+    if (c.cloze) return c.q + "  (cloze c" + c.cloze + ")";
+    return c.q + "  \u2192  " + c.a;
+  }
+
   function mdToHtml(src) {
     var lines = String(src || "").split("\n"),
       out = [],
@@ -1708,6 +2318,26 @@ window.addEventListener("error", function (e) {
       inQuote = false,
       taskN = 0;
     function inline(t) {
+      var stash = [];
+      function keep(h) {
+        stash.push(h);
+        return "\u0001" + (stash.length - 1) + "\u0002";
+      }
+      t = String(t)
+        .replace(IMG_RE, function (m, alt, ref) {
+          return keep(imgHtml(alt, ref));
+        })
+        .replace(DMATH_INLINE_RE, function (m, tex) {
+          return keep(texToHtml(tex, false));
+        })
+        .replace(MATH_RE, function (m, tex) {
+          return keep(texToHtml(tex, false));
+        });
+      return inline0(t).replace(/\u0001(\d+)\u0002/g, function (m, i) {
+        return stash[+i];
+      });
+    }
+    function inline0(t) {
       return citeEsc(t)
         .replace(
           /`([^`]+)`/g,
@@ -1761,6 +2391,24 @@ window.addEventListener("error", function (e) {
       }
       if (inCode) {
         out.push(citeEsc(l));
+        i++;
+        continue;
+      }
+      if (/^\s*\$\$/.test(l)) {
+        var mathSrc = l.replace(/^\s*\$\$/, "");
+        if (/\$\$\s*$/.test(mathSrc)) mathSrc = mathSrc.replace(/\$\$\s*$/, "");
+        else {
+          var mbuf = [mathSrc];
+          i++;
+          while (i < lines.length && !/\$\$/.test(lines[i])) {
+            mbuf.push(lines[i]);
+            i++;
+          }
+          if (i < lines.length) mbuf.push(lines[i].replace(/\$\$.*$/, ""));
+          mathSrc = mbuf.join("\n");
+        }
+        closeAll();
+        out.push(texToHtml(mathSrc, true));
         i++;
         continue;
       }
@@ -3401,6 +4049,42 @@ window.addEventListener("error", function (e) {
       ".OyyyyyyyyyyyyO.",
       ".OOOOOOOOOOOOOO.",
       "..dddddddddddddd",
+    ],
+    breaker: [
+      "................",
+      ".kkkkkkkkkkkkkk.",
+      ".krrrrrrrrrrrrk.",
+      ".kwwwwwwwwwwwwk.",
+      ".kwrrwwwwwwrrwk.",
+      ".kwwrrwwwwrrwwk.",
+      ".kwwwrrwwrrwwwk.",
+      ".kwwwwrrrrwwwwk.",
+      ".kwwwwrrrrwwwwk.",
+      ".kwwwrrwwrrwwwk.",
+      ".kwwrrwwwwrrwwk.",
+      ".kwrrwwwwwwrrwk.",
+      ".kwwwwwwwwwwwwk.",
+      ".kkkkkkkkkkkkkk.",
+      "..dddddddddddd..",
+      "................",
+    ],
+    trophy: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      "..kwyyyyyyyyOk..",
+      "kkkwyyyyyyyyOkkk",
+      "kyykwyyyyyyOkyyk",
+      "kyykwyyyyyyOkyyk",
+      "kkkkwyyyyyyOkkkk",
+      "..kkwyyyyyyOkk..",
+      "....kwyyyyOk....",
+      ".....kwyyOk.....",
+      "......kyOk......",
+      ".......kk.......",
+      "......kyyk......",
+      "....kkkkkkkk....",
+      "...kyyyyyyyyk...",
+      "...kkkkkkkkkk...",
     ],
     habits: [
       "................",
@@ -6445,7 +7129,7 @@ window.addEventListener("error", function (e) {
           .replace(/[^\w\- ]+/g, "")
           .trim()
           .slice(0, 40) || "note") + ".md",
-        n.text || " "
+        inlineImages(n.text || " ")
       );
     }
     function stamp() {
@@ -6467,6 +7151,7 @@ window.addEventListener("error", function (e) {
       ta.selectionStart = ta.selectionEnd = a + s.length;
       ta.dispatchEvent(new Event("input"));
     }
+    attachImagePaste(ta, ins);
     function findReplace() {
       var qf = el("input", {
         class: "in",
@@ -7139,6 +7824,8 @@ window.addEventListener("error", function (e) {
       var lb = clip((T.label || "").trim() || "(no subject)", 40);
       d.by = d.by || {};
       d.by[lb] = (d.by[lb] || 0) + S.prefs.dur.focus;
+      S.sessions.push({ t: Date.now(), m: S.prefs.dur.focus, l: lb });
+      if (S.sessions.length > 3000) S.sessions.splice(0, S.sessions.length - 3000);
       T.cycle++;
       save();
       var nx = T.cycle % 4 === 0 ? "long" : "short";
@@ -8072,7 +8759,7 @@ window.addEventListener("error", function (e) {
             null,
             flipped ? "Answer (click to flip back)" : "Question (click to flip)"
           ),
-          flipped ? curCard.a : curCard.q
+          cardFace(curCard, flipped)
         )
       );
       var btns;
@@ -8301,6 +8988,12 @@ window.addEventListener("error", function (e) {
       onEnter(q, function () {
         a.focus();
       });
+      attachImagePaste(q, function (md) {
+        insertAtCursor(q, md);
+      });
+      attachImagePaste(a, function (md) {
+        insertAtCursor(a, md);
+      });
       var list = el("div", { class: "sunk list", style: "margin:0" });
       pool().forEach(function (c) {
         var stats =
@@ -8314,7 +9007,7 @@ window.addEventListener("error", function (e) {
             "div",
             { class: "lrow" },
             el("span", { class: "tag" }, c.deck),
-            el("span", { class: "t" }, c.q + "  →  " + c.a),
+            el("span", { class: "t" }, cardLabel(c)),
             el(
               "span",
               { class: "w", style: "font-size:10px;color:#606060" },
@@ -8361,6 +9054,36 @@ window.addEventListener("error", function (e) {
               },
             },
             "Import\u2026"
+          ),
+          el(
+            "button",
+            {
+              class: "btn sm",
+              title: "Fill-in-the-blank cards from {{c1::text}}",
+              onclick: function () {
+                clozeDialog(dIn.value.trim(), function () {
+                  curCard = null;
+                  drawDecks();
+                  drawManage();
+                });
+              },
+            },
+            "Cloze\u2026"
+          ),
+          el(
+            "button",
+            {
+              class: "btn sm",
+              title: "Hide parts of a diagram",
+              onclick: function () {
+                occDialog(dIn.value.trim(), function () {
+                  curCard = null;
+                  drawDecks();
+                  drawManage();
+                });
+              },
+            },
+            "Occlusion\u2026"
           )
         ),
         list
@@ -11280,6 +12003,7 @@ window.addEventListener("error", function (e) {
     });
     function drawStorageBar() {
       storageBar.textContent = "";
+      if (window.__focusdeskIsDesktop) return; /* files on disk: no 5 MB limit */
       try {
         var total = 0;
         for (var k in localStorage)
@@ -12186,6 +12910,8 @@ window.addEventListener("error", function (e) {
       }
       var rows = [
         ["Studio", "Apoji Studios"],
+        ["Developer", "Apoji Delegraphics"],
+        ["Product", "FocusDesk 96"],
         ["Version", VERSION],
         [
           "Where",
@@ -12233,6 +12959,19 @@ window.addEventListener("error", function (e) {
       drawAbout();
     });
     var aboutBox = el("fieldset", null, el("legend", null, "About"), aboutInfo);
+    var updBox = el(
+      "fieldset",
+      null,
+      el("legend", null, "Updates"),
+      el(
+        "div",
+        { class: "row", style: "gap:8px;align-items:center;flex-wrap:wrap" },
+        el("button", { class: "btn sm", onclick: function () { checkUpdate(true); } }, window.__focusdeskIsDesktop ? "Check for updates" : "Check for the desktop app"),
+        window.__focusdeskIsDesktop
+          ? el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.updCheck !== false, onchange: function () { S.prefs.updCheck = this.checked; save(); } }), "Check automatically at startup")
+          : null
+      )
+    );
     var wallInfo = el("div", { style: "padding:0" });
     function drawWall() {
       wallInfo.textContent = wallData
@@ -12867,6 +13606,7 @@ window.addEventListener("error", function (e) {
         aiBox,
         iconsBox,
         aboutBox,
+        updBox,
         el(
           "fieldset",
           null,
@@ -12912,12 +13652,17 @@ window.addEventListener("error", function (e) {
               { class: "cp-footer-title" },
               "\u00A9 " +
                 new Date().getFullYear() +
-                " Apoji Studios. All rights reserved."
+                " Apoji Delegraphics. All rights reserved."
             ),
             el(
               "div",
               { class: "cp-footer-sub" },
               "FocusDesk 96 \u2014 Version " + VERSION
+            ),
+            el(
+              "div",
+              { class: "cp-footer-sub" },
+              "Designed by Apoji Studios  \u00b7  Engineered by Apoji Delegraphics"
             ),
             el(
               "div",
@@ -13779,7 +14524,8 @@ window.addEventListener("error", function (e) {
   }
   function appGrades(w) {
     var cur = S.grades.length ? S.grades[0].id : null,
-      target = 90;
+      target = 90,
+      wiX = null;
     function find() {
       return S.grades.filter(function (g) {
         return g.id === cur;
@@ -14150,6 +14896,69 @@ window.addEventListener("error", function (e) {
       );
       drawSummary();
     }
+    function projectFinal(x, X) {
+      var r = gradeOf(x);
+      if (r.mode === "points")
+        return r.total > 0 ? ((r.earned + (X / 100) * r.remaining) / r.total) * 100 : null;
+      var tot = r.gradedW + r.remaining;
+      return tot > 0 ? ((r.points + (X * r.remaining) / 100) / tot) * 100 : null;
+    }
+    function projGPA(X) {
+      var tc = 0,
+        tg = 0;
+      S.grades.forEach(function (x) {
+        var r = gradeOf(x);
+        if (r.current == null || !(x.credits > 0)) return;
+        var f = projectFinal(x, X == null ? r.current : X);
+        if (f == null) return;
+        tc += x.credits;
+        tg += letterOf(f).g * x.credits;
+      });
+      return tc ? tg / tc : null;
+    }
+    function whatIfPanel(g) {
+      var r = gradeOf(g);
+      if (r.current == null) return;
+      var out1 = el("div"),
+        out2 = el("div", { style: "margin-top:2px" }),
+        lab = el("b", { style: "width:40px;text-align:right" });
+      var slider = el("input", {
+        type: "range",
+        min: "0",
+        max: "100",
+        step: "1",
+        value: String(wiX == null ? Math.round(Math.min(100, r.current)) : wiX),
+        style: "flex:1",
+        "aria-label": "Average score on the remaining work",
+        oninput: function () {
+          wiX = +this.value;
+          upd();
+        },
+      });
+      function fmt(n) {
+        return n == null ? "\u2014" : n.toFixed(2);
+      }
+      function upd() {
+        var X = wiX == null ? r.current : wiX;
+        lab.textContent = Math.round(X) + "%";
+        if (r.remaining > 0) {
+          var f = projectFinal(g, X);
+          out1.textContent = "Average " + Math.round(X) + "% on the rest and " + g.name + " finishes at " + f.toFixed(1) + "% (" + letterOf(f).l + ").";
+        } else out1.textContent = "Everything in this course is already graded.";
+        out2.textContent = "Semester GPA: best " + fmt(projGPA(100)) + " (100% on the rest) \u00b7 likely " + fmt(projGPA(wiX)) + (wiX == null ? " (keeping your averages)" : "") + " \u00b7 worst " + fmt(projGPA(60)) + " (60% on the rest)";
+      }
+      summary.append(
+        el(
+          "div",
+          { style: "margin-top:6px;border-top:1px solid #c0c0c0;padding-top:4px" },
+          el("div", { style: "font-weight:bold" }, "What if\u2026"),
+          el("div", { class: "row", style: "gap:6px;align-items:center" }, "Rest of the work:", slider, lab, el("button", { class: "btn xs", onclick: function () { wiX = null; slider.value = String(Math.round(Math.min(100, r.current))); upd(); } }, "Reset")),
+          out1,
+          out2
+        )
+      );
+      upd();
+    }
     function drawSummary() {
       summary.textContent = "";
       var g = find();
@@ -14283,6 +15092,7 @@ window.addEventListener("error", function (e) {
             el("b", null, (tgp / tc).toFixed(2))
           )
         );
+      whatIfPanel(g);
       var bars = [];
       S.grades.forEach(function (x) {
         var rr = gradeOf(x);
@@ -16004,6 +16814,7 @@ window.addEventListener("error", function (e) {
     var chart = el("div", { class: "sunk st-chart" });
     var info = el("div", { class: "sunk st-info" });
     var heat = el("div", { class: "sunk", style: "padding:6px;overflow:auto" });
+    var tod = el("div", { class: "sunk", style: "padding:6px" });
     var goalIn = el("input", {
       class: "in",
       type: "number",
@@ -16078,7 +16889,9 @@ window.addEventListener("error", function (e) {
           { style: "font-weight:bold;margin-top:6px" },
           "Focus heatmap (last 6 months)"
         ),
-        heat
+        heat,
+        el("div", { style: "font-weight:bold;margin-top:6px" }, "When do you focus best?"),
+        tod
       )
     );
     function draw() {
@@ -16305,6 +17118,7 @@ window.addEventListener("error", function (e) {
         el("span", null, "More")
       );
       heat.append(legend);
+      drawTod(tod);
     }
     w.refresh = draw;
     draw();
@@ -16528,6 +17342,7 @@ window.addEventListener("error", function (e) {
         });
         content.append(subBox);
       }
+      weeklySessions(content, weekStart, weekEnd);
       content.append(
         card("Work", [
           ["Tasks created", tasksCreated],
@@ -17625,6 +18440,757 @@ window.addEventListener("error", function (e) {
     );
     w.refresh = draw;
     draw();
+  }
+
+  /* ================= 2.7: APP: HABIT BREAKER ================= */
+  function dayDiff(a, b) {
+    return Math.round((new Date(b + "T00:00") - new Date(a + "T00:00")) / 86400000);
+  }
+  /* Clean days run from the start date to today; a logged slip breaks the run. */
+  function breakerRuns(b) {
+    var today = ymd(new Date()),
+      start = b.start > today ? today : b.start,
+      n = dayDiff(start, today),
+      run = 0,
+      best = 0,
+      slips = 0;
+    for (var i = 0; i <= n; i++) {
+      var d = new Date(start + "T00:00");
+      d.setDate(d.getDate() + i);
+      if (b.log[ymd(d)]) {
+        run = 0;
+        slips++;
+      } else {
+        run++;
+        if (run > best) best = run;
+      }
+    }
+    return { run: run, best: best, slips: slips };
+  }
+  function appBreaker(w) {
+    var nm = el("input", {
+      class: "in",
+      placeholder: "Habit to quit (e.g. Energy drinks)",
+      style: "flex:1 1 170px",
+    });
+    var dt = el("input", {
+      class: "in",
+      type: "date",
+      value: ymd(new Date()),
+      title: "Quit date (your first clean day)",
+      style: "width:134px",
+    });
+    var box = el("div", { class: "sunk list" });
+    var dayCount = 7,
+      toggle = el("div", { class: "row", style: "gap:4px" });
+    function add() {
+      var v = nm.value.trim();
+      if (!v) {
+        nm.focus();
+        return;
+      }
+      if (S.breakers.length >= 40) return;
+      var st = /^\d{4}-\d{2}-\d{2}$/.test(dt.value) ? dt.value : ymd(new Date());
+      if (st > ymd(new Date())) st = ymd(new Date());
+      S.breakers.push({ id: uid(), name: clip(v, 60), start: st, log: {}, record: 0 });
+      nm.value = "";
+      save();
+      refreshAll();
+    }
+    onEnter(nm, add);
+    function paintToggle() {
+      toggle.textContent = "";
+      [[7, "7 days"], [14, "14 days"], [30, "30 days"]].forEach(function (o) {
+        toggle.append(
+          el(
+            "button",
+            {
+              class: "btn sm" + (dayCount === o[0] ? " on" : ""),
+              onclick: function () {
+                dayCount = o[0];
+                paintToggle();
+                draw();
+              },
+            },
+            o[1]
+          )
+        );
+      });
+    }
+    function checkRecord(b) {
+      var r = breakerRuns(b);
+      if (r.run > b.record) {
+        var old = b.record;
+        b.record = r.run;
+        save();
+        if (old >= 3) {
+          S.ach._rec = Date.now();
+          msgBox({
+            title: "New Record!",
+            icon: "bulb",
+            text:
+              "\u201c" + b.name + "\u201d: " + r.run + " clean days in a row. That's longer than your previous best of " + old + ". Nicely done \u2014 keep it going.",
+          });
+        }
+      }
+    }
+    function slipLog(b) {
+      var keys = Object.keys(b.log).sort().reverse();
+      var list = el("div", { style: "max-height:220px;overflow:auto;text-align:left" });
+      if (!keys.length) list.append(el("div", { class: "dim" }, "No slips logged. Clean so far."));
+      keys.forEach(function (k) {
+        var nt = b.log[k] && b.log[k].note;
+        list.append(
+          el(
+            "div",
+            { style: "padding:3px 0;border-bottom:1px solid #d0d0d0" },
+            el("b", null, k),
+            nt ? " \u2014 " + nt : el("span", { class: "dim" }, "  (no note)")
+          )
+        );
+      });
+      msgBox({ title: "Slip log: " + b.name, icon: "info", width: 400, text: keys.length + " slip(s) logged:", extra: list });
+    }
+    function cellFor(b, d, today) {
+      var k = ymd(d),
+        entry = b.log[k],
+        slip = !!entry,
+        before = k < b.start,
+        future = k > today,
+        note = slip && isStr(entry.note) ? entry.note : "";
+      return el(
+        "button",
+        {
+          class:
+            "btn hb-cell" + (slip ? " slip" : !before && !future ? " on" : "") + (note ? " has-note" : ""),
+          disabled: before || future,
+          "aria-label": b.name + " on " + k,
+          title: before ? "Before your quit date" : future ? "" : slip ? "Slip" + (note ? ": " + note : "") + " (click to undo)" : "Clean day (click to log a slip)",
+          onclick: function () {
+            if (slip) delete b.log[k];
+            else b.log[k] = { note: "" };
+            save();
+            refreshAll();
+          },
+          oncontextmenu: function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (before || future) return;
+            popMenu(e.clientX, e.clientY, [
+              {
+                label: slip ? "Edit what triggered it\u2026" : "Log a slip with a note\u2026",
+                fn: function () {
+                  askText("Slip on " + k, "What triggered it?", note, function (v) {
+                    b.log[k] = { note: clip(v, 200) };
+                    save();
+                    refreshAll();
+                  });
+                },
+              },
+              {
+                label: "Clear slip",
+                dis: !slip,
+                fn: function () {
+                  delete b.log[k];
+                  save();
+                  refreshAll();
+                },
+              },
+            ]);
+          },
+        },
+        before || future ? "" : slip ? "\u2717" : "\u2713"
+      );
+    }
+    function draw() {
+      box.textContent = "";
+      if (!S.breakers.length) {
+        box.append(el("div", { class: "dim" }, "Nothing here yet. Add a habit you want to quit and set the day you stopped. Every day without a slip is a clean day."));
+        w.status("");
+        return;
+      }
+      var today = ymd(new Date()),
+        days = [];
+      for (var i = dayCount - 1; i >= 0; i--) {
+        var d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d);
+      }
+      box.append(
+        el(
+          "div",
+          { class: "hb-row hb-head" },
+          el("span", { class: "hb-n", style: "min-width:84px" }, "Habit"),
+          days.map(function (d) {
+            return el("span", { class: "hb-c" }, DAYS[d.getDay()].charAt(0) + d.getDate());
+          }),
+          el("span", { class: "hb-s" }, "Days since"),
+          el("span", { style: "width:46px" })
+        )
+      );
+      var cleanToday = 0;
+      S.breakers.forEach(function (b) {
+        var r = breakerRuns(b);
+        if (!b.log[today]) cleanToday++;
+        box.append(
+          el(
+            "div",
+            { class: "hb-row" },
+            el("span", { class: "hb-n", style: "min-width:84px", title: "Quit date " + b.start }, b.name),
+            days.map(function (d) {
+              return cellFor(b, d, today);
+            }),
+            el("span", { class: "hb-s", title: "Current clean run / best run" }, r.run + "d / " + r.best + "d"),
+            el("button", { class: "btn xs", "aria-label": "Slip log", title: "Slip log", onclick: function () { slipLog(b); } }, "\u2630"),
+            el(
+              "button",
+              {
+                class: "btn xs",
+                "aria-label": "Delete habit",
+                onclick: function () {
+                  msgBox({
+                    title: "Delete Habit",
+                    icon: "q",
+                    text: 'Move "' + b.name + '" and its history to the Recycle Bin?',
+                    buttons: [
+                      {
+                        label: "Yes",
+                        fn: function () {
+                          softDelete("breakers", function (x) {
+                            return x.id === b.id;
+                          });
+                        },
+                      },
+                      { label: "No" },
+                    ],
+                  });
+                },
+              },
+              "X"
+            )
+          )
+        );
+        checkRecord(b);
+      });
+      w.status(cleanToday + " of " + S.breakers.length + " clean today \u2014 click a day to log a slip, right-click to add a note");
+    }
+    paintToggle();
+    w.body.append(
+      el("div", { class: "row form" }, nm, dt, el("button", { class: "btn sm", onclick: add }, "Add")),
+      el("div", { style: "padding:0 6px 4px" }, toggle),
+      el("div", { class: "col", style: "flex:1;min-height:0" }, box)
+    );
+    w.refresh = draw;
+    draw();
+  }
+
+  /* ================= 2.7: ACHIEVEMENTS ================= */
+  function longestStudyStreak() {
+    var keys = Object.keys(S.stats)
+        .filter(function (k) {
+          return S.stats[k].sessions > 0;
+        })
+        .sort(),
+      best = 0,
+      run = 0,
+      prev = null;
+    keys.forEach(function (k) {
+      run = prev && dayDiff(prev, k) === 1 ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = k;
+    });
+    return best;
+  }
+  function achBadge() {
+    var b = pix("trophy", 32);
+    b.classList.add("ach-badge");
+    return b;
+  }
+  function achCtx() {
+    var c = { sessions: 0, minutes: 0 };
+    Object.keys(S.stats).forEach(function (k) {
+      c.sessions += S.stats[k].sessions || 0;
+      c.minutes += S.stats[k].minutes || 0;
+    });
+    c.streak = longestStudyStreak();
+    c.habits = S.habits.length;
+    c.habitBest = 0;
+    S.habits.forEach(function (h) {
+      var keys = Object.keys(h.log).sort(),
+        run = 0,
+        prev = null;
+      keys.forEach(function (k) {
+        run = prev && dayDiff(prev, k) === 1 ? run + 1 : 1;
+        if (run > c.habitBest) c.habitBest = run;
+        prev = k;
+      });
+    });
+    c.breakBest = 0;
+    S.breakers.forEach(function (b) {
+      c.breakBest = Math.max(c.breakBest, breakerRuns(b).best);
+    });
+    c.recordBroken = S.ach._rec ? 1 : 0;
+    c.cards = S.cards.length;
+    c.reviews = 0;
+    S.cards.forEach(function (x) {
+      c.reviews += x.reps || 0;
+    });
+    c.notes = S.notes.length;
+    c.mathNotes = S.notes.filter(function (n) {
+      return /\$[^$\n]+\$/.test(n.text || "");
+    }).length;
+    c.tasksDone = S.tasks.filter(function (t) {
+      return t.done;
+    }).length;
+    c.assignDone = S.assign.filter(function (a) {
+      return a.done;
+    }).length;
+    c.bestGrade = 0;
+    S.grades.forEach(function (g) {
+      var r = gradeOf(g);
+      if (r.current != null && r.current > c.bestGrade) c.bestGrade = r.current;
+    });
+    c.g2048 = S.games.g2048 || 0;
+    c.snake = S.games.snakeBest || 0;
+    c.tetris = S.games.tetrisBest || 0;
+    c.wpm = S.games.wpmBest || 0;
+    return c;
+  }
+  function achDef(id, name, desc, key, goal) {
+    return { id: id, n: name, d: desc, k: key, g: goal };
+  }
+  var ACH = [
+    achDef("s1", "First Focus", "Finish a focus session", "sessions", 1),
+    achDef("s10", "Warming Up", "Finish 10 focus sessions", "sessions", 10),
+    achDef("s50", "In the Zone", "Finish 50 focus sessions", "sessions", 50),
+    achDef("s100", "Centurion", "Finish 100 focus sessions", "sessions", 100),
+    achDef("s250", "Marathoner", "Finish 250 focus sessions", "sessions", 250),
+    achDef("h10", "Ten Hours", "Study for 10 hours in total", "minutes", 600),
+    achDef("h50", "Fifty Hours", "Study for 50 hours in total", "minutes", 3000),
+    achDef("h100", "Hundred Hours", "Study for 100 hours in total", "minutes", 6000),
+    achDef("st3", "Hat Trick", "Study 3 days in a row", "streak", 3),
+    achDef("st7", "Full Week", "Study 7 days in a row", "streak", 7),
+    achDef("st14", "Fortnight", "Study 14 days in a row", "streak", 14),
+    achDef("st30", "Unstoppable", "Study 30 days in a row", "streak", 30),
+    achDef("c10", "Deck Builder", "Make 10 flash cards", "cards", 10),
+    achDef("r50", "Flashy", "Review cards 50 times", "reviews", 50),
+    achDef("r250", "Sharp Memory", "Review cards 250 times", "reviews", 250),
+    achDef("r1000", "Memory Palace", "Review cards 1000 times", "reviews", 1000),
+    achDef("hb1", "Habit Former", "Start tracking a habit", "habits", 1),
+    achDef("hb7", "Week Strong", "Keep a habit going for 7 days", "habitBest", 7),
+    achDef("hb30", "Month Strong", "Keep a habit going for 30 days", "habitBest", 30),
+    achDef("br7", "Clean Week", "7 clean days in a row with Habit Breaker", "breakBest", 7),
+    achDef("br30", "Clean Month", "30 clean days in a row with Habit Breaker", "breakBest", 30),
+    achDef("brr", "Record Breaker", "Beat your own best clean run", "recordBroken", 1),
+    achDef("n10", "Scribe", "Keep 10 notes", "notes", 10),
+    achDef("math", "Mathematician", "Write a note with LaTeX in it", "mathNotes", 1),
+    achDef("t25", "Taskmaster", "Complete 25 tasks", "tasksDone", 25),
+    achDef("as10", "Homework Hero", "Complete 10 assignments", "assignDone", 10),
+    achDef("gr90", "Honor Roll", "Reach 90% in a course", "bestGrade", 90),
+    achDef("g2048", "2048!", "Reach the 2048 tile", "g2048", 2048),
+    achDef("snk", "Snake Charmer", "Score 20 in Snake", "snake", 20),
+    achDef("wpm", "Fast Fingers", "Type 60 words per minute", "wpm", 60),
+  ];
+  var achT = 0;
+  function checkAch() {
+    var ctx = achCtx(),
+      fresh = [],
+      first = !S.ach._init;
+    ACH.forEach(function (a) {
+      if (!S.ach[a.id] && ctx[a.k] >= a.g) {
+        S.ach[a.id] = Date.now();
+        fresh.push(a);
+      }
+    });
+    if (first) S.ach._init = 1;
+    if (!fresh.length && !first) return;
+    save();
+    refreshAll();
+    if (!fresh.length) return;
+    chime();
+    var list = el("div", { style: "text-align:left;max-height:220px;overflow:auto" });
+    fresh.slice(0, 8).forEach(function (a) {
+      list.append(
+        el(
+          "div",
+          { class: "ach-row" },
+          achBadge(),
+          el("div", null, el("b", null, a.n), el("div", { class: "dim", style: "padding:0" }, a.d))
+        )
+      );
+    });
+    if (fresh.length > 8) list.append(el("div", { class: "dim" }, "\u2026and " + (fresh.length - 8) + " more."));
+    msgBox({
+      title: first ? "Achievements" : "Achievement Unlocked!",
+      icon: "bulb",
+      silent: true,
+      width: 360,
+      text: first
+        ? "Welcome to Achievements! You've already earned " + fresh.length + " badge" + (fresh.length === 1 ? "" : "s") + ":"
+        : fresh.length === 1
+        ? "You earned a new badge:"
+        : "You earned " + fresh.length + " new badges:",
+      extra: list,
+    });
+  }
+  function appAch(w) {
+    var list = el("div", { class: "sunk list" });
+    function draw() {
+      list.textContent = "";
+      var ctx = achCtx(),
+        have = 0;
+      ACH.forEach(function (a) {
+        var got = S.ach[a.id],
+          cur = Math.min(a.g, Math.floor(ctx[a.k] || 0));
+        if (got) have++;
+        list.append(
+          el(
+            "div",
+            { class: "ach-row" + (got ? "" : " locked") },
+            achBadge(),
+            el(
+              "div",
+              { style: "flex:1" },
+              el("b", null, a.n),
+              el("div", { class: "dim", style: "padding:0" }, a.d),
+              got
+                ? el("div", { style: "font-size:11px;color:#006000" }, "Unlocked " + new Date(got).toLocaleDateString())
+                : el("div", { style: "font-size:11px;color:#606060" }, (a.k === "minutes" ? Math.floor(cur / 60) + " / " + a.g / 60 + " h" : cur + " / " + a.g))
+            )
+          )
+        );
+      });
+      w.status(have + " of " + ACH.length + " unlocked");
+    }
+    w.body.append(el("div", { class: "col", style: "flex:1;min-height:0" }, list));
+    w.refresh = draw;
+    draw();
+  }
+
+  /* ================= 2.7: FOCUS SESSION LOG VIEWS ================= */
+  function hm12(d) {
+    var h = d.getHours(),
+      m = d.getMinutes();
+    return (h % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
+  }
+  function hourLabel(h) {
+    return (h % 12 || 12) + (h < 12 ? " AM" : " PM");
+  }
+  function drawTod(box) {
+    box.textContent = "";
+    var hrs = [];
+    for (var i = 0; i < 24; i++) hrs.push(0);
+    var count = S.sessions.length;
+    S.sessions.forEach(function (s) {
+      hrs[new Date(s.t - s.m * 60000).getHours()] += s.m;
+    });
+    if (count < 5) {
+      box.append(
+        el("div", { class: "dim", style: "padding:0" }, count + " of 5 sessions logged. Finish a few focus sessions with the Focus Timer to see which hours you focus best.")
+      );
+      return;
+    }
+    var max = Math.max.apply(null, hrs),
+      bestH = hrs.indexOf(max),
+      bars = el("div", { class: "tod-bars" });
+    hrs.forEach(function (m, h) {
+      bars.append(
+        el(
+          "div",
+          { class: "tod-col", title: hourLabel(h) + ": " + m + " min" },
+          el("div", { class: "tod-bar" + (h === bestH ? " best" : ""), style: "height:" + Math.round((m / max) * 100) + "%" }),
+          el("span", null, h % 3 === 0 ? String(h % 12 || 12) : "")
+        )
+      );
+    });
+    box.append(
+      el("div", { style: "margin-bottom:4px" }, "Your best hour: ", el("b", null, hourLabel(bestH) + " \u2013 " + hourLabel((bestH + 1) % 24)), " (" + max + " min across " + count + " sessions)"),
+      bars
+    );
+  }
+  function weeklySessions(content, ws, we) {
+    var rows = S.sessions
+      .filter(function (s) {
+        var st = s.t - s.m * 60000;
+        return st >= ws && st < we;
+      })
+      .sort(function (a, b) {
+        return a.t - b.t;
+      });
+    if (!rows.length) return;
+    var b = el("div", { class: "sunk", style: "padding:8px 10px;max-height:180px;overflow:auto" });
+    b.append(el("div", { style: "font-weight:bold;margin-bottom:4px;font-size:13px" }, "Focus sessions (" + rows.length + ")"));
+    rows.forEach(function (s) {
+      var st = new Date(s.t - s.m * 60000);
+      b.append(
+        el(
+          "div",
+          { style: "display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:12px" },
+          el("span", null, DAYS[st.getDay()] + " " + hm12(st) + " \u00b7 " + (s.l || "(no subject)")),
+          el("b", null, s.m + " min")
+        )
+      );
+    });
+    content.append(b);
+  }
+
+  /* ================= 2.7: CLOZE + IMAGE OCCLUSION DIALOGS ================= */
+  function clozeDialog(deckName, done) {
+    var ta = el("textarea", {
+      class: "in",
+      rows: 6,
+      placeholder: "The capital of France is {{c1::Paris}}.\n{{c1::Mitochondria}} make {{c2::ATP}}.",
+      style: 'width:100%;resize:vertical;margin-top:8px;font:12px "Courier New",monospace',
+    });
+    var dn = el("input", { class: "in", value: deckName || "Cloze", style: "width:100%;margin-top:8px" });
+    msgBox({
+      title: "Cloze Cards",
+      icon: "info",
+      width: 430,
+      text: "Wrap the part to hide in {{c1::...}}. Add a hint with {{c1::answer::hint}}. Each different number (c1, c2...) on a line becomes its own card. One line per note. Deck name:",
+      extra: el("div", null, dn, ta),
+      buttons: [
+        {
+          label: "Create",
+          fn: function () {
+            var n = 0,
+              skipped = 0;
+            ta.value.split(/\r?\n/).forEach(function (line) {
+              line = line.trim();
+              if (!line) return;
+              var nums = clozeNums(line);
+              if (!nums.length) {
+                skipped++;
+                return;
+              }
+              var grp = uid();
+              nums.forEach(function (num) {
+                if (S.cards.length >= 5000) return;
+                S.cards.push({
+                  id: uid(),
+                  deck: clip(dn.value.trim() || "Cloze", 40),
+                  q: clip(line, 1000),
+                  a: "",
+                  cloze: num,
+                  grp: grp,
+                  box: 0,
+                  dueAt: Date.now(),
+                  interval: 0,
+                  ease: 2.5,
+                  reps: 0,
+                  lapses: 0,
+                });
+                n++;
+              });
+            });
+            save();
+            done();
+            msgBox({
+              title: "Cloze Cards",
+              icon: "info",
+              text: n + " card(s) created." + (skipped ? "\n" + skipped + " line(s) had no {{c1::...}} and were skipped." : ""),
+            });
+          },
+        },
+        { label: "Cancel" },
+      ],
+    });
+  }
+  function occDialog(deckName, done) {
+    var imgId = null,
+      boxes = [],
+      drag = null,
+      stage = el("div", { class: "occ-stage" }),
+      info = el("div", { class: "dim", style: "padding:0" }, "Add an image, then drag rectangles over the parts to hide."),
+      dn = el("input", { class: "in", value: deckName || "Images", style: "flex:1" });
+    function paint() {
+      stage.textContent = "";
+      if (!imgId) {
+        stage.append(el("div", { class: "dim", style: "padding:20px;text-align:center" }, "Paste, drop or choose an image"));
+        return;
+      }
+      var im = el("img", { class: "occ-img", src: S.images[imgId], draggable: "false", alt: "" });
+      stage.append(im);
+      boxes.forEach(function (b, j) {
+        stage.append(
+          el("div", { class: "occ-box occ-edit", style: "left:" + b.x * 100 + "%;top:" + b.y * 100 + "%;width:" + b.w * 100 + "%;height:" + b.h * 100 + "%" }, String(j + 1))
+        );
+      });
+      info.textContent = boxes.length + " box(es) = " + boxes.length + " card(s). Drag on the image to add one.";
+    }
+    function setImage(id) {
+      imgId = id;
+      boxes = [];
+      paint();
+    }
+    function point(e) {
+      var r = stage.getBoundingClientRect();
+      return {
+        x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
+        y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
+      };
+    }
+    stage.addEventListener("pointerdown", function (e) {
+      if (!imgId) return;
+      e.preventDefault();
+      drag = point(e);
+      try {
+        stage.setPointerCapture(e.pointerId);
+      } catch (x) {}
+    });
+    stage.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      var p = point(e);
+      paint();
+      stage.append(
+        el("div", {
+          class: "occ-box occ-edit",
+          style: "left:" + Math.min(drag.x, p.x) * 100 + "%;top:" + Math.min(drag.y, p.y) * 100 + "%;width:" + Math.abs(p.x - drag.x) * 100 + "%;height:" + Math.abs(p.y - drag.y) * 100 + "%",
+        })
+      );
+    });
+    stage.addEventListener("pointerup", function (e) {
+      if (!drag) return;
+      var p = point(e),
+        b = { x: Math.min(drag.x, p.x), y: Math.min(drag.y, p.y), w: Math.abs(p.x - drag.x), h: Math.abs(p.y - drag.y) };
+      drag = null;
+      if (b.w > 0.015 && b.h > 0.015 && boxes.length < 40) boxes.push(b);
+      paint();
+    });
+    var pick = el("input", {
+      type: "file",
+      accept: "image/*",
+      style: "display:none",
+      onchange: function () {
+        var f = this.files && this.files[0];
+        this.value = "";
+        if (f) take(f);
+      },
+    });
+    function take(f) {
+      addImageFile(f, function (id, err) {
+        if (err) msgBox({ title: "Image Occlusion", icon: "warn", text: err });
+        else setImage(id);
+      });
+    }
+    attachImagePaste(stage, function (md) {
+      var m = /img:([A-Za-z0-9_-]+)/.exec(md);
+      if (m) setImage(m[1]);
+    });
+    paint();
+    msgBox({
+      title: "Image Occlusion",
+      icon: "info",
+      width: 560,
+      text: "Hide parts of a diagram. Every rectangle becomes its own card.",
+      extra: el(
+        "div",
+        null,
+        el("div", { class: "row", style: "gap:6px;margin:6px 0" }, el("button", { class: "btn sm", onclick: function () { pick.click(); } }, "Choose image\u2026"), "Deck:", dn, pick),
+        stage,
+        el("div", { class: "row", style: "gap:6px;margin-top:4px" }, info, el("button", { class: "btn xs", style: "margin-left:auto", onclick: function () { boxes.pop(); paint(); } }, "Undo box"))
+      ),
+      buttons: [
+        {
+          label: "Create cards",
+          fn: function () {
+            if (!imgId || !boxes.length) {
+              info.textContent = "Add an image and draw at least one box first.";
+              return false;
+            }
+            var grp = uid();
+            boxes.forEach(function (b, j) {
+              if (S.cards.length >= 5000) return;
+              S.cards.push({
+                id: uid(),
+                deck: clip(dn.value.trim() || "Images", 40),
+                q: "[Image occlusion]",
+                a: "",
+                occ: { img: imgId, boxes: boxes.slice(), i: j },
+                grp: grp,
+                box: 0,
+                dueAt: Date.now(),
+                interval: 0,
+                ease: 2.5,
+                reps: 0,
+                lapses: 0,
+              });
+            });
+            save();
+            done();
+          },
+        },
+        {
+          label: "Cancel",
+          fn: function () {
+            if (imgId) pruneImages();
+          },
+        },
+      ],
+    });
+  }
+
+  /* ================= 2.7: UPDATE CHECKER (GitHub releases) ================= */
+  var REPO = "apojidelegraphics/FocusDesk-96";
+  function checkUpdate(manual) {
+    S.prefs.updLast = Date.now();
+    save();
+    return fetch("https://api.github.com/repos/" + REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (rel) {
+        var tag = String(rel.tag_name || "").replace(/^v/i, ""),
+          url = /^https:\/\/github\.com\//.test(rel.html_url || "") ? rel.html_url : "https://github.com/" + REPO + "/releases";
+        if (!tag) throw new Error("no release");
+        var isDesk = !!window.__focusdeskIsDesktop;
+        if (isDesk && verCmp(VERSION, tag) < 0) {
+          if (!manual && S.prefs.updSeen === tag) return;
+          S.prefs.updSeen = tag;
+          save();
+          msgBox({
+            title: "Update Available",
+            icon: "bulb",
+            text: "FocusDesk 96 " + tag + " is available (you have " + VERSION + ").\n\nDownload the new installer and run it over your current copy. Your data is kept.",
+            buttons: [
+              { label: "Download", fn: function () { window.open(url, "_blank", "noopener"); } },
+              { label: "Later" },
+            ],
+          });
+        } else if (manual) {
+          msgBox({
+            title: "Updates",
+            icon: "info",
+            text: isDesk
+              ? "You're up to date. FocusDesk 96 " + VERSION + " is the newest release."
+              : "Desktop app " + tag + " is available. You're using the browser version " + VERSION + ".",
+            buttons: isDesk ? [{ label: "OK" }] : [{ label: "Get the desktop app", fn: function () { window.open(url, "_blank", "noopener"); } }, { label: "Close" }],
+          });
+        }
+      })
+      .catch(function () {
+        if (manual) msgBox({ title: "Updates", icon: "warn", text: "Couldn't reach GitHub to check for updates. Check your connection and try again." });
+      });
+  }
+  function autoUpdateCheck() {
+    if (!window.__focusdeskIsDesktop || S.prefs.updCheck === false) return;
+    if (Date.now() - (S.prefs.updLast || 0) < 12 * 3600000) return;
+    setTimeout(function () {
+      checkUpdate(false);
+    }, 8000);
+  }
+
+  function checkAchSoon() {
+    if (achT) return;
+    achT = setTimeout(function () {
+      achT = 0;
+      try {
+        checkAch();
+      } catch (e) {
+        console.error(e);
+      }
+    }, 1500);
   }
 
   /* ================= APP: COUNTDOWNS ================= */
@@ -25559,6 +27125,22 @@ window.addEventListener("error", function (e) {
       h: 440,
       build: appHabits,
     },
+    breaker: {
+      id: "breaker",
+      title: "Habit Breaker",
+      icon: "breaker",
+      w: 640,
+      h: 440,
+      build: appBreaker,
+    },
+    achievements: {
+      id: "achievements",
+      title: "Achievements",
+      icon: "trophy",
+      w: 420,
+      h: 480,
+      build: appAch,
+    },
     countdown: {
       id: "countdown",
       title: "Countdowns",
@@ -26190,6 +27772,7 @@ window.addEventListener("error", function (e) {
         "planner",
         "folders",
         "habits",
+        "breaker",
         "countdown",
         "reminders",
         "timer",
@@ -26201,6 +27784,7 @@ window.addEventListener("error", function (e) {
         "grades",
         "cite",
         "links",
+        "achievements",
       ],
     },
     {
@@ -26721,6 +28305,9 @@ window.addEventListener("error", function (e) {
     if (h1 && !h1.querySelector(".byline")) {
       h1.append(el("small", { class: "byline" }, "by Apoji Studios"));
     }
+    if (!b.querySelector(".devby")) {
+      b.append(el("div", { class: "devby" }, "A product of Apoji Delegraphics"));
+    }
     if (
       !b.querySelector(".apojilogo") &&
       !b.querySelector(".apojilogo-missing")
@@ -26780,6 +28367,9 @@ window.addEventListener("error", function (e) {
       } catch (e) {}
       if (S.prefs.tips) showWelcome();
       checkBackupAge();
+      pruneImages();
+      autoUpdateCheck();
+      checkAchSoon();
     }
     var iv = setInterval(function () {
       if (n < segs.length) segs[n++].style.opacity = 1;

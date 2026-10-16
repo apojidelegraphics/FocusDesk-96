@@ -71,11 +71,8 @@ Grab the installer for your platform from the
 These builds are unsigned. That's normal for indie software and doesn't mean
 anything is wrong.
 
-- **macOS** — after dragging the app to Applications, open Terminal and run:
-xattr -cr "/Applications/FocusDesk 96.app"
-codesign --force --deep --sign - "/Applications/FocusDesk 96.app"
-xattr -cr "/Applications/FocusDesk 96.app"
-Then open it normally. You only need to do this once.
+- **macOS** — right-click the app → Open → Open. Do this once. Subsequent launches work normally.
+  On macOS 15 and later, if that doesn't offer an Open button: open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to FocusDesk 96.
 - **Windows** — if SmartScreen appears, click "More info" → "Run anyway".
 - **Linux** — mark the AppImage executable: `chmod +x FocusDesk-96-1.0.0.AppImage`.
 
@@ -166,13 +163,67 @@ git push origin v1.0.0
 The GitHub Actions workflow builds all three installers and attaches them to a **draft**
 release. Review it on the Releases page and publish when you're happy.
 
+## About Apoji
+
+FocusDesk 96 is a product of **Apoji Delegraphics**, developed in collaboration
+with **Apoji Studios**.
+
+**Apoji Studios** is the creative design arm: the people behind every pixel,
+every theme, every bit of polish. The Windows 95 aesthetic, the Tritone icon
+system, Clipy, the sound design, and the whole feel of the desktop come from
+here. If it looks and feels like something, the Studio made it.
+
+**Apoji Delegraphics** is the engineering and security side: software
+development, cybersecurity, and firewall protection solutions, plus AI work.
+The data model, the sanitization layer, the offline-first architecture, the
+local-first, no-account design, and everything that has to *hold up under
+pressure* comes from here. If it works, and keeps working, Delegraphics built it.
+
+FocusDesk 96 is the first product to come from both sides at once.
+
+---
+
+## From Lucas Roland, CEO
+
+> I'm Lucas Roland, and I run two companies. Apoji Studios makes things that
+> look and feel good. Apoji Delegraphics makes sure they work, stay secure,
+> and hold up when it matters.
+>
+> FocusDesk 96 started as a personal frustration. Every study app I tried
+> wanted my data on their server. Every planner wanted a subscription. Every
+> timer wanted to send me push notifications at 7 AM. So we built the
+> opposite: a complete study environment that lives entirely on your device,
+> that doesn't have an account system because it doesn't need one, and that
+> treats your attention as the scarce resource it actually is.
+>
+> It's the first thing the Studio and Delegraphics have built together, and
+> it's the template for everything we're going to make next. Design and
+> engineering in the same room, from day one, on products we'd actually use
+> ourselves.
+>
+> Whether you're a student cramming for a chem midterm or someone just
+> trying to build better habits, I hope FocusDesk gives you a real place to
+> work. Something that feels like *yours*.
+>
+> — Lucas
+
+---
+
 ## License
 
-MIT © 2026 Lucas Roland / Apoji Studios. See [LICENSE](LICENSE).
+MIT © 2026 Lucas / Apoji Studios. See [LICENSE](LICENSE).
 
 ## Credits
 
-Made by **Apoji Studios**.
+A product of **Apoji Delegraphics**, designed by **Apoji Studios**.
 
 Full browser-version history lives in the app's own Notepad under
 "FocusDesk 96 — Complete Guide".
+
+---
+
+*FocusDesk 96 is a product of Apoji Delegraphics, designed by Apoji Studios.*
+
+*© 2026 Apoji Delegraphics. All rights reserved.*
+
+*Lucas Roland, CEO*
