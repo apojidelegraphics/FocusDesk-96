@@ -3841,3 +3841,14 @@ html.dt-tb.dt-tb-off #desktop { top: 0; }
   cursor: default;
 }
 #dt-menu:active { border-color: #404040 #fff #fff #404040; }
+
+/* ===== 2.7.1: integral limits, multi-line equations, substack, habit risk bar ===== */
+.tx-int { display: inline-flex; align-items: stretch; vertical-align: middle; }
+.tx-int .tx-bigop { font-size: 1.9em; line-height: 1; }
+.tx-iscr { display: inline-flex; flex-direction: column; justify-content: space-between; font-size: 0.62em; line-height: 1.1; margin-left: -0.15em; padding: 0.2em 0; }
+.tx-isup { margin-left: 0.55em; }
+.tx-substack { display: inline-flex; flex-direction: column; align-items: center; font-size: 0.8em; line-height: 1.15; vertical-align: middle; }
+.tx-align td:nth-child(odd) { text-align: right; padding-right: 0.15em; }
+.tx-align td:nth-child(even) { text-align: left; padding-left: 0.15em; }
+.tx-gather td { text-align: center; }
+.tod-bar.risk { background: #c00000; }

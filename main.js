@@ -20,6 +20,9 @@ const fs = require("fs");
 const fsp = fs.promises;
 const { fileURLToPath } = require("url");
 
+// Windows only shows toast notifications for apps with a stable identity; this matches the installer's appId.
+if (process.platform === "win32") app.setAppUserModelId("com.apojistudios.focusdesk96");
+
 const APP_TITLE = "FocusDesk 96";
 const PUBLISHER = "Apoji Studios";
 const REPO_URL = "https://github.com/apojidelegraphics/FocusDesk-96";
@@ -34,7 +37,11 @@ const REPO_URL = "https://github.com/apojidelegraphics/FocusDesk-96";
  * ------------------------------------------------------------------------- */
 app.setPath("userData", path.join(app.getPath("appData"), "focusdesk-96"));
 const DATA_DIR = path.join(app.getPath("appData"), APP_TITLE);
-const BACKUP_DIR = path.join(DATA_DIR, "backups");
+const BACKUP_DIR_DEFAULT = path.join(DATA_DIR, "backups");
+/** The folder daily backups go to: the user's choice, or <data folder>/backups. */
+function backupDir() {
+  return (typeof dprefs === "object" && dprefs.backupPath) || BACKUP_DIR_DEFAULT;
+}
 const MIGRATE_DIR = path.join(DATA_DIR, "migrate");
 const FILES = {
   data: path.join(DATA_DIR, "data.json"),
@@ -45,7 +52,6 @@ const FILES = {
   desktop: path.join(DATA_DIR, "desktop.json"),
 };
 const INDEX_FILE = path.join(__dirname, "index.html");
-const KEEP_BACKUPS = 7;
 const MAX_OPEN_BYTES = 50 * 1024 * 1024;
 
 /* ---------------------------------------------------------------------------
@@ -204,15 +210,16 @@ async function loadJson(file, valid) {
 }
 
 let backupCheckedFor = null;
-/** If the newest daily backup is older than today, copy data.json to backups/YYYY-MM-DD.json. Keep 7. */
+let backupNote = ""; // shown in Control Panel if the chosen folder couldn't be used
+/** If the newest daily backup is older than today, copy data.json to <backup folder>/YYYY-MM-DD.json, then prune. */
 async function ensureDailyBackup() {
   const today = ymd(new Date());
   if (backupCheckedFor === today) return;
   backupCheckedFor = today; // one attempt per calendar day, success or not
-  try {
-    await fsp.mkdir(BACKUP_DIR, { recursive: true });
-    const list = async () =>
-      (await fsp.readdir(BACKUP_DIR)).filter((n) => /^\d{4}-\d{2}-\d{2}\.json$/.test(n)).sort();
+  const keep = dprefs.backupKeep; // 0 = keep everything
+  const attempt = async (dir) => {
+    await fsp.mkdir(dir, { recursive: true });
+    const list = async () => (await fsp.readdir(dir)).filter((n) => /^\d{4}-\d{2}-\d{2}\.json$/.test(n)).sort();
     let names = await list();
     const latest = names[names.length - 1];
     if (!latest || latest.slice(0, 10) < today) {
@@ -222,18 +229,31 @@ async function ensureDailyBackup() {
       } catch (e) {
         if (e.code !== "ENOENT") throw e;
       }
-      if (raw) await atomicWrite(path.join(BACKUP_DIR, today + ".json"), raw);
+      if (raw) await atomicWrite(path.join(dir, today + ".json"), raw);
     }
     names = await list();
-    while (names.length > KEEP_BACKUPS) await fsp.unlink(path.join(BACKUP_DIR, names.shift())).catch(() => {});
+    if (keep > 0) while (names.length > keep) await fsp.unlink(path.join(dir, names.shift())).catch(() => {});
+  };
+  try {
+    await attempt(backupDir());
+    backupNote = "";
   } catch (e) {
     console.error("[focusdesk] daily backup failed:", e);
+    if (dprefs.backupPath) {
+      // e.g. an unplugged drive or a Dropbox folder that moved: fall back so today is still protected
+      try {
+        await attempt(BACKUP_DIR_DEFAULT);
+        backupNote = "Couldn't reach your backup folder, so today's backup went to the default folder.";
+      } catch (e2) {
+        backupNote = "Couldn't write a backup today.";
+      }
+    }
   }
 }
 
 /** Remove half-written temp files left behind by a crash or power cut (single-instance, so none are live). */
 async function cleanStaleTemps() {
-  for (const dir of [DATA_DIR, BACKUP_DIR, MIGRATE_DIR]) {
+  for (const dir of [DATA_DIR, backupDir(), MIGRATE_DIR]) {
     let names = [];
     try {
       names = await fsp.readdir(dir);
@@ -244,7 +264,7 @@ async function cleanStaleTemps() {
 
 async function loadAll() {
   await fsp.mkdir(DATA_DIR, { recursive: true });
-  await fsp.mkdir(BACKUP_DIR, { recursive: true });
+  await fsp.mkdir(BACKUP_DIR_DEFAULT, { recursive: true });
   await fsp.mkdir(MIGRATE_DIR, { recursive: true });
   await cleanStaleTemps();
   bootCorrupt = [];
@@ -266,7 +286,8 @@ function bootPayload() {
     settings: mem.settings,
     keys: mem.keys,
     corrupt,
-    dirs: { data: DATA_DIR, backups: BACKUP_DIR, migrate: MIGRATE_DIR },
+    dirs: { data: DATA_DIR, backups: backupDir(), backupsDefault: BACKUP_DIR_DEFAULT, migrate: MIGRATE_DIR },
+    backupNote: backupNote,
     platform: process.platform,
     appVersion: app.getVersion(),
     dprefs: dprefs,
@@ -482,7 +503,17 @@ function registerIpc() {
 /* ---------------------------------------------------------------------------
  * Desktop 1.1: native notifications, quick capture, tray, launch at login
  * ------------------------------------------------------------------------- */
-const DEFAULT_DPREFS = { notifications: true, hotkey: true, closeToTray: false, launchAtLogin: false, startHidden: false, compactTitle: false };
+const DEFAULT_DPREFS = {
+  notifications: true,
+  notifyAlways: true, // show native notifications even while FocusDesk is the front window
+  hotkey: true,
+  closeToTray: false,
+  launchAtLogin: false,
+  startHidden: false,
+  slimTitle: true, // Windows: menu behind a ⋯ button in a slim title bar. (Set false in desktop.json to turn off.)
+  backupPath: "",
+  backupKeep: 7,
+};
 let compactActive = false; // was the current window built with the slim title bar? (Windows only, set at creation)
 const HOTKEY = "CommandOrControl+Shift+Space";
 let dprefs = Object.assign({}, DEFAULT_DPREFS);
@@ -494,7 +525,12 @@ let firstWindow = true;
 function cleanDprefs(p) {
   const out = {};
   if (p && typeof p === "object")
-    for (const k of Object.keys(DEFAULT_DPREFS)) if (typeof p[k] === "boolean") out[k] = p[k];
+    for (const k of Object.keys(DEFAULT_DPREFS)) {
+      if (typeof DEFAULT_DPREFS[k] === "boolean" && typeof p[k] === "boolean") out[k] = p[k];
+    }
+  if (p && typeof p.backupPath === "string" && p.backupPath.length < 1000 && path.isAbsolute(p.backupPath)) out.backupPath = p.backupPath;
+  if (p && p.backupPath === "") out.backupPath = "";
+  if (p && [0, 7, 14, 30].indexOf(p.backupKeep) >= 0) out.backupKeep = p.backupKeep;
   return out;
 }
 
@@ -518,17 +554,22 @@ function whenMainReady() {
   });
 }
 
-function notifyNative(title, body, ignoreFocus) {
-  if (!dprefs.notifications || !Notification.isSupported()) return false;
-  // If you're already looking at FocusDesk, the in-app dialog is enough.
-  if (!ignoreFocus && mainWindow && !mainWindow.isDestroyed() && mainWindow.isFocused()) return false;
+/** Returns { ok, reason }. reason: "off" | "unsupported" | "focused" | an error message. */
+function notifyNative(title, body, opts) {
+  opts = opts || {};
+  if (!opts.force && !dprefs.notifications) return { ok: false, reason: "off" };
+  if (!Notification.isSupported()) return { ok: false, reason: "unsupported" };
+  // Optional: if you're already looking at FocusDesk, the in-app dialog is enough.
+  if (!opts.force && !dprefs.notifyAlways && mainWindow && !mainWindow.isDestroyed() && mainWindow.isFocused())
+    return { ok: false, reason: "focused" };
   try {
     const n = new Notification({ title: title, body: body });
     n.on("click", showMainWindow);
+    n.on("failed", (e, err) => console.error("[focusdesk] notification failed:", err));
     n.show();
-    return true;
-  } catch (_) {
-    return false;
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: String((e && e.message) || e) };
   }
 }
 
@@ -601,12 +642,67 @@ function registerHotkey() {
 
 const mmss = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 function updateTrayTimer(t) {
+  lastTimer = t;
+  if (miniWin && !miniWin.isDestroyed()) miniWin.webContents.send("mini:status", t);
   if (!tray) return;
   const active = t && (t.running || t.paused);
   const label = active ? (t.running ? (t.mode === "focus" ? "Focus " : "Break ") : "Paused ") + mmss(Math.max(0, t.left)) : "";
   try {
     tray.setToolTip(label ? "FocusDesk 96 \u2014 " + label : "FocusDesk 96");
     if (process.platform === "darwin") tray.setTitle(t && t.running ? " " + mmss(Math.max(0, t.left)) : "");
+  } catch (_) {}
+}
+
+let due = { cards: 0, tasks: 0, badge: null };
+let lastTimer = null;
+let miniWin = null;
+let clipyWin = null;
+
+function sendCmd(cmd, show) {
+  return whenMainReady().then((wc) => {
+    if (show) showMainWindow();
+    wc.send("focusdesk:cmd", cmd);
+  });
+}
+
+function buildTrayMenu() {
+  const total = due.cards + due.tasks;
+  const items = [{ label: "Open FocusDesk 96", click: showMainWindow }, { type: "separator" }];
+  // Due counts live inside the menu (not on the icon) so nothing nags until you click it.
+  if (total > 0) {
+    if (due.cards > 0) items.push({ label: due.cards + (due.cards === 1 ? " card" : " cards") + " due", click: () => sendCmd("open:cards", true) });
+    if (due.tasks > 0) items.push({ label: due.tasks + (due.tasks === 1 ? " task" : " tasks") + " due today", click: () => sendCmd("open:tasks", true) });
+  } else items.push({ label: "Nothing due right now", enabled: false });
+  items.push(
+    { type: "separator" },
+    { label: "Start focus session", click: () => sendCmd("focus") },
+    { label: "Mini timer", click: openMiniTimer },
+    { label: "Add quick task\u2026", click: () => openCapture("task") },
+    { label: "Ask Clipy\u2026", click: () => openClipyChat("") },
+    { type: "separator" },
+    {
+      label: "Quit FocusDesk 96",
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      },
+    }
+  );
+  return Menu.buildFromTemplate(items);
+}
+
+function applyDue() {
+  if (tray) {
+    try {
+      tray.setContextMenu(buildTrayMenu());
+    } catch (_) {}
+  }
+  const total = due.cards + due.tasks;
+  try {
+    if (process.platform === "win32" && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setOverlayIcon(total > 0 && due.badge ? nativeImage.createFromDataURL(due.badge) : null, total > 0 ? total + " due" : "");
+    } else if (process.platform === "linux") app.setBadgeCount(total);
+    // macOS: no dock badge on purpose; the counts are inside the menu bar menu.
   } catch (_) {}
 }
 
@@ -617,27 +713,7 @@ function ensureTray() {
     if (img.isEmpty()) return;
     tray = new Tray(img);
     tray.setToolTip("FocusDesk 96");
-    tray.setContextMenu(
-      Menu.buildFromTemplate([
-        { label: "Open FocusDesk 96", click: showMainWindow },
-        {
-          label: "Start focus session",
-          click: async () => {
-            const wc = await whenMainReady();
-            wc.send("focusdesk:cmd", "focus");
-          },
-        },
-        { label: "Add quick task\u2026", click: () => openCapture("task") },
-        { type: "separator" },
-        {
-          label: "Quit FocusDesk 96",
-          click: () => {
-            isQuitting = true;
-            app.quit();
-          },
-        },
-      ])
-    );
+    tray.setContextMenu(buildTrayMenu());
     tray.on("click", () => {
       if (process.platform !== "darwin") showMainWindow();
     });
@@ -645,6 +721,125 @@ function ensureTray() {
     console.error("[focusdesk] tray unavailable:", e);
     tray = null;
   }
+}
+
+/* ---- mini timer: a small always-on-top pill you can drag to any screen ---- */
+const MINI_FILE = path.join(DATA_DIR, "mini-timer.json");
+function openMiniTimer() {
+  if (miniWin && !miniWin.isDestroyed()) {
+    miniWin.show();
+    return;
+  }
+  let pos = null;
+  try {
+    pos = JSON.parse(fs.readFileSync(MINI_FILE, "utf8"));
+  } catch (_) {}
+  const w = 236,
+    h = 52;
+  let x, y;
+  const onScreen =
+    pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) && screen.getAllDisplays().some((d) => {
+      const a = d.workArea;
+      return pos.x >= a.x - 20 && pos.x + 60 < a.x + a.width && pos.y >= a.y - 20 && pos.y + 20 < a.y + a.height;
+    });
+  if (onScreen) {
+    x = Math.round(pos.x);
+    y = Math.round(pos.y);
+  } else {
+    const a = screen.getPrimaryDisplay().workArea; // default: top right of the main screen
+    x = a.x + a.width - w - 24;
+    y = a.y + 24;
+  }
+  const win = new BrowserWindow({
+    width: w,
+    height: h,
+    x: x,
+    y: y,
+    frame: false,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    backgroundColor: "#c0c0c0",
+    title: "FocusDesk Timer",
+    webPreferences: { preload: path.join(__dirname, "aux-preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  miniWin = win;
+  win.setAlwaysOnTop(true, "floating");
+  if (process.platform === "darwin") win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  win.setMenuBarVisibility(false);
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (ev) => ev.preventDefault());
+  win.loadFile(path.join(__dirname, "timer-mini.html"));
+  win.webContents.once("did-finish-load", () => {
+    win.show();
+    if (lastTimer) win.webContents.send("mini:status", lastTimer);
+  });
+  let saveT = null;
+  win.on("move", () => {
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      try {
+        const b = win.getBounds();
+        atomicWrite(MINI_FILE, JSON.stringify({ x: b.x, y: b.y })).catch(() => {});
+      } catch (_) {}
+    }, 400);
+  });
+  win.on("closed", () => {
+    if (miniWin === win) miniWin = null;
+  });
+}
+function closeMiniTimer() {
+  if (miniWin && !miniWin.isDestroyed()) miniWin.close();
+}
+
+/* ---- Ask Clipy: its own always-on-top chat window ---- */
+const pendingAsks = new Map();
+let askSeq = 0;
+function openClipyChat(question) {
+  if (clipyWin && !clipyWin.isDestroyed()) {
+    clipyWin.show();
+    clipyWin.focus();
+    if (question) clipyWin.webContents.send("clipy:init", { question: question });
+    return;
+  }
+  const a = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+  const w = 400,
+    h = 540;
+  const win = new BrowserWindow({
+    width: w,
+    height: h,
+    x: Math.round(a.x + a.width - w - 40),
+    y: Math.round(a.y + Math.max(20, (a.height - h) / 2)),
+    minWidth: 320,
+    minHeight: 360,
+    alwaysOnTop: true,
+    minimizable: true,
+    maximizable: false,
+    fullscreenable: false,
+    show: false,
+    backgroundColor: "#c0c0c0",
+    title: "Clipy",
+    icon: fs.existsSync(path.join(__dirname, "build", "icon.png")) ? path.join(__dirname, "build", "icon.png") : undefined,
+    webPreferences: { preload: path.join(__dirname, "aux-preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  clipyWin = win;
+  win.setAlwaysOnTop(true, "floating");
+  win.removeMenu();
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (ev) => ev.preventDefault());
+  win.loadFile(path.join(__dirname, "clipy.html"));
+  win.webContents.once("did-finish-load", () => {
+    win.show();
+    win.focus();
+    if (question) win.webContents.send("clipy:init", { question: question });
+  });
+  win.on("closed", () => {
+    if (clipyWin === win) clipyWin = null;
+  });
 }
 
 function applyLoginItem() {
@@ -694,7 +889,12 @@ function registerDesktopIpc() {
 
   ipcMain.handle("focusdesk:notify", (e, p) => {
     assertTrusted(e);
-    return { ok: notifyNative(String((p && p.title) || "FocusDesk 96").slice(0, 100), String((p && p.body) || "").slice(0, 300), false) };
+    return notifyNative(String((p && p.title) || "FocusDesk 96").slice(0, 100), String((p && p.body) || "").slice(0, 300));
+  });
+
+  ipcMain.handle("focusdesk:testNotify", (e) => {
+    assertTrusted(e);
+    return notifyNative("FocusDesk 96", "Notifications are working. You'll see reminders and finished focus sessions here.", { force: true });
   });
 
   ipcMain.handle("focusdesk:setDesktopPrefs", async (e, p) => {
@@ -703,6 +903,10 @@ function registerDesktopIpc() {
     await atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2));
     registerHotkey();
     ensureTray();
+    if (p && p.backupKeep !== undefined) {
+      backupCheckedFor = null;
+      await ensureDailyBackup();
+    }
     const login = applyLoginItem();
     return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, trayOk: !!tray, login: login };
   });
@@ -719,8 +923,102 @@ function registerDesktopIpc() {
   ipcMain.handle("focusdesk:openCapture", (e, p) => {
     assertTrusted(e);
     const k = p && p.kind;
-    openCapture(["task", "note", "reminder", "event"].indexOf(k) >= 0 ? k : "task");
+    openCapture(["task", "note", "reminder", "event", "ask"].indexOf(k) >= 0 ? k : "task");
     return { ok: true };
+  });
+
+  ipcMain.handle("focusdesk:miniTimer", (e, p) => {
+    assertTrusted(e);
+    if (p && p.close) closeMiniTimer();
+    else openMiniTimer();
+    return { ok: true };
+  });
+  ipcMain.on("mini:cmd", (e, cmd) => {
+    if (!miniWin || miniWin.isDestroyed() || e.sender !== miniWin.webContents) return;
+    if (cmd === "toggle") sendCmd("timer-toggle");
+    else if (cmd === "reset") sendCmd("timer-reset");
+    else if (cmd === "open") showMainWindow();
+    else if (cmd === "close") closeMiniTimer();
+  });
+
+  ipcMain.handle("focusdesk:openClipy", (e, p) => {
+    assertTrusted(e);
+    openClipyChat(p && typeof p.question === "string" ? p.question.slice(0, 2000) : "");
+    return { ok: true };
+  });
+  ipcMain.handle("clipy:ask", async (e, p) => {
+    if (!clipyWin || clipyWin.isDestroyed() || e.sender !== clipyWin.webContents) return { ok: false, text: "Not allowed." };
+    const text = p && typeof p.text === "string" ? p.text.trim().slice(0, 2000) : "";
+    if (!text) return { ok: false, text: "" };
+    const wc = await whenMainReady();
+    const id = ++askSeq;
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        pendingAsks.delete(id);
+        resolve({ ok: false, text: "Clipy took too long to answer. Try again." });
+      }, 90000);
+      pendingAsks.set(id, (r) => {
+        clearTimeout(timer);
+        resolve(r);
+      });
+      wc.send("focusdesk:ask", { id: id, text: text });
+    });
+  });
+  ipcMain.on("focusdesk:askReply", (e, r) => {
+    if (!trusted(e) || !r) return;
+    const done = pendingAsks.get(r.id);
+    if (!done) return;
+    pendingAsks.delete(r.id);
+    done({ ok: !!r.ok, text: String(r.text || "").slice(0, 20000) });
+  });
+
+  ipcMain.on("focusdesk:dueCounts", (e, d) => {
+    if (!trusted(e) || !d) return;
+    const n = (v) => Math.max(0, Math.min(9999, Math.floor(Number(v) || 0)));
+    due = {
+      cards: n(d.cards),
+      tasks: n(d.tasks),
+      badge: typeof d.badge === "string" && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(d.badge) && d.badge.length < 40000 ? d.badge : null,
+    };
+    applyDue();
+  });
+
+  ipcMain.handle("focusdesk:chooseBackupFolder", async (e) => {
+    assertTrusted(e);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const res = await dialog.showOpenDialog(win, {
+      title: "Choose where daily backups are saved",
+      defaultPath: backupDir(),
+      properties: ["openDirectory", "createDirectory"],
+    });
+    if (res.canceled || !res.filePaths.length) return { ok: false, canceled: true };
+    const dir = res.filePaths[0];
+    try {
+      const probe = path.join(dir, ".focusdesk-write-test-" + process.pid);
+      await fsp.writeFile(probe, "ok");
+      await fsp.unlink(probe);
+    } catch (err) {
+      return { ok: false, error: "FocusDesk can't write to that folder." };
+    }
+    dprefs = Object.assign({}, dprefs, { backupPath: dir });
+    await atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2));
+    backupCheckedFor = null;
+    await ensureDailyBackup();
+    return { ok: true, path: dir, prefs: dprefs, note: backupNote };
+  });
+  ipcMain.handle("focusdesk:resetBackupFolder", async (e) => {
+    assertTrusted(e);
+    dprefs = Object.assign({}, dprefs, { backupPath: "" });
+    await atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2));
+    backupCheckedFor = null;
+    await ensureDailyBackup();
+    return { ok: true, path: backupDir(), prefs: dprefs };
+  });
+  ipcMain.handle("focusdesk:openBackupDir", async (e) => {
+    assertTrusted(e);
+    await fsp.mkdir(backupDir(), { recursive: true }).catch(() => {});
+    const err = await shell.openPath(backupDir());
+    return { ok: !err, path: backupDir(), error: err || null };
   });
 
   ipcMain.on("focusdesk:timerStatus", (e, t) => {
@@ -729,7 +1027,7 @@ function registerDesktopIpc() {
   });
 
   ipcMain.on("focusdesk:captureDone", (e, r) => {
-    if (trusted(e) && r && typeof r.msg === "string") notifyNative("FocusDesk 96", r.msg.slice(0, 200), true);
+    if (trusted(e) && r && typeof r.msg === "string") notifyNative("FocusDesk 96", r.msg.slice(0, 200));
   });
 
   ipcMain.on("capture:cancel", (e) => {
@@ -740,7 +1038,11 @@ function registerDesktopIpc() {
     const kind = p && p.kind;
     const text = p && typeof p.text === "string" ? p.text.trim().slice(0, 500) : "";
     captureWin.close();
-    if (!text || ["task", "note", "reminder", "event"].indexOf(kind) < 0) return;
+    if (!text || ["task", "note", "reminder", "event", "ask"].indexOf(kind) < 0) return;
+    if (kind === "ask") {
+      openClipyChat(text);
+      return;
+    }
     const wc = await whenMainReady();
     wc.send("focusdesk:capture", { kind: kind, text: text });
   });
@@ -822,7 +1124,7 @@ function createWindow(hidden) {
   const keepHidden = !!hidden || (firstWindow && launchedHidden());
   firstWindow = false;
   // Windows only: the menu moves into a ⋯ button in a slim custom title bar (opt-in, applies on restart).
-  const compact = (process.platform === "win32" && dprefs.compactTitle) || process.env.FD_TEST_TITLEBAR === "1";
+  const compact = (process.platform === "win32" && dprefs.slimTitle) || process.env.FD_TEST_TITLEBAR === "1";
   compactActive = compact;
   const iconPath = path.join(__dirname, "build", "icon.png");
   const win = new BrowserWindow({
@@ -920,6 +1222,7 @@ function showAbout() {
 
 function buildMenu() {
   const isMac = process.platform === "darwin";
+  const go = (id) => () => sendCmd("open:" + id, true);
   const template = [];
   if (isMac) {
     template.push({
@@ -940,8 +1243,13 @@ function buildMenu() {
   template.push({
     label: "File",
     submenu: [
+      { label: "New Note", accelerator: "CmdOrCtrl+N", click: () => sendCmd("new-note", true) },
+      { label: "New Task\u2026", click: () => openCapture("task") },
       { label: "Quick Capture\u2026", click: () => openCapture("task") },
-      { label: "Open Backups Folder", click: () => shell.openPath(DATA_DIR) },
+      { label: "Ask Clipy\u2026", click: () => openClipyChat("") },
+      { type: "separator" },
+      { label: "Save Backup Now", click: () => sendCmd("backup-now", true) },
+      { label: "Open Backups Folder", click: () => shell.openPath(backupDir()) },
       { type: "separator" },
       isMac ? { role: "close" } : { role: "quit" },
     ],
@@ -956,6 +1264,34 @@ function buildMenu() {
       { role: "copy" },
       { role: "paste" },
       { role: "selectAll" },
+      { type: "separator" },
+      { label: "Find\u2026", accelerator: "CmdOrCtrl+F", click: go("find") },
+    ],
+  });
+  template.push({
+    label: "Go",
+    submenu: [
+      { label: "Today", click: go("today") },
+      { label: "Calendar", click: go("calendar") },
+      { label: "Tasks", click: go("tasks") },
+      { label: "Notepad", click: go("notepad") },
+      { label: "Flash Cards", click: go("cards") },
+      { label: "Focus Timer", click: go("timer") },
+      { label: "Habit Tracker", click: go("habits") },
+      { label: "Habit Breaker", click: go("breaker") },
+      { label: "Study Stats", click: go("stats") },
+      { label: "Achievements", click: go("achievements") },
+      { type: "separator" },
+      { label: "Control Panel", click: go("control") },
+    ],
+  });
+  template.push({
+    label: "Timer",
+    submenu: [
+      { label: "Start / Pause", accelerator: "CmdOrCtrl+Shift+T", click: () => sendCmd("timer-toggle") },
+      { label: "Reset", click: () => sendCmd("timer-reset") },
+      { type: "separator" },
+      { label: "Mini Timer", click: openMiniTimer },
     ],
   });
   template.push({
@@ -976,7 +1312,11 @@ function buildMenu() {
     role: "help",
     submenu: [
       { label: "About " + APP_TITLE, click: showAbout },
+      { label: "Check for Updates", click: () => sendCmd("check-updates", true) },
+      { type: "separator" },
       { label: "Documentation", click: () => shell.openExternal(REPO_URL) },
+      { label: "Terms of Use", click: () => shell.openExternal(REPO_URL + "/blob/main/TERMS.md") },
+      { label: "Report an Issue", click: () => shell.openExternal(REPO_URL + "/issues") },
     ],
   });
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));

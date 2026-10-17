@@ -31,6 +31,21 @@ contextBridge.exposeInMainWorld("focusdesk", {
   // desktop 1.1: notifications, quick capture, tray, startup
   notify: (title, body) => ipcRenderer.invoke("focusdesk:notify", { title, body }),
   setDesktopPrefs: (p) => ipcRenderer.invoke("focusdesk:setDesktopPrefs", p),
+  testNotify: () => ipcRenderer.invoke("focusdesk:testNotify"),
+  openMiniTimer: (close) => ipcRenderer.invoke("focusdesk:miniTimer", { close: !!close }),
+  openClipy: (question) => ipcRenderer.invoke("focusdesk:openClipy", { question }),
+  setDueCounts: (d) => ipcRenderer.send("focusdesk:dueCounts", d),
+  chooseBackupFolder: () => ipcRenderer.invoke("focusdesk:chooseBackupFolder"),
+  resetBackupFolder: () => ipcRenderer.invoke("focusdesk:resetBackupFolder"),
+  openBackupDir: () => ipcRenderer.invoke("focusdesk:openBackupDir"),
+  onAsk: (cb) => {
+    ipcRenderer.on("focusdesk:ask", (e, p) => {
+      try {
+        cb(p);
+      } catch (err) {}
+    });
+  },
+  askReply: (r) => ipcRenderer.send("focusdesk:askReply", r),
   popupMenu: (x, y) => ipcRenderer.invoke("focusdesk:popupMenu", { x, y }),
   onFullscreen: (cb) => {
     ipcRenderer.on("focusdesk:fs", (e, on) => {

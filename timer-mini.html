@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>FocusDesk Timer</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; }
+      body { background: #c0c0c0; font: 12px Tahoma, "Segoe UI", Arial, sans-serif; }
+      #pill {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 8px;
+        border: 2px solid;
+        border-color: #fff #404040 #404040 #fff;
+        outline: 1px solid #000;
+        -webkit-app-region: drag;
+      }
+      #time {
+        font: bold 22px "Courier New", monospace;
+        min-width: 70px;
+        background: #000;
+        color: #0f0;
+        padding: 1px 6px;
+        border: 2px solid;
+        border-color: #404040 #fff #fff #404040;
+        text-align: center;
+      }
+      #time.break { color: #6cf; }
+      #time.paused { color: #fc0; }
+      #mode { flex: 1; font-weight: bold; color: #000080; white-space: nowrap; }
+      button {
+        -webkit-app-region: no-drag;
+        font: bold 13px Tahoma, Arial, sans-serif;
+        width: 26px;
+        height: 24px;
+        padding: 0;
+        background: #c0c0c0;
+        border: 2px solid;
+        border-color: #fff #404040 #404040 #fff;
+        cursor: default;
+      }
+      button:active { border-color: #404040 #fff #fff #404040; }
+    </style>
+  </head>
+  <body>
+    <div id="pill" title="Double-click to open FocusDesk">
+      <div id="time">--:--</div>
+      <div id="mode">Timer</div>
+      <button id="go" title="Start / pause">&#9654;</button>
+      <button id="rst" title="Reset">&#8634;</button>
+      <button id="x" title="Close">&#10005;</button>
+    </div>
+    <script>
+      var time = document.getElementById("time"), mode = document.getElementById("mode"), go = document.getElementById("go");
+      function mmss(s) { s = Math.max(0, Math.floor(s)); return ("0" + Math.floor(s / 60)).slice(-2) + ":" + ("0" + (s % 60)).slice(-2); }
+      function paint(t) {
+        if (!t) return;
+        time.textContent = mmss(t.left);
+        time.className = t.running ? (t.mode === "focus" ? "" : "break") : t.paused ? "paused" : "";
+        mode.textContent = (t.mode === "focus" ? "Focus" : "Break") + (t.running ? "" : t.paused ? " (paused)" : " (ready)");
+        go.innerHTML = t.running ? "&#10074;&#10074;" : "&#9654;";
+      }
+      window.auxApi.on("mini:status", paint);
+      go.onclick = function () { window.auxApi.send("mini:cmd", "toggle"); };
+      document.getElementById("rst").onclick = function () { window.auxApi.send("mini:cmd", "reset"); };
+      document.getElementById("x").onclick = function () { window.auxApi.send("mini:cmd", "close"); };
+      document.getElementById("pill").ondblclick = function () { window.auxApi.send("mini:cmd", "open"); };
+    </script>
+  </body>
+</html>

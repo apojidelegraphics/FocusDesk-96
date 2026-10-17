@@ -20,11 +20,40 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.7";
-  var VERSION_DESKTOP = "1.1.1";
+  var VERSION_BROWSER = "2.7.1";
+  var VERSION_DESKTOP = "1.2.0";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
+    {
+      v: "2.7.1",
+      date: "October 2026",
+      title: "Edit cards, add images, more LaTeX",
+      apps: [],
+      notes: [
+        "Flash cards: edit cloze and image-occlusion cards. Cards you keep keep their review history.",
+        "Notepad: new Add Image button, alongside paste and drop.",
+        "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
+        "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
+        "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "1.2.0",
+      date: "October 2026",
+      title: "Desktop 1.2: mini timer, Ask Clipy, backup folder",
+      apps: [],
+      notes: [
+        "Mini timer: a small always-on-top focus timer you can drag to any screen. Open it from the Timer menu, the tray, or Control Panel \u2192 Desktop.",
+        "Ask Clipy: press the quick capture hotkey, switch to the Ask tab and type a question. Clipy opens in its own always-on-top window so you can chat while you work.",
+        "Choose where your daily backups go (for example a Dropbox or iCloud folder) and how many to keep: 7, 14, 30 or all.",
+        "Due counts: the tray menu shows how many cards and tasks are due, and on Windows the taskbar icon shows a badge. On Mac nothing shows until you click the menu bar icon.",
+        "More in the menus: New Note, Save Backup Now, Go to any app, Start/Pause timer, Check for Updates, Terms of Use and Report an Issue.",
+        "Notifications: fixed the Windows identity, they now show even while FocusDesk is in front (you can turn that off), and there is a Send test notification button.",
+        "Windows: the menu now lives behind the \u22ef button in the title bar by default.",
+        "Includes browser version 2.7.1: edit cloze and occlusion cards, an Add Image button in Notepad, more LaTeX, Habit Breaker upgrades.",
+      ],
+    },
     {
       v: "1.1.1",
       date: "October 2026",
@@ -678,6 +707,7 @@ window.addEventListener("error", function (e) {
         wotdMode: "daily",
         todayOrder: [],
         restoreSession: true,
+        updAuto: !!window.__focusdeskIsDesktop,
         dur: { focus: 25, short: 5, long: 15 },
       },
     };
@@ -1304,7 +1334,7 @@ window.addEventListener("error", function (e) {
         return isStr(x) && x.length <= 24;
       });
     o.prefs.restoreSession = pp.restoreSession !== false;
-    o.prefs.updCheck = pp.updCheck !== false;
+    o.prefs.updAuto = typeof pp.updAuto === "boolean" ? pp.updAuto : pp.updCheck === false ? false : !!window.__focusdeskIsDesktop;
     o.prefs.updLast = isNum(pp.updLast) ? pp.updLast : 0;
     o.prefs.updSeen = isStr(pp.updSeen) ? clip(pp.updSeen, 20) : "";
 
@@ -1404,6 +1434,7 @@ window.addEventListener("error", function (e) {
           name: clip(b.name, 60),
           start: isStr(b.start) && dateRe.test(b.start) ? b.start : ymd(new Date()),
           log: log,
+          note: isStr(b.note) ? clip(b.note, 500) : "",
           record: isNum(b.record) ? Math.max(0, Math.floor(b.record)) : 0,
         };
       })
@@ -1494,6 +1525,7 @@ window.addEventListener("error", function (e) {
     clearTimeout(saveT);
     saveT = setTimeout(flush, 200);
     checkAchSoon();
+    if (window.__focusdeskScheduleDue) window.__focusdeskScheduleDue();
   }
   window.addEventListener("pagehide", flush);
   if (window.__focusdeskIsDesktop) window.__focusdeskFlush = flush;
@@ -2014,6 +2046,8 @@ window.addEventListener("error", function (e) {
   var TEX_ENV = {
     pmatrix: ["(", ")"], bmatrix: ["[", "]"], Bmatrix: ["{", "}"], vmatrix: ["|", "|"],
     Vmatrix: ["\u2016", "\u2016"], matrix: ["", ""], cases: ["{", ""],
+    aligned: ["", ""], align: ["", ""], "align*": ["", ""], split: ["", ""], alignat: ["", ""], "alignat*": ["", ""],
+    gather: ["", ""], "gather*": ["", ""], gathered: ["", ""], eqnarray: ["", ""], "eqnarray*": ["", ""],
   };
   var TEX_BB = { R: "\u211d", Z: "\u2124", N: "\u2115", Q: "\u211a", C: "\u2102", P: "\u2119" };
   var TEX_ACC = { hat: "^", widehat: "^", tilde: "~", widetilde: "~", vec: "\u2192", dot: "\u02d9", ddot: "\u00a8", check: "\u02c7", acute: "\u00b4", grave: "`" };
@@ -2022,6 +2056,7 @@ window.addEventListener("error", function (e) {
       p = 0,
       n = s.length,
       big = false,
+      intFlag = false,
       depth = 0;
     function esc(t) {
       return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -2066,7 +2101,11 @@ window.addEventListener("error", function (e) {
     function parseSeq() {
       if (++depth > 40) throw new Error("too deep");
       var out = "";
-      while (p < n && !atEnd()) out += parseScripted();
+      for (;;) {
+        skipWs();
+        if (p >= n || atEnd()) break;
+        out += parseScripted();
+      }
       depth--;
       return out;
     }
@@ -2093,8 +2132,10 @@ window.addEventListener("error", function (e) {
     }
     function parseScripted() {
       big = false;
+      intFlag = false;
       var h = parseAtom(),
         isBig = big,
+        wasInt = intFlag,
         sub = "",
         sup = "";
       for (;;) {
@@ -2114,6 +2155,8 @@ window.addEventListener("error", function (e) {
           '<span class="tx-lim"><span class="tx-limsup">' + sup + "</span><span>" + h +
           '</span><span class="tx-limsub">' + sub + "</span></span>"
         );
+      if (wasInt)
+        return '<span class="tx-int">' + h + '<span class="tx-iscr"><span class="tx-isup">' + sup + '</span><span class="tx-isub">' + sub + "</span></span></span>";
       if (sub && sup)
         return h + '<span class="tx-scr"><span>' + sup + "</span><span>" + sub + "</span></span>";
       return h + (sup ? "<sup>" + sup + "</sup>" : "<sub>" + sub + "</sub>");
@@ -2160,7 +2203,12 @@ window.addEventListener("error", function (e) {
         rawGroup();
       }
       var dl = TEX_ENV[name] || ["", ""],
-        t = '<table class="tx-mt' + (name === "cases" ? " tx-cases" : "") + '">';
+        t =
+          '<table class="tx-mt' +
+          (name === "cases" ? " tx-cases" : "") +
+          (/^(aligned|align|alignat|split|eqnarray)\*?$/.test(name) ? " tx-align" : "") +
+          (/^gather/.test(name) ? " tx-gather" : "") +
+          '">';
       rows.forEach(function (r) {
         t += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
       });
@@ -2176,6 +2224,7 @@ window.addEventListener("error", function (e) {
       if (TEX_OPS[name] !== undefined) return '<span class="tx-op">' + esc(TEX_OPS[name]) + "</span>";
       if (TEX_BIG[name]) {
         big = !!TEX_BIGLIM[name];
+        intFlag = name === "int" || name === "iint" || name === "oint";
         return '<span class="tx-bigop">' + TEX_BIG[name] + "</span>";
       }
       if (TEX_FN.indexOf(name) >= 0) {
@@ -2237,6 +2286,22 @@ window.addEventListener("error", function (e) {
           return "";
         case "begin":
           return parseEnv(rawGroup());
+        case "substack":
+          var srows = [];
+          skipWs();
+          if (peek() === "{") {
+            p++;
+            for (var sg = 0; sg < 60; sg++) {
+              srows.push(parseSeq());
+              if (s.substr(p, 2) === "\\\\") {
+                p += 2;
+                continue;
+              }
+              break;
+            }
+            if (peek() === "}") p++;
+          }
+          return '<span class="tx-substack">' + srows.map(function (r) { return "<span>" + r + "</span>"; }).join("") + "</span>";
         case ",": return '<span class="tx-sp" style="width:.17em"></span>';
         case ":": return '<span class="tx-sp" style="width:.22em"></span>';
         case ";": return '<span class="tx-sp" style="width:.28em"></span>';
@@ -7055,6 +7120,9 @@ window.addEventListener("error", function (e) {
       fmtBtn("\u25A6", "Insert table", function () {
         ins("\n| Column A | Column B |\n|---|---|\n|  |  |\n|  |  |\n");
       }),
+      fmtBtn("\uD83D\uDDBC", "Add an image (or paste / drop one)", function () {
+        imgIn.click();
+      }),
       el("span", { style: "width:6px" }),
       fmtBtn("[[", "Link to another note", function () {
         wrapSel("[[", "]]", "Note Title");
@@ -7070,6 +7138,25 @@ window.addEventListener("error", function (e) {
       saveLabel,
       previewBtn
     );
+    var imgIn = el("input", {
+      type: "file",
+      accept: "image/*",
+      style: "display:none",
+      onchange: function () {
+        var f = this.files && this.files[0];
+        this.value = "";
+        if (!f) return;
+        addImageFile(f, function (id, err) {
+          if (err) {
+            msgBox({ title: "Add Image", icon: "warn", text: err });
+            return;
+          }
+          var alt = (f.name || "image").replace(/\.[a-z0-9]+$/i, "").replace(/[\[\]\n]/g, "");
+          ins("![" + clip(alt, 40) + "](img:" + id + ")");
+        });
+      },
+    });
+    w.body.append(imgIn);
     var NOTE_TEMPLATES = {
       "Cornell Notes":
         "# Topic\n\nDate: \n\n| Cues / Questions | Notes |\n|---|---|\n|  |  |\n\n## Summary\n",
@@ -9043,6 +9130,23 @@ window.addEventListener("error", function (e) {
               { class: "w", style: "font-size:10px;color:#606060" },
               stats
             ),
+            c.cloze || c.occ
+              ? el(
+                  "button",
+                  {
+                    class: "btn xs",
+                    "aria-label": "Edit",
+                    onclick: function () {
+                      (c.occ ? occDialog : clozeDialog)(c.deck, function () {
+                        curCard = null;
+                        drawDecks();
+                        drawManage();
+                      }, c);
+                    },
+                  },
+                  "Edit"
+                )
+              : null,
             el(
               "button",
               {
@@ -12945,9 +13049,15 @@ window.addEventListener("error", function (e) {
         ["Version", VERSION],
         [
           "Where",
-          embedded
+          window.__focusdeskIsDesktop
+            ? "FocusDesk 96 Desktop Edition (" +
+              ({ darwin: "macOS", win32: "Windows", linux: "Linux" }[window.__focusdeskPlatform] || "desktop") +
+              ")"
+            : embedded
             ? "Inside another page (such as Claude)"
-            : "In its own browser tab or window",
+            : location.protocol === "file:"
+            ? "Browser version saved on this computer"
+            : "In your web browser (online)",
         ],
         [
           "Helpy (Claude)",
@@ -12960,7 +13070,11 @@ window.addEventListener("error", function (e) {
         ["Assistant", S.prefs.ai || "(auto)"],
         [
           "Saving files",
-          helpyOk ? "Through the host page" : "Through your browser downloads",
+          window.__focusdeskIsDesktop
+            ? "Native Save As and Open dialogs"
+            : helpyOk
+            ? "Through the host page"
+            : "Through your browser downloads",
         ],
         [
           "Full screen",
@@ -12992,15 +13106,22 @@ window.addEventListener("error", function (e) {
     var deskBox = window.__focusdeskIsDesktop
       ? (function () {
           var P = window.__focusdeskDPrefs || {},
+            D = Object.assign({}, window.__focusdeskDirs || {}),
+            fdk = window.focusdesk,
             mac = window.__focusdeskPlatform === "darwin",
             tray = mac ? "menu bar" : "system tray",
-            note = el("div", { class: "dim", style: "padding:0" });
-          function paintNote() {
+            note = el("div", { class: "dim", style: "padding:0" }),
+            bkPath = el("div", { style: "padding:0;word-break:break-all;font-size:11px" });
+          function paintNote(extra) {
             var st = window.__focusdeskDStatus || {},
               bits = [];
             if (P.hotkey !== false && !st.hotkeyOk) bits.push("The quick capture hotkey is in use by another app, so it isn't active.");
             if (!st.trayOk) bits.push("No " + tray + " is available on this system, so tray options won't work.");
+            if (extra) bits.push(extra);
             note.textContent = bits.join(" ");
+          }
+          function paintBk() {
+            bkPath.textContent = "Daily backups go to: " + (D.backups || "") + (P.backupPath ? "" : "  (default)");
           }
           function opt(key, label, dflt) {
             return el(
@@ -13014,16 +13135,32 @@ window.addEventListener("error", function (e) {
                   o[key] = this.checked;
                   window.__focusdeskSetPrefs(o).then(function (r) {
                     P = window.__focusdeskDPrefs || P;
-                    paintNote();
-                    if (key === "launchAtLogin" && r && r.login && !r.login.ok) note.textContent = r.login.reason || "Couldn't change the startup setting.";
-                    if (key === "compactTitle") note.textContent = "Restart FocusDesk to apply the title bar change.";
+                    paintNote(key === "launchAtLogin" && r && r.login && !r.login.ok ? r.login.reason || "Couldn't change the startup setting." : "");
                   });
                 },
               }),
               label
             );
           }
+          function btn(label, fn, title) {
+            return el("button", { class: "btn sm", title: title || "", onclick: fn }, label);
+          }
+          var keepSel = el(
+            "select",
+            {
+              class: "in",
+              "aria-label": "How many daily backups to keep",
+              onchange: function () {
+                window.__focusdeskSetPrefs({ backupKeep: +this.value });
+              },
+            },
+            [[7, "Keep the last 7"], [14, "Keep the last 14"], [30, "Keep the last 30"], [0, "Keep all of them"]].map(function (o) {
+              return el("option", { value: String(o[0]), selected: (P.backupKeep === undefined ? 7 : P.backupKeep) === o[0] }, o[1]);
+            })
+          );
+          var testOut = el("span", { class: "dim", style: "padding:0" });
           paintNote();
+          paintBk();
           return el(
             "fieldset",
             null,
@@ -13032,14 +13169,71 @@ window.addEventListener("error", function (e) {
               "div",
               { class: "col", style: "gap:4px" },
               opt("notifications", "Native notifications for reminders and finished focus sessions", true),
+              opt("notifyAlways", "...even while FocusDesk is the window in front", true),
+              el(
+                "div",
+                { class: "row", style: "gap:6px;align-items:center" },
+                btn("Send test notification", function () {
+                  testOut.textContent = "Sending\u2026";
+                  fdk.testNotify().then(function (r) {
+                    testOut.textContent =
+                      r && r.ok
+                        ? "Sent. If you don't see it, check your system's notification settings and Do Not Disturb."
+                        : r && r.reason === "unsupported"
+                        ? "This system doesn't support notifications from FocusDesk."
+                        : "Couldn't send one: " + ((r && r.reason) || "unknown reason");
+                  });
+                }),
+                testOut
+              ),
               opt("hotkey", "Quick capture hotkey: " + (mac ? "Cmd" : "Ctrl") + "+Shift+Space", true),
               opt("closeToTray", "Keep running in the " + tray + " when I close the window", false),
               opt("launchAtLogin", "Open FocusDesk when I log in", false),
-              opt("startHidden", "…and start hidden in the " + tray, false),
-              window.__focusdeskPlatform === "win32"
-                ? opt("compactTitle", "Put File, Edit, View and Help in a \u22ef button in the title bar (restart to apply)", false)
-                : null,
-              el("div", { class: "row", style: "gap:6px" }, el("button", { class: "btn sm", onclick: function () { window.__focusdeskOpenCapture("task"); } }, "Quick capture…")),
+              opt("startHidden", "\u2026and start hidden in the " + tray, false),
+              el(
+                "div",
+                { class: "row", style: "gap:6px;flex-wrap:wrap" },
+                btn("Quick capture\u2026", function () {
+                  fdk.openCapture("task");
+                }),
+                btn("Ask Clipy\u2026", function () {
+                  fdk.openClipy("");
+                }),
+                btn("Mini timer", function () {
+                  fdk.openMiniTimer(false);
+                })
+              ),
+              el("div", { style: "font-weight:bold;margin-top:6px" }, "Daily backups"),
+              bkPath,
+              el(
+                "div",
+                { class: "row", style: "gap:6px;flex-wrap:wrap;align-items:center" },
+                btn("Choose folder\u2026", function () {
+                  fdk.chooseBackupFolder().then(function (r) {
+                    if (r && r.ok) {
+                      D.backups = r.path;
+                      P = r.prefs || P;
+                      window.__focusdeskDPrefs = P;
+                      paintBk();
+                      paintNote(r.note || "");
+                    } else if (r && r.error) paintNote(r.error);
+                  });
+                }, "For example a Dropbox or iCloud Drive folder"),
+                btn("Use default", function () {
+                  fdk.resetBackupFolder().then(function (r) {
+                    if (r && r.ok) {
+                      D.backups = r.path;
+                      P = r.prefs || P;
+                      window.__focusdeskDPrefs = P;
+                      paintBk();
+                    }
+                  });
+                }),
+                btn("Open folder", function () {
+                  fdk.openBackupDir();
+                }),
+                keepSel
+              ),
               note
             )
           );
@@ -13052,9 +13246,9 @@ window.addEventListener("error", function (e) {
       el(
         "div",
         { class: "row", style: "gap:8px;align-items:center;flex-wrap:wrap" },
-        el("button", { class: "btn sm", onclick: function () { checkUpdate(true); } }, window.__focusdeskIsDesktop ? "Check for updates" : "Check for the desktop app"),
-        window.__focusdeskIsDesktop
-          ? el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.updCheck !== false, onchange: function () { S.prefs.updCheck = this.checked; save(); } }), "Check automatically at startup")
+        el("button", { class: "btn sm", onclick: function () { checkUpdate(true); } }, window.__focusdeskIsDesktop || location.protocol === "file:" ? "Check for updates" : "Check for the desktop app"),
+        window.__focusdeskIsDesktop || location.protocol === "file:"
+          ? el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.updAuto === true, onchange: function () { S.prefs.updAuto = this.checked; save(); } }), "Check automatically when FocusDesk starts")
           : null
       )
     );
@@ -13691,9 +13885,9 @@ window.addEventListener("error", function (e) {
         displayBox,
         aiBox,
         iconsBox,
-        aboutBox,
         updBox,
         deskBox,
+        aboutBox,
         el(
           "fieldset",
           null,
@@ -18622,8 +18816,35 @@ window.addEventListener("error", function (e) {
       }
     }
     function slipLog(b) {
-      var keys = Object.keys(b.log).sort().reverse();
-      var list = el("div", { style: "max-height:220px;overflow:auto;text-align:left" });
+      var keys = Object.keys(b.log).sort().reverse(),
+        wk = [0, 0, 0, 0, 0, 0, 0];
+      keys.forEach(function (k) {
+        wk[new Date(k + "T00:00").getDay()]++;
+      });
+      var top = Math.max.apply(null, wk),
+        bars = el("div", { class: "tod-bars", style: "height:64px" });
+      wk.forEach(function (n, i) {
+        bars.append(
+          el(
+            "div",
+            { class: "tod-col", title: DAYS[i] + ": " + n + " slip" + (n === 1 ? "" : "s") },
+            el("div", { class: "tod-bar" + (n === top && n > 0 ? " risk" : ""), style: "height:" + Math.round((n / Math.max(top, 1)) * 100) + "%" }),
+            el("span", { style: "font-size:10px" }, DAYS[i].charAt(0))
+          )
+        );
+      });
+      var note = el("textarea", {
+        class: "in",
+        rows: 3,
+        placeholder: "Notes about this habit: why you're quitting, what helps, what to watch for\u2026",
+        style: "width:100%;resize:vertical;margin-top:2px",
+        oninput: function () {
+          b.note = clip(this.value, 500);
+          save();
+        },
+      });
+      note.value = b.note || "";
+      var list = el("div", { style: "max-height:130px;overflow:auto;text-align:left" });
       if (!keys.length) list.append(el("div", { class: "dim" }, "No slips logged. Clean so far."));
       keys.forEach(function (k) {
         var nt = b.log[k] && b.log[k].note;
@@ -18631,12 +18852,47 @@ window.addEventListener("error", function (e) {
           el(
             "div",
             { style: "padding:3px 0;border-bottom:1px solid #d0d0d0" },
-            el("b", null, k),
+            el("b", null, k + " (" + DAYS[new Date(k + "T00:00").getDay()] + ")"),
             nt ? " \u2014 " + nt : el("span", { class: "dim" }, "  (no note)")
           )
         );
       });
-      msgBox({ title: "Slip log: " + b.name, icon: "info", width: 400, text: keys.length + " slip(s) logged:", extra: list });
+      var r = breakerRuns(b),
+        hint = top > 0 ? "Most slips: " + DAYS[wk.indexOf(top)] + " (" + top + "). " : "";
+      msgBox({
+        title: "Habit: " + b.name,
+        icon: "info",
+        width: 440,
+        text: "Quit date " + b.start + " \u00b7 clean run " + r.run + "d \u00b7 best " + r.best + "d \u00b7 " + keys.length + " slip" + (keys.length === 1 ? "" : "s") + ". " + hint,
+        extra: el(
+          "div",
+          { style: "text-align:left" },
+          el("b", null, "Slips by weekday"),
+          bars,
+          el("b", { style: "display:block;margin-top:8px" }, "Notes"),
+          note,
+          el("b", { style: "display:block;margin-top:8px" }, "Slip log"),
+          list
+        ),
+        buttons: [
+          {
+            label: "Change quit date\u2026",
+            fn: function () {
+              askText("Quit date", "The first day without it (YYYY-MM-DD):", b.start, function (v) {
+                v = String(v || "").trim();
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || isNaN(new Date(v + "T00:00")) || v > ymd(new Date())) {
+                  msgBox({ title: "Quit date", icon: "warn", text: "Use a date like 2026-10-01 that isn't in the future." });
+                  return;
+                }
+                b.start = v;
+                save();
+                refreshAll();
+              });
+            },
+          },
+          { label: "Close" },
+        ],
+      });
     }
     function cellFor(b, d, today) {
       var k = ymd(d),
@@ -18723,7 +18979,7 @@ window.addEventListener("error", function (e) {
           el(
             "div",
             { class: "hb-row" },
-            el("span", { class: "hb-n", style: "min-width:84px", title: "Quit date " + b.start }, b.name),
+            el("span", { class: "hb-n", style: "min-width:84px", title: "Quit date " + b.start + (b.note ? "\n" + b.note : "") }, b.name),
             days.map(function (d) {
               return cellFor(b, d, today);
             }),
@@ -19022,24 +19278,68 @@ window.addEventListener("error", function (e) {
   }
 
   /* ================= 2.7: CLOZE + IMAGE OCCLUSION DIALOGS ================= */
-  function clozeDialog(deckName, done) {
+  function newCardBase(deck, q, extra) {
+    return Object.assign(
+      { id: uid(), deck: clip(deck, 40), q: clip(q, 1000), a: "", box: 0, dueAt: Date.now(), interval: 0, ease: 2.5, reps: 0, lapses: 0 },
+      extra || {}
+    );
+  }
+  /* Cloze: create, or edit an existing cloze card (all cards from the same note). */
+  function clozeDialog(deckName, done, edit) {
+    var sibs = edit
+      ? edit.grp
+        ? S.cards.filter(function (c) {
+            return c.grp === edit.grp && c.cloze;
+          })
+        : [edit]
+      : [];
     var ta = el("textarea", {
       class: "in",
-      rows: 6,
+      rows: edit ? 3 : 6,
       placeholder: "The capital of France is {{c1::Paris}}.\n{{c1::Mitochondria}} make {{c2::ATP}}.",
       style: 'width:100%;resize:vertical;margin-top:8px;font:12px "Courier New",monospace',
     });
-    var dn = el("input", { class: "in", value: deckName || "Cloze", style: "width:100%;margin-top:8px" });
+    if (edit) ta.value = edit.q;
+    var dn = el("input", { class: "in", value: edit ? edit.deck : deckName || "Cloze", style: "width:100%;margin-top:8px" });
     msgBox({
-      title: "Cloze Cards",
+      title: edit ? "Edit Cloze Card" : "Cloze Cards",
       icon: "info",
       width: 430,
-      text: "Wrap the part to hide in {{c1::...}}. Add a hint with {{c1::answer::hint}}. Each different number (c1, c2...) on a line becomes its own card. One line per note. Deck name:",
+      text: edit
+        ? "Change the text or the {{c1::...}} parts. Clozes you keep keep their review history, new ones are added, and removed ones go to the Recycle Bin. Deck name:"
+        : "Wrap the part to hide in {{c1::...}}. Add a hint with {{c1::answer::hint}}. Each different number (c1, c2...) on a line becomes its own card. One line per note. Deck name:",
       extra: el("div", null, dn, ta),
       buttons: [
         {
-          label: "Create",
+          label: edit ? "Save" : "Create",
           fn: function () {
+            var deck = clip(dn.value.trim() || "Cloze", 40);
+            if (edit) {
+              var line = ta.value.replace(/\s*\r?\n\s*/g, " ").trim(),
+                nums = clozeNums(line);
+              if (!nums.length) {
+                msgBox({ title: "Cloze Cards", icon: "warn", text: "The text needs at least one {{c1::...}} part." });
+                return false;
+              }
+              var grp = edit.grp || uid();
+              sibs.forEach(function (c) {
+                if (nums.indexOf(c.cloze) >= 0) {
+                  c.q = clip(line, 1000);
+                  c.deck = deck;
+                  c.grp = grp;
+                } else
+                  softDelete("cards", function (x) {
+                    return x.id === c.id;
+                  });
+              });
+              nums.forEach(function (num) {
+                if (S.cards.length < 5000 && !sibs.some(function (c) { return c.cloze === num; }))
+                  S.cards.push(newCardBase(deck, line, { cloze: num, grp: grp }));
+              });
+              save();
+              done();
+              return;
+            }
             var n = 0,
               skipped = 0;
             ta.value.split(/\r?\n/).forEach(function (line) {
@@ -19053,20 +19353,7 @@ window.addEventListener("error", function (e) {
               var grp = uid();
               nums.forEach(function (num) {
                 if (S.cards.length >= 5000) return;
-                S.cards.push({
-                  id: uid(),
-                  deck: clip(dn.value.trim() || "Cloze", 40),
-                  q: clip(line, 1000),
-                  a: "",
-                  cloze: num,
-                  grp: grp,
-                  box: 0,
-                  dueAt: Date.now(),
-                  interval: 0,
-                  ease: 2.5,
-                  reps: 0,
-                  lapses: 0,
-                });
+                S.cards.push(newCardBase(deck, line, { cloze: num, grp: grp }));
                 n++;
               });
             });
@@ -19083,27 +19370,54 @@ window.addEventListener("error", function (e) {
       ],
     });
   }
-  function occDialog(deckName, done) {
-    var imgId = null,
-      boxes = [],
+  /* Image occlusion: create, or edit an existing set (add or remove boxes; kept boxes keep their history). */
+  function occDialog(deckName, done, edit) {
+    var sibs = edit
+      ? edit.grp
+        ? S.cards.filter(function (c) {
+            return c.grp === edit.grp && c.occ;
+          })
+        : [edit]
+      : [];
+    var imgId = edit ? edit.occ.img : null,
+      boxes = edit
+        ? edit.occ.boxes.map(function (b, i) {
+            return { x: b.x, y: b.y, w: b.w, h: b.h, key: i };
+          })
+        : [],
       drag = null,
       stage = el("div", { class: "occ-stage" }),
+      chips = el("div", { class: "row", style: "gap:4px;flex-wrap:wrap;margin-top:4px" }),
       info = el("div", { class: "dim", style: "padding:0" }, "Add an image, then drag rectangles over the parts to hide."),
-      dn = el("input", { class: "in", value: deckName || "Images", style: "flex:1" });
+      dn = el("input", { class: "in", value: edit ? edit.deck : deckName || "Images", style: "flex:1" });
     function paint() {
       stage.textContent = "";
+      chips.textContent = "";
       if (!imgId) {
         stage.append(el("div", { class: "dim", style: "padding:20px;text-align:center" }, "Paste, drop or choose an image"));
         return;
       }
-      var im = el("img", { class: "occ-img", src: S.images[imgId], draggable: "false", alt: "" });
-      stage.append(im);
+      stage.append(el("img", { class: "occ-img", src: S.images[imgId], draggable: "false", alt: "" }));
       boxes.forEach(function (b, j) {
         stage.append(
           el("div", { class: "occ-box occ-edit", style: "left:" + b.x * 100 + "%;top:" + b.y * 100 + "%;width:" + b.w * 100 + "%;height:" + b.h * 100 + "%" }, String(j + 1))
         );
+        chips.append(
+          el(
+            "button",
+            {
+              class: "btn xs",
+              title: "Remove box " + (j + 1),
+              onclick: function () {
+                boxes.splice(j, 1);
+                paint();
+              },
+            },
+            j + 1 + " \u2715"
+          )
+        );
       });
-      info.textContent = boxes.length + " box(es) = " + boxes.length + " card(s). Drag on the image to add one.";
+      info.textContent = boxes.length + " box(es) = " + boxes.length + " card(s). Drag on the image to add one" + (boxes.length ? "; use the buttons to remove one." : ".");
     }
     function setImage(id) {
       imgId = id;
@@ -19139,7 +19453,7 @@ window.addEventListener("error", function (e) {
     stage.addEventListener("pointerup", function (e) {
       if (!drag) return;
       var p = point(e),
-        b = { x: Math.min(drag.x, p.x), y: Math.min(drag.y, p.y), w: Math.abs(p.x - drag.x), h: Math.abs(p.y - drag.y) };
+        b = { x: Math.min(drag.x, p.x), y: Math.min(drag.y, p.y), w: Math.abs(p.x - drag.x), h: Math.abs(p.y - drag.y), key: null };
       drag = null;
       if (b.w > 0.015 && b.h > 0.015 && boxes.length < 40) boxes.push(b);
       paint();
@@ -19160,48 +19474,70 @@ window.addEventListener("error", function (e) {
         else setImage(id);
       });
     }
-    attachImagePaste(stage, function (md) {
-      var m = /img:([A-Za-z0-9_-]+)/.exec(md);
-      if (m) setImage(m[1]);
-    });
+    if (!edit)
+      attachImagePaste(stage, function (md) {
+        var m = /img:([A-Za-z0-9_-]+)/.exec(md);
+        if (m) setImage(m[1]);
+      });
     paint();
     msgBox({
-      title: "Image Occlusion",
+      title: edit ? "Edit Image Occlusion" : "Image Occlusion",
       icon: "info",
       width: 560,
-      text: "Hide parts of a diagram. Every rectangle becomes its own card.",
+      text: edit
+        ? "Add or remove boxes. Boxes you keep keep their review history; removed ones go to the Recycle Bin."
+        : "Hide parts of a diagram. Every rectangle becomes its own card.",
       extra: el(
         "div",
         null,
-        el("div", { class: "row", style: "gap:6px;margin:6px 0" }, el("button", { class: "btn sm", onclick: function () { pick.click(); } }, "Choose image\u2026"), "Deck:", dn, pick),
+        el(
+          "div",
+          { class: "row", style: "gap:6px;margin:6px 0" },
+          edit ? null : el("button", { class: "btn sm", onclick: function () { pick.click(); } }, "Choose image\u2026"),
+          "Deck:",
+          dn,
+          pick
+        ),
         stage,
-        el("div", { class: "row", style: "gap:6px;margin-top:4px" }, info, el("button", { class: "btn xs", style: "margin-left:auto", onclick: function () { boxes.pop(); paint(); } }, "Undo box"))
+        chips,
+        el("div", { class: "row", style: "gap:6px;margin-top:4px" }, info, edit ? null : el("button", { class: "btn xs", style: "margin-left:auto", onclick: function () { boxes.pop(); paint(); } }, "Undo box"))
       ),
       buttons: [
         {
-          label: "Create cards",
+          label: edit ? "Save" : "Create cards",
           fn: function () {
             if (!imgId || !boxes.length) {
-              info.textContent = "Add an image and draw at least one box first.";
+              info.textContent = edit ? "Keep at least one box." : "Add an image and draw at least one box first.";
               return false;
             }
-            var grp = uid();
-            boxes.forEach(function (b, j) {
-              if (S.cards.length >= 5000) return;
-              S.cards.push({
-                id: uid(),
-                deck: clip(dn.value.trim() || "Images", 40),
-                q: "[Image occlusion]",
-                a: "",
-                occ: { img: imgId, boxes: boxes.slice(), i: j },
-                grp: grp,
-                box: 0,
-                dueAt: Date.now(),
-                interval: 0,
-                ease: 2.5,
-                reps: 0,
-                lapses: 0,
+            var deck = clip(dn.value.trim() || "Images", 40),
+              grp = (edit && edit.grp) || uid(),
+              plain = function () {
+                return boxes.map(function (b) {
+                  return { x: b.x, y: b.y, w: b.w, h: b.h };
+                });
+              };
+            if (edit) {
+              sibs.forEach(function (c) {
+                var j = -1;
+                boxes.forEach(function (b, k) {
+                  if (b.key === c.occ.i) j = k;
+                });
+                if (j >= 0) {
+                  c.occ.boxes = plain();
+                  c.occ.i = j;
+                  c.deck = deck;
+                  c.grp = grp;
+                } else
+                  softDelete("cards", function (x) {
+                    return x.id === c.id;
+                  });
               });
+            }
+            boxes.forEach(function (b, k) {
+              if (edit && b.key != null) return;
+              if (S.cards.length >= 5000) return;
+              S.cards.push(newCardBase(deck, "[Image occlusion]", { occ: { img: imgId, boxes: plain(), i: k }, grp: grp }));
             });
             save();
             done();
@@ -19210,7 +19546,7 @@ window.addEventListener("error", function (e) {
         {
           label: "Cancel",
           fn: function () {
-            if (imgId) pruneImages();
+            if (imgId && !edit) pruneImages();
           },
         },
       ],
@@ -19234,7 +19570,7 @@ window.addEventListener("error", function (e) {
         var isDesk = !!window.__focusdeskIsDesktop;
         /* Browser copies compare against the Browser zip attached to the release. */
         var brz = null;
-        if (!isDesk)
+        if (!isDesk && location.protocol === "file:")
           (rel.assets || []).forEach(function (a) {
             var m = /^FocusDesk-96-Browser-(\d+(?:\.\d+)*)\.zip$/.exec((a && a.name) || "");
             if (m && /^https:\/\/github\.com\//.test(a.browser_download_url || "") && (!brz || verCmp(brz.v, m[1]) < 0))
@@ -19242,7 +19578,9 @@ window.addEventListener("error", function (e) {
           });
         if (brz) {
           if (verCmp(VERSION, brz.v) < 0) {
-            if (manual)
+            if (manual || S.prefs.updSeen !== "b" + brz.v) {
+              S.prefs.updSeen = "b" + brz.v;
+              save();
               msgBox({
                 title: "Update Available",
                 icon: "bulb",
@@ -19254,6 +19592,7 @@ window.addEventListener("error", function (e) {
                   { label: "Later" },
                 ],
               });
+            }
           } else if (manual)
             msgBox({ title: "Updates", icon: "info", text: "You're up to date. Browser version " + VERSION + " is the newest." });
           return;
@@ -19287,7 +19626,8 @@ window.addEventListener("error", function (e) {
       });
   }
   function autoUpdateCheck() {
-    if (!window.__focusdeskIsDesktop || S.prefs.updCheck === false) return;
+    if (!S.prefs.updAuto) return;
+    if (!window.__focusdeskIsDesktop && location.protocol !== "file:") return;
     if (Date.now() - (S.prefs.updLast || 0) < 12 * 3600000) return;
     setTimeout(function () {
       checkUpdate(false);
@@ -19386,12 +19726,135 @@ window.addEventListener("error", function (e) {
       return { ok: true, msg: msg };
     };
     window.__focusdeskCmd = function (cmd) {
+      cmd = String(cmd || "");
       if (cmd === "focus") {
         openApp("timer");
         if (T.mode !== "focus") setMode("focus");
         if (!T.running) startPause();
+      } else if (cmd === "timer-toggle") startPause();
+      else if (cmd === "timer-reset") resetT();
+      else if (cmd === "new-note") {
+        S.notes.unshift({ id: uid(), text: "# Untitled\n\n", updated: Date.now() });
+        save();
+        refreshAll();
+        openApp("notepad");
+      } else if (cmd === "backup-now") quickBackup();
+      else if (cmd === "check-updates") checkUpdate(true);
+      else if (cmd.indexOf("open:") === 0) {
+        var id = cmd.slice(5);
+        if (APPS[id]) openApp(id);
       }
     };
+    /* Ask Clipy from the quick-capture Ask tab: same assistant and context as the Clipy panel. */
+    window.__focusdeskAsk = function (text) {
+      var v = clip(String(text || "").trim(), 2000);
+      if (!v) return Promise.resolve({ ok: false, text: "" });
+      if (!S.clipy || !Array.isArray(S.clipy.msgs)) S.clipy = { msgs: [], wotd: null, wotdHistory: [] };
+      function add(role, t) {
+        S.clipy.msgs.push({ role: role, text: t, at: Date.now() });
+        if (S.clipy.msgs.length > 200) S.clipy.msgs.splice(0, S.clipy.msgs.length - 200);
+        save();
+      }
+      add("user", v);
+      var m = clipyAssistant();
+      if (m === "off") {
+        var off = "Pick an assistant in Control Panel \u2192 Assistant, then try again.";
+        add("sys", off);
+        return Promise.resolve({ ok: false, text: off });
+      }
+      var hist = S.clipy.msgs
+        .slice(-10, -1)
+        .map(function (mm) {
+          return (mm.role === "user" ? "User: " : "Clipy: ") + mm.text;
+        })
+        .join("\n");
+      var prompt =
+        "You are Clipy, a warm, concise study companion built into FocusDesk 96. " +
+        "Answer in plain text (no markdown headers, no asterisks). Be practical and specific. " +
+        "If you don't know something about the user, say so instead of guessing.\n\n" +
+        "What you know about the user right now:\n" +
+        clipyContext() +
+        "\n\n" +
+        (hist ? "Conversation so far:\n" + hist + "\n\n" : "") +
+        "User: " +
+        v +
+        "\n\nClipy:";
+      return aiChat(m, prompt, { maxTokens: 1500 }).then(
+        function (r) {
+          var t = ((r && r.text) || "").trim() || "(no reply)";
+          add("assistant", t);
+          return { ok: true, text: t };
+        },
+        function (e) {
+          var t = copyFor(e);
+          add("sys", t);
+          return { ok: false, text: t };
+        }
+      );
+    };
+    /* Due counts for the tray menu and the Windows taskbar badge. */
+    var dueT = 0;
+    function makeBadge(n) {
+      var cv = document.createElement("canvas");
+      cv.width = cv.height = 32;
+      var g = cv.getContext("2d");
+      g.fillStyle = "#c00000";
+      g.beginPath();
+      g.arc(16, 16, 15, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.font = "bold 19px Arial, sans-serif";
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillText(n > 9 ? "9+" : String(n), 16, 17);
+      return cv.toDataURL("image/png");
+    }
+    window.__focusdeskDue = function () {
+      if (!window.focusdesk || !window.focusdesk.setDueCounts) return;
+      var now = Date.now(),
+        eod = new Date();
+      eod.setHours(23, 59, 59, 999);
+      var cards = S.cards.filter(function (c) {
+          return (c.dueAt || 0) <= now;
+        }).length,
+        tasks = S.tasks.filter(function (t) {
+          return !t.done && t.due && t.due <= eod.getTime();
+        }).length;
+      window.focusdesk.setDueCounts({
+        cards: cards,
+        tasks: tasks,
+        badge: window.__focusdeskPlatform === "win32" && cards + tasks > 0 ? makeBadge(cards + tasks) : null,
+      });
+    };
+    window.__focusdeskScheduleDue = function () {
+      if (dueT) return;
+      dueT = setTimeout(function () {
+        dueT = 0;
+        try {
+          window.__focusdeskDue();
+        } catch (e) {}
+      }, 3000);
+    };
+    setInterval(function () {
+      try {
+        window.__focusdeskDue();
+      } catch (e) {}
+    }, 60000);
+    setTimeout(function () {
+      try {
+        window.__focusdeskDue();
+      } catch (e) {}
+    }, 4000);
+  }
+
+  function quickBackup() {
+    saveFile(
+      "focusdesk96-backup-" + ymd(new Date()) + ".json",
+      JSON.stringify({ app: "FocusDesk 96", version: VERSION, saved: new Date().toISOString(), data: S, wall: wallData }, null, 2)
+    );
+    try {
+      localStorage.setItem("focusdesk96.lastbackup", String(Date.now()));
+    } catch (e) {}
   }
 
   /* ================= APP: COUNTDOWNS ================= */
