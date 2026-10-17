@@ -656,7 +656,6 @@ function updateTrayTimer(t) {
 let due = { cards: 0, tasks: 0, badge: null };
 let lastTimer = null;
 let miniWin = null;
-let clipyWin = null;
 
 function sendCmd(cmd, show) {
   return whenMainReady().then((wc) => {
@@ -796,50 +795,9 @@ function closeMiniTimer() {
   if (miniWin && !miniWin.isDestroyed()) miniWin.close();
 }
 
-/* ---- Ask Clipy: its own always-on-top chat window ---- */
-const pendingAsks = new Map();
-let askSeq = 0;
+/* ---- Ask Clipy: the real Clipy panel, in its own always-on-top window (built by the app itself) ---- */
 function openClipyChat(question) {
-  if (clipyWin && !clipyWin.isDestroyed()) {
-    clipyWin.show();
-    clipyWin.focus();
-    if (question) clipyWin.webContents.send("clipy:init", { question: question });
-    return;
-  }
-  const a = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
-  const w = 400,
-    h = 540;
-  const win = new BrowserWindow({
-    width: w,
-    height: h,
-    x: Math.round(a.x + a.width - w - 40),
-    y: Math.round(a.y + Math.max(20, (a.height - h) / 2)),
-    minWidth: 320,
-    minHeight: 360,
-    alwaysOnTop: true,
-    minimizable: true,
-    maximizable: false,
-    fullscreenable: false,
-    show: false,
-    backgroundColor: "#c0c0c0",
-    title: "Clipy",
-    icon: fs.existsSync(path.join(__dirname, "build", "icon.png")) ? path.join(__dirname, "build", "icon.png") : undefined,
-    webPreferences: { preload: path.join(__dirname, "aux-preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
-  });
-  clipyWin = win;
-  win.setAlwaysOnTop(true, "floating");
-  win.removeMenu();
-  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
-  win.webContents.on("will-navigate", (ev) => ev.preventDefault());
-  win.loadFile(path.join(__dirname, "clipy.html"));
-  win.webContents.once("did-finish-load", () => {
-    win.show();
-    win.focus();
-    if (question) win.webContents.send("clipy:init", { question: question });
-  });
-  win.on("closed", () => {
-    if (clipyWin === win) clipyWin = null;
-  });
+  return sendCmd(question ? "clipy:" + String(question).slice(0, 2000) : "clipy");
 }
 
 function applyLoginItem() {
@@ -946,32 +904,6 @@ function registerDesktopIpc() {
     openClipyChat(p && typeof p.question === "string" ? p.question.slice(0, 2000) : "");
     return { ok: true };
   });
-  ipcMain.handle("clipy:ask", async (e, p) => {
-    if (!clipyWin || clipyWin.isDestroyed() || e.sender !== clipyWin.webContents) return { ok: false, text: "Not allowed." };
-    const text = p && typeof p.text === "string" ? p.text.trim().slice(0, 2000) : "";
-    if (!text) return { ok: false, text: "" };
-    const wc = await whenMainReady();
-    const id = ++askSeq;
-    return new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        pendingAsks.delete(id);
-        resolve({ ok: false, text: "Clipy took too long to answer. Try again." });
-      }, 90000);
-      pendingAsks.set(id, (r) => {
-        clearTimeout(timer);
-        resolve(r);
-      });
-      wc.send("focusdesk:ask", { id: id, text: text });
-    });
-  });
-  ipcMain.on("focusdesk:askReply", (e, r) => {
-    if (!trusted(e) || !r) return;
-    const done = pendingAsks.get(r.id);
-    if (!done) return;
-    pendingAsks.delete(r.id);
-    done({ ok: !!r.ok, text: String(r.text || "").slice(0, 20000) });
-  });
-
   ipcMain.on("focusdesk:dueCounts", (e, d) => {
     if (!trusted(e) || !d) return;
     const n = (v) => Math.max(0, Math.min(9999, Math.floor(Number(v) || 0)));
@@ -1159,9 +1091,31 @@ function createWindow(hidden) {
   });
 
   // Links open in the real browser; the app window itself never navigates away.
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  win.webContents.setWindowOpenHandler(({ url, frameName }) => {
+    if (frameName === "focusdesk-clipy")
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          width: 400,
+          height: 580,
+          minWidth: 320,
+          minHeight: 380,
+          alwaysOnTop: true,
+          title: "Clipy",
+          icon: path.join(__dirname, "assets", "clipy.png"),
+          backgroundColor: "#c0c0c0",
+          autoHideMenuBar: true,
+          fullscreenable: false,
+        },
+      };
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: "deny" };
+  });
+  win.webContents.on("did-create-window", (child) => {
+    child.setAlwaysOnTop(true, "floating");
+    child.setMenuBarVisibility(false);
+    child.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+    child.webContents.on("will-navigate", (ev) => ev.preventDefault());
   });
   win.webContents.on("will-navigate", (ev, url) => {
     if (isAppUrl(url)) return;

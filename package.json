@@ -48,7 +48,6 @@
     "files": [
       "main.js",
       "preload.js",
-      "clipy.html",
       "timer-mini.html",
       "aux-preload.js",
       "assets/**",

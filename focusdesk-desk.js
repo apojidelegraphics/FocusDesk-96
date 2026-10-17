@@ -76,18 +76,6 @@
     var r = typeof window.__focusdeskCapture === "function" ? window.__focusdeskCapture(p.kind, p.text) : null;
     if (r && r.msg) fd.captureDone({ msg: r.msg });
   });
-  fd.onAsk(function (p) {
-    var f = window.__focusdeskAsk;
-    if (typeof f !== "function") return fd.askReply({ id: p.id, ok: false, text: "Clipy isn't ready yet." });
-    Promise.resolve(f(p.text)).then(
-      function (r) {
-        fd.askReply({ id: p.id, ok: !!(r && r.ok), text: (r && r.text) || "" });
-      },
-      function () {
-        fd.askReply({ id: p.id, ok: false, text: "Something went wrong asking Clipy." });
-      }
-    );
-  });
   fd.onCommand(function (cmd) {
     if (typeof window.__focusdeskCmd === "function") window.__focusdeskCmd(cmd);
   });

@@ -2,8 +2,8 @@
 /* Preload for the small helper windows (mini timer, Clipy chat). Strict allow-lists only. */
 const { contextBridge, ipcRenderer } = require("electron");
 const SEND = new Set(["mini:cmd"]);
-const INVOKE = new Set(["clipy:ask"]);
-const ON = new Set(["mini:status", "clipy:init"]);
+const INVOKE = new Set([]);
+const ON = new Set(["mini:status"]);
 contextBridge.exposeInMainWorld("auxApi", {
   send: (ch, p) => {
     if (SEND.has(ch)) ipcRenderer.send(ch, p);

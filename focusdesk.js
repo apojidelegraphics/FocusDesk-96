@@ -5595,11 +5595,13 @@ window.addEventListener("error", function (e) {
     };
     var ic = ik[o.icon] || "info";
     var txt = el("div", { class: "dlg-t" }, o.text || "");
+    var host = dlgHost(),
+      hostW = host === desk ? innerWidth : host.ownerDocument.defaultView.innerWidth;
     var dlg = el("div", {
       class: "win dialog active",
       style:
         "width:" +
-        Math.min(o.width || 350, innerWidth - 16) +
+        Math.min(o.width || 350, hostW - 16) +
         "px;z-index:" +
         ++dz,
     });
@@ -5650,9 +5652,9 @@ window.addEventListener("error", function (e) {
       ),
       btns
     );
-    desk.append(dlg);
-    var dr = desk.getBoundingClientRect(),
-      n = desk.querySelectorAll(".dialog").length - 1;
+    host.append(dlg);
+    var dr = host.getBoundingClientRect(),
+      n = host.querySelectorAll(".dialog").length - 1;
     dlg.style.left =
       Math.max(0, (dr.width - dlg.offsetWidth) / 2 + (n % 5) * 18) + "px";
     dlg.style.top =
@@ -19738,59 +19740,14 @@ window.addEventListener("error", function (e) {
         save();
         refreshAll();
         openApp("notepad");
-      } else if (cmd === "backup-now") quickBackup();
+      } else if (cmd === "clipy") openClipyPopout("");
+      else if (cmd.indexOf("clipy:") === 0) openClipyPopout(cmd.slice(6));
+      else if (cmd === "backup-now") quickBackup();
       else if (cmd === "check-updates") checkUpdate(true);
       else if (cmd.indexOf("open:") === 0) {
         var id = cmd.slice(5);
         if (APPS[id]) openApp(id);
       }
-    };
-    /* Ask Clipy from the quick-capture Ask tab: same assistant and context as the Clipy panel. */
-    window.__focusdeskAsk = function (text) {
-      var v = clip(String(text || "").trim(), 2000);
-      if (!v) return Promise.resolve({ ok: false, text: "" });
-      if (!S.clipy || !Array.isArray(S.clipy.msgs)) S.clipy = { msgs: [], wotd: null, wotdHistory: [] };
-      function add(role, t) {
-        S.clipy.msgs.push({ role: role, text: t, at: Date.now() });
-        if (S.clipy.msgs.length > 200) S.clipy.msgs.splice(0, S.clipy.msgs.length - 200);
-        save();
-      }
-      add("user", v);
-      var m = clipyAssistant();
-      if (m === "off") {
-        var off = "Pick an assistant in Control Panel \u2192 Assistant, then try again.";
-        add("sys", off);
-        return Promise.resolve({ ok: false, text: off });
-      }
-      var hist = S.clipy.msgs
-        .slice(-10, -1)
-        .map(function (mm) {
-          return (mm.role === "user" ? "User: " : "Clipy: ") + mm.text;
-        })
-        .join("\n");
-      var prompt =
-        "You are Clipy, a warm, concise study companion built into FocusDesk 96. " +
-        "Answer in plain text (no markdown headers, no asterisks). Be practical and specific. " +
-        "If you don't know something about the user, say so instead of guessing.\n\n" +
-        "What you know about the user right now:\n" +
-        clipyContext() +
-        "\n\n" +
-        (hist ? "Conversation so far:\n" + hist + "\n\n" : "") +
-        "User: " +
-        v +
-        "\n\nClipy:";
-      return aiChat(m, prompt, { maxTokens: 1500 }).then(
-        function (r) {
-          var t = ((r && r.text) || "").trim() || "(no reply)";
-          add("assistant", t);
-          return { ok: true, text: t };
-        },
-        function (e) {
-          var t = copyFor(e);
-          add("sys", t);
-          return { ok: false, text: t };
-        }
-      );
     };
     /* Due counts for the tray menu and the Windows taskbar badge. */
     var dueT = 0;
@@ -19845,6 +19802,76 @@ window.addEventListener("error", function (e) {
         window.__focusdeskDue();
       } catch (e) {}
     }, 4000);
+  }
+
+  /* ---- Clipy in its own always-on-top window (desktop): the same panel, built into a child window ---- */
+  var clipyPop = null,
+    lastDoc = document;
+  function dlgHost() {
+    try {
+      if (clipyPop && !clipyPop.closed && lastDoc === clipyPop.document && clipyPop.document.body) return clipyPop.document.body;
+    } catch (e) {}
+    return desk;
+  }
+  ["pointerdown", "keydown"].forEach(function (ev) {
+    document.addEventListener(
+      ev,
+      function () {
+        lastDoc = document;
+      },
+      true
+    );
+  });
+  function openClipyPopout(question) {
+    question = String(question || "").trim();
+    if (clipyPop && !clipyPop.closed) {
+      try {
+        clipyPop.focus();
+      } catch (e) {}
+      if (question && clipyController && clipyController.ask) clipyController.ask(question);
+      return;
+    }
+    var w = window.open("", "focusdesk-clipy", "width=400,height=580");
+    if (!w) return;
+    clipyPop = w;
+    var d = w.document;
+    d.open();
+    d.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Clipy</title></head><body></body></html>');
+    d.close();
+    // same look as the main window: theme classes/variables and every stylesheet
+    d.documentElement.className = document.documentElement.className;
+    d.documentElement.style.cssText = document.documentElement.style.cssText;
+    d.body.className = document.body.className;
+    Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"], style'), function (n) {
+      d.head.appendChild(n.cloneNode(true));
+    });
+    var st = d.createElement("style");
+    st.textContent =
+      "html,body{margin:0;height:100%;overflow:hidden}body{position:relative;display:flex;flex-direction:column;background:#c0c0c0}";
+    d.head.appendChild(st);
+    var body = d.createElement("div");
+    body.className = "wbody";
+    body.style.cssText = "flex:1;min-height:0;overflow:hidden;margin:2px";
+    d.body.appendChild(body);
+    ["pointerdown", "keydown"].forEach(function (ev) {
+      d.addEventListener(
+        ev,
+        function () {
+          lastDoc = d;
+        },
+        true
+      );
+    });
+    w.addEventListener("unload", function () {
+      if (clipyPop === w) clipyPop = null;
+    });
+    buildClipyContent(body, { popout: true });
+    lastDoc = d;
+    setTimeout(function () {
+      var ta = d.querySelector("textarea");
+      if (ta) ta.focus();
+    }, 50);
+    if (question && clipyController && clipyController.ask) clipyController.ask(question);
   }
 
   function quickBackup() {
@@ -26393,7 +26420,8 @@ window.addEventListener("error", function (e) {
       if (ta) ta.focus();
     }, 0);
   }
-  function buildClipyContent(body) {
+  function buildClipyContent(body, opts) {
+    opts = opts || {};
     if (!S.clipy || !Array.isArray(S.clipy.msgs))
       S.clipy = { msgs: [], wotd: null, wotdHistory: [] };
     if (!S.clipy.wotdHistory) S.clipy.wotdHistory = [];
@@ -26511,7 +26539,7 @@ window.addEventListener("error", function (e) {
       var p =
         m === "off" ? { name: "No assistant", icon: "info" } : PROVIDERS[m];
       who.append(
-        pix(p.icon, 28),
+        opts.popout ? pix("clippy", 28) : pix(p.icon, 28),
         el(
           "div",
           { class: "who" },
@@ -26711,6 +26739,10 @@ window.addEventListener("error", function (e) {
             : null
         )
       );
+      // node.append(null) writes the text "null"; drop those strays (empty example / reason lines)
+      Array.prototype.slice.call(card.childNodes).forEach(function (n) {
+        if (n.nodeType === 3 && n.data === "null") n.remove();
+      });
       return card;
     }
     function paintMsgs() {
@@ -26791,6 +26823,9 @@ window.addEventListener("error", function (e) {
       );
     }
     clipyController = {
+      ask: function (t) {
+        send(t);
+      },
       seed: function (s) {
         if (!s || (!s.topic && !s.text)) return;
         var greeting = s.topic
