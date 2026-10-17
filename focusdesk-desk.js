@@ -44,6 +44,29 @@
       "\nA daily backup may be in the backups folder inside it.";
   }
 
+  /* ---------- advanced math: KaTeX (bundled, offline) ---------- */
+  (function () {
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "vendor/katex/katex.min.css";
+    document.head.appendChild(link);
+    function load(src, then) {
+      var sc = document.createElement("script");
+      sc.src = src;
+      sc.onload = then;
+      sc.onerror = function () {
+        console.error("[focusdesk] couldn't load " + src + "; using the built-in math renderer.");
+      };
+      document.head.appendChild(sc);
+    }
+    load("vendor/katex/katex.min.js", function () {
+      load("vendor/katex/mhchem.min.js", function () {
+        window.__focusdeskKatex = true;
+        window.dispatchEvent(new Event("focusdesk-katex"));
+      });
+    });
+  })();
+
   /* ---------- desktop 1.1 bridges ---------- */
   window.__focusdeskPlatform = init.platform || "";
   window.__focusdeskDPrefs = init.dprefs || {};
@@ -57,6 +80,7 @@
     return fd.setDesktopPrefs(p).then(function (r) {
       if (r && r.prefs) {
         window.__focusdeskDPrefs = r.prefs;
+        if (p && p.dueOverdue !== undefined && typeof window.__focusdeskDue === "function") window.__focusdeskDue();
         window.__focusdeskDStatus = { hotkeyOk: !!r.hotkeyOk, trayOk: !!r.trayOk, login: r.login };
       }
       return r;

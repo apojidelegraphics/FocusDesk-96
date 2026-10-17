@@ -1,7 +1,7 @@
 {
   "name": "focusdesk-96",
   "productName": "FocusDesk 96",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "FocusDesk 96 — a Windows 95-style study and productivity desktop, as a native app for macOS, Windows and Linux.",
   "main": "main.js",
   "author": {
@@ -23,18 +23,20 @@
   ],
   "scripts": {
     "start": "electron .",
-    "prebuild": "node scripts/build-icon.js",
+    "prebuild": "node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build": "electron-builder",
-    "prebuild:mac": "node scripts/build-icon.js",
+    "prebuild:mac": "node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build:mac": "electron-builder --mac dmg",
-    "prebuild:win": "node scripts/build-icon.js",
+    "prebuild:win": "node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build:win": "electron-builder --win nsis",
-    "prebuild:linux": "node scripts/build-icon.js",
-    "build:linux": "electron-builder --linux AppImage"
+    "prebuild:linux": "node scripts/build-icon.js && node scripts/vendor-katex.js",
+    "build:linux": "electron-builder --linux AppImage",
+    "postinstall": "node scripts/vendor-katex.js"
   },
   "devDependencies": {
     "electron": "^44.7.2",
     "electron-builder": "^26.15.3",
+    "katex": "^0.19.0",
     "sharp": "^0.35.5"
   },
   "build": {
@@ -58,7 +60,8 @@
       "focusdesk-desk.js",
       "focusdesk.css",
       "apojilogo.js",
-      "package.json"
+      "package.json",
+      "vendor/**"
     ],
     "mac": {
       "category": "public.app-category.education",

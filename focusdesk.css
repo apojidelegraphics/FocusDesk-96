@@ -3852,3 +3852,24 @@ html.dt-tb.dt-tb-off #desktop { top: 0; }
 .tx-align td:nth-child(even) { text-align: left; padding-left: 0.15em; }
 .tx-gather td { text-align: center; }
 .tod-bar.risk { background: #c00000; }
+
+/* ===== 1.2.1 / 2.7.2: offline marker, greeting bubble, polish ===== */
+.clipy-offline { color: #c00000; font-weight: bold; }
+.cm.greet { border-left: 3px solid #000080; }
+.btn:focus-visible, .in:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+}
+.in:focus-visible { outline-offset: -2px; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fdDlgIn { from { opacity: 0; transform: translateY(-6px) scale(0.985); } to { opacity: 1; transform: none; } }
+  @keyframes fdPopIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+  .win.dialog { animation: fdDlgIn 0.12s ease-out; }
+  .pop { animation: fdPopIn 0.08s ease-out; }
+  .btn, button { transition: background-color 0.08s linear; }
+}
+
+/* ===== desktop: KaTeX output ===== */
+.kx-block { display: block; text-align: center; margin: 8px 0; overflow-x: auto; overflow-y: hidden; }
+.kx-block .katex-display { margin: 0; }
+.kx .katex { font-size: 1.08em; }

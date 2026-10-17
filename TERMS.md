@@ -4,7 +4,7 @@
 **Publisher:** Apoji Delegraphics
 **Designed by:** Apoji Studios
 
-This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.0), the Browser Edition (Version 2.7.1), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
+This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.1), the Browser Edition (Version 2.7.2), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
 
 ---
 
@@ -16,8 +16,8 @@ This document governs the use, development, and distribution of Apoji Delegraphi
 
 These General Terms and Conditions ("T&C") apply to all users accessing or utilizing the following products (collectively, the "Products"):
 
-* a. **FocusDesk 96 Desktop Edition, Version 1.2.0**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
-* b. **FocusDesk 96 Browser Edition, Version 2.7.1**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
+* a. **FocusDesk 96 Desktop Edition, Version 1.2.1**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
+* b. **FocusDesk 96 Browser Edition, Version 2.7.2**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
 * c. **The FocusDesk 96 feature set**, consisting of: Habit Breaker, Achievements, the focus session log, LaTeX and image support in notes and flash cards, cloze and image-occlusion flash cards, the grade what-if projection, and the other apps in the Start menu.
 
 **1.2. Acceptance**
@@ -70,7 +70,7 @@ The grade calculator, GPA projection, and study statistics are planning aids. Th
 
 ## PART II: DESKTOP EDITION AGREEMENT
 
-This Part applies to the Desktop Edition (Version 1.2.0).
+This Part applies to the Desktop Edition (Version 1.2.1).
 
 ### 4. Installation, Builds, and Data Location
 
@@ -91,7 +91,7 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * c. **The tray or menu bar icon,** and the option to keep the application running there when You close the window.
 * d. **Open at login,** and the option to start hidden.
 * e. **The mini timer** and **Ask Clipy** windows, which stay on top of other windows until You close them.
-* f. **Due counts** for cards and tasks, shown in the tray or menu bar menu and, on Windows, as a badge on the taskbar icon. They are calculated on Your device and are not sent anywhere.
+* f. **Due counts** for cards, tasks and assignments (including a list of assignment titles and times, and, if You leave it on, overdue items), shown in the tray or menu bar menu and, on Windows, as a badge on the taskbar icon. They are calculated on Your device and are not sent anywhere.
 
 **4.4. Data Location**
 
@@ -119,7 +119,7 @@ Unless You state otherwise in writing, anything You contribute to the project (c
 
 ## PART III: BROWSER EDITION AND DEVELOPER TERMS
 
-This Part applies to the Browser Edition (Version 2.7.1), the Browser zip, and anyone building from the source code.
+This Part applies to the Browser Edition (Version 2.7.2), the Browser zip, and anyone building from the source code.
 
 ### 6. Browser Edition and Browser zip
 

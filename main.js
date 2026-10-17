@@ -506,6 +506,7 @@ function registerIpc() {
 const DEFAULT_DPREFS = {
   notifications: true,
   notifyAlways: true, // show native notifications even while FocusDesk is the front window
+  dueOverdue: true, // include overdue tasks and assignments in the tray / menu bar list
   hotkey: true,
   closeToTray: false,
   launchAtLogin: false,
@@ -653,7 +654,7 @@ function updateTrayTimer(t) {
   } catch (_) {}
 }
 
-let due = { cards: 0, tasks: 0, badge: null };
+let due = { cards: 0, tasks: 0, tasksOver: 0, assign: 0, assignOver: 0, items: [], badge: null };
 let lastTimer = null;
 let miniWin = null;
 
@@ -665,12 +666,21 @@ function sendCmd(cmd, show) {
 }
 
 function buildTrayMenu() {
-  const total = due.cards + due.tasks;
+  const total = due.cards + due.tasks + due.assign;
   const items = [{ label: "Open FocusDesk 96", click: showMainWindow }, { type: "separator" }];
   // Due counts live inside the menu (not on the icon) so nothing nags until you click it.
   if (total > 0) {
+    if (due.assign > 0) {
+      const over = due.assignOver ? " (" + due.assignOver + " overdue)" : "";
+      const sub = due.items.map((label) => ({ label: label, click: () => sendCmd("open:planner", true) }));
+      sub.push({ type: "separator" }, { label: "Open Assignment Planner", click: () => sendCmd("open:planner", true) });
+      items.push({ label: due.assign + (due.assign === 1 ? " assignment" : " assignments") + " due" + over, submenu: sub });
+    }
+    if (due.tasks > 0) {
+      const over = due.tasksOver ? " (" + due.tasksOver + " overdue)" : "";
+      items.push({ label: due.tasks + (due.tasks === 1 ? " task" : " tasks") + " due" + over, click: () => sendCmd("open:tasks", true) });
+    }
     if (due.cards > 0) items.push({ label: due.cards + (due.cards === 1 ? " card" : " cards") + " due", click: () => sendCmd("open:cards", true) });
-    if (due.tasks > 0) items.push({ label: due.tasks + (due.tasks === 1 ? " task" : " tasks") + " due today", click: () => sendCmd("open:tasks", true) });
   } else items.push({ label: "Nothing due right now", enabled: false });
   items.push(
     { type: "separator" },
@@ -696,7 +706,7 @@ function applyDue() {
       tray.setContextMenu(buildTrayMenu());
     } catch (_) {}
   }
-  const total = due.cards + due.tasks;
+  const total = due.cards + due.tasks + due.assign;
   try {
     if (process.platform === "win32" && mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.setOverlayIcon(total > 0 && due.badge ? nativeImage.createFromDataURL(due.badge) : null, total > 0 ? total + " due" : "");
@@ -910,6 +920,10 @@ function registerDesktopIpc() {
     due = {
       cards: n(d.cards),
       tasks: n(d.tasks),
+      tasksOver: n(d.tasksOver),
+      assign: n(d.assign),
+      assignOver: n(d.assignOver),
+      items: Array.isArray(d.items) ? d.items.slice(0, 10).map((x) => String(x).slice(0, 90)) : [],
       badge: typeof d.badge === "string" && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(d.badge) && d.badge.length < 40000 ? d.badge : null,
     };
     applyDue();

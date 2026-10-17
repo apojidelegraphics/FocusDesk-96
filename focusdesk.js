@@ -20,8 +20,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.7.1";
-  var VERSION_DESKTOP = "1.2.0";
+  var VERSION_BROWSER = "2.7.2";
+  var VERSION_DESKTOP = "1.2.1";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -36,6 +36,29 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.7.2",
+      date: "October 2026",
+      title: "Merge keeps your look, offline marker, Clipy greeting",
+      apps: [],
+      notes: [
+        "Merging a backup can now bring over its look too: theme, icons, cursors and wallpaper. It's ticked automatically when your own look is still the default. Pictures, focus sessions and badges from the backup merge in as well.",
+        "Clipy and Control Panel mark the assistant as offline when you're disconnected or it can't be reached. Local models are not affected.",
+        "Clipy always opens with a greeting, even in a new chat.",
+        "Smoother dialogs and menus, clearer keyboard focus, and a friendlier message when the assistant can't connect.",
+      ],
+    },
+    {
+      v: "1.2.1",
+      date: "October 2026",
+      title: "Desktop 1.2.1: full LaTeX, assignments in the menu bar",
+      apps: [],
+      notes: [
+        "Math is now rendered by KaTeX, bundled with the app and working offline: boxed and cancelled terms, aligned multi-line equations, arrays, colours, and chemistry with \\ce{H2O}.",
+        "The menu bar / tray menu now lists the assignments due today, with a submenu of titles and times. A new switch in Control Panel \u2192 Desktop decides whether overdue tasks and assignments are included.",
+        "Includes browser version 2.7.2: merge keeps your look, an offline marker for assistants, and Clipy's always-on greeting.",
       ],
     },
     {
@@ -2052,6 +2075,20 @@ window.addEventListener("error", function (e) {
   var TEX_BB = { R: "\u211d", Z: "\u2124", N: "\u2115", Q: "\u211a", C: "\u2102", P: "\u2119" };
   var TEX_ACC = { hat: "^", widehat: "^", tilde: "~", widetilde: "~", vec: "\u2192", dot: "\u02d9", ddot: "\u00a8", check: "\u02c7", acute: "\u00b4", grave: "`" };
   function texToHtml(src, block) {
+    /* Desktop bundles KaTeX (and the chemistry extension): full LaTeX, offline. The built-in renderer below is the fallback. */
+    if (window.__focusdeskKatex && window.katex) {
+      try {
+        var kh = window.katex.renderToString(String(src || ""), {
+          displayMode: !!block,
+          throwOnError: false,
+          strict: "ignore",
+          trust: false,
+          maxExpand: 1000,
+          maxSize: 60,
+        });
+        return block ? '<div class="kx-block">' + kh + "</div>" : '<span class="kx">' + kh + "</span>";
+      } catch (e) {}
+    }
     var s = String(src || ""),
       p = 0,
       n = s.length,
@@ -3156,7 +3193,47 @@ window.addEventListener("error", function (e) {
       });
   }
   var capSample = null;
+  /* ---- is the assistant reachable? cloud ones need a connection; the local model only fails if it can't be reached ---- */
+  var aiFail = {},
+    aiNetListeners = {};
+  function assistantState(m) {
+    if (m === "off") return { ok: false, off: true, why: "" };
+    var local = m === "ollama";
+    if (!local && navigator.onLine === false) return { ok: false, why: "offline" };
+    if (aiFail[m] && Date.now() - aiFail[m] < 90000) return { ok: false, why: local ? "can't reach your local model" : "can't reach the provider" };
+    return { ok: true, why: "" };
+  }
+  function fireAiNet() {
+    Object.keys(aiNetListeners).forEach(function (k) {
+      try {
+        aiNetListeners[k]();
+      } catch (e) {}
+    });
+  }
+  window.addEventListener("online", function () {
+    aiFail = {};
+    fireAiNet();
+  });
+  window.addEventListener("offline", fireAiNet);
   function aiChat(prov, prompt, opts) {
+    return aiChat0(prov, prompt, opts).then(
+      function (r) {
+        if (aiFail[prov]) {
+          delete aiFail[prov];
+          fireAiNet();
+        }
+        return r;
+      },
+      function (e) {
+        if (e && e.code === "network") {
+          aiFail[prov] = Date.now();
+          fireAiNet();
+        }
+        throw e;
+      }
+    );
+  }
+  function aiChat0(prov, prompt, opts) {
     opts = opts || {};
     var p = PROVIDERS[prov];
     if (!p) return Promise.reject({ code: "no_backend" });
@@ -3263,8 +3340,13 @@ window.addEventListener("error", function (e) {
       return "That account has no credit left. Try a free model.";
     if (c === "bad_model") return "The provider couldn't use that model.";
     if (c === "empty") return "The model returned an empty answer.";
-    if (c === "network")
+    if (c === "network") {
+      if (navigator.onLine === false)
+        return "You're offline, so this assistant can't be reached. It will work again when you're back online.";
+      if (window.self === window.top)
+        return "Couldn't reach the assistant. Check your connection (or that your local model is running), then try again.";
       return "Couldn't reach the provider. Pages inside Claude block outside connections — download the page and open it in your browser (or host it).";
+    }
     if (c === "not_granted") return "Claude access was declined for this page.";
     if (c === "rate_limited")
       return "Too many requests, or a usage limit was reached.";
@@ -12307,6 +12389,34 @@ window.addEventListener("error", function (e) {
         Object.keys(incoming.games).forEach(function (k) {
           S.games[k] = Math.max(S.games[k] || 0, incoming.games[k] || 0);
         });
+      /* pictures used by merged notes and cards, the focus log, and badges */
+      if (isObj(incoming.images))
+        Object.keys(incoming.images).forEach(function (k) {
+          if (!S.images[k] && Object.keys(S.images).length < 200) {
+            S.images[k] = incoming.images[k];
+            added++;
+          }
+        });
+      if (Array.isArray(incoming.sessions)) {
+        var seenS = {};
+        S.sessions.forEach(function (x) {
+          seenS[x.t + ":" + x.m] = 1;
+        });
+        incoming.sessions.forEach(function (x) {
+          if (seenS[x.t + ":" + x.m]) return;
+          S.sessions.push(x);
+          seenS[x.t + ":" + x.m] = 1;
+          added++;
+        });
+        S.sessions.sort(function (a, b) {
+          return a.t - b.t;
+        });
+        if (S.sessions.length > 3000) S.sessions.splice(0, S.sessions.length - 3000);
+      }
+      if (isObj(incoming.ach))
+        Object.keys(incoming.ach).forEach(function (k) {
+          if (!S.ach[k] || incoming.ach[k] < S.ach[k]) S.ach[k] = incoming.ach[k];
+        });
       save();
       refreshAll();
       draw();
@@ -12320,6 +12430,44 @@ window.addEventListener("error", function (e) {
       out.folders = Array.isArray(o.folders) ? o.folders.length : 0;
       out.statsDays = isObj(o.stats) ? Object.keys(o.stats).length : 0;
       return out;
+    }
+    var APPEARANCE_KEYS = ["bg", "wallMode", "grey", "pattern", "theme", "accent", "cursor", "cursorColors", "iconTheme", "tritone", "iconGrid", "saver", "saverMin", "soundPack", "noteSize", "showClipy", "todayOrder"];
+    function sameJ(a, b) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+    function appearanceIsDefault() {
+      var d = defaults().prefs;
+      return !wallData && APPEARANCE_KEYS.every(function (k) {
+        return sameJ(S.prefs[k], d[k]);
+      });
+    }
+    function backupHasLook(inc, wall) {
+      var d = defaults().prefs;
+      return !!wall || (isObj(inc.prefs) && APPEARANCE_KEYS.some(function (k) {
+        return inc.prefs[k] !== undefined && !sameJ(inc.prefs[k], d[k]);
+      }));
+    }
+    function adoptAppearance(inc, wall) {
+      if (isObj(inc.prefs))
+        APPEARANCE_KEYS.forEach(function (k) {
+          if (inc.prefs[k] !== undefined) S.prefs[k] = JSON.parse(JSON.stringify(inc.prefs[k]));
+        });
+      if (wall) {
+        wallData = wall;
+        try {
+          localStorage.setItem(WALLKEY, wall);
+        } catch (e) {}
+      }
+      applyWall();
+      applyBg();
+      applyCursor();
+      refreshIcons();
+      setSpk();
+      mountClipy();
+      flush();
+      refreshAll();
+      draw();
+      paintThemes();
     }
     function tryRestore(text, merge) {
       var p = null;
@@ -12376,6 +12524,8 @@ window.addEventListener("error", function (e) {
         }
       }
       if (merge) {
+        var hasLook = backupHasLook(incoming, topWall),
+          lookChk = el("input", { type: "checkbox", checked: appearanceIsDefault() });
         msgBox({
           title: "Merge Backup",
           icon: "q",
@@ -12383,16 +12533,26 @@ window.addEventListener("error", function (e) {
           text:
             summary +
             "\n\nMerge adds any items from the backup that aren't already present.",
+          extra: hasLook
+            ? el(
+                "label",
+                { class: "row", style: "gap:6px;align-items:center;margin-top:6px;text-align:left" },
+                lookChk,
+                "Also bring over the backup's look: theme, icons, cursors and wallpaper" +
+                  (appearanceIsDefault() ? "" : " (replaces yours)")
+              )
+            : null,
           buttons: [
             {
               label: "Merge",
               fn: function () {
                 var n = mergeData(incoming);
-                restoreWall();
+                var look = hasLook && lookChk.checked;
+                if (look) adoptAppearance(incoming, topWall);
                 msgBox({
                   title: "Merge",
                   icon: "info",
-                  text: "Merged " + n + " new item(s).",
+                  text: "Merged " + n + " new item(s)." + (look ? " The backup's look was applied too." : ""),
                 });
               },
             },
@@ -13025,12 +13185,28 @@ window.addEventListener("error", function (e) {
         el(
           "div",
           { class: "dim", style: "padding:4px 0 0" },
-          "Keys stay in this browser only and are never written into backup files."
+          window.__focusdeskIsDesktop
+            ? "Keys stay on this computer (in keys.json) and are never written into backup files."
+            : "Keys stay in this browser only and are never written into backup files."
         )
       );
     }
+    var aiStatus = el("div", { class: "dim", style: "padding:0 0 4px" });
+    function paintAiStatus() {
+      var m = clipyAssistant(),
+        st = assistantState(m);
+      aiStatus.textContent =
+        m === "off"
+          ? "No assistant selected."
+          : st.ok
+          ? "Ready: " + PROVIDERS[m].name + " is available."
+          : PROVIDERS[m].name + " is unavailable (" + st.why + ")." + (m !== "ollama" && st.why === "offline" ? " A local model (M.X.E.S.) still works offline." : "");
+      aiStatus.style.color = m !== "off" && !st.ok ? "#c00000" : "";
+    }
+    aiNetListeners.cp = paintAiStatus;
+    paintAiStatus();
     drawAI();
-    var aiBox = el("fieldset", null, el("legend", null, "Assistant"), aiC);
+    var aiBox = el("fieldset", null, el("legend", null, "Assistant"), aiStatus, aiC);
     var aboutInfo = el("div", {
         class: "stats",
         style: "grid-template-columns:auto 1fr",
@@ -13188,6 +13364,7 @@ window.addEventListener("error", function (e) {
                 }),
                 testOut
               ),
+              opt("dueOverdue", "Show overdue tasks and assignments in the " + tray + " menu, too", true),
               opt("hotkey", "Quick capture hotkey: " + (mac ? "Cmd" : "Ctrl") + "+Shift+Space", true),
               opt("closeToTray", "Keep running in the " + tray + " when I close the window", false),
               opt("launchAtLogin", "Open FocusDesk when I log in", false),
@@ -19769,20 +19946,54 @@ window.addEventListener("error", function (e) {
     window.__focusdeskDue = function () {
       if (!window.focusdesk || !window.focusdesk.setDueCounts) return;
       var now = Date.now(),
+        sod = new Date(),
         eod = new Date();
+      sod.setHours(0, 0, 0, 0);
       eod.setHours(23, 59, 59, 999);
+      var overOn = (window.__focusdeskDPrefs || {}).dueOverdue !== false;
       var cards = S.cards.filter(function (c) {
-          return (c.dueAt || 0) <= now;
-        }).length,
-        tasks = S.tasks.filter(function (t) {
-          return !t.done && t.due && t.due <= eod.getTime();
-        }).length;
+        return (c.dueAt || 0) <= now;
+      }).length;
+      function split(list) {
+        var today = [],
+          over = [];
+        list.forEach(function (x) {
+          if (x.done || !x.due) return;
+          if (x.due >= sod.getTime() && x.due <= eod.getTime()) today.push(x);
+          else if (x.due < sod.getTime() && overOn) over.push(x);
+        });
+        return { today: today, over: over };
+      }
+      var t = split(S.tasks),
+        a = split(S.assign);
+      var items = a.over
+        .concat(a.today)
+        .sort(function (x, y) {
+          return x.due - y.due;
+        })
+        .slice(0, 10)
+        .map(function (x) {
+          var d = new Date(x.due),
+            late = x.due < sod.getTime(),
+            when = late || x.allDay ? d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : fmt12(d);
+          return clip((late ? "Overdue: " : "") + x.title + (x.course ? " (" + x.course + ")" : ""), 48) + " \u2014 " + when;
+        });
+      var total = cards + t.today.length + t.over.length + a.today.length + a.over.length;
       window.focusdesk.setDueCounts({
         cards: cards,
-        tasks: tasks,
-        badge: window.__focusdeskPlatform === "win32" && cards + tasks > 0 ? makeBadge(cards + tasks) : null,
+        tasks: t.today.length + t.over.length,
+        tasksOver: t.over.length,
+        assign: a.today.length + a.over.length,
+        assignOver: a.over.length,
+        items: items,
+        badge: window.__focusdeskPlatform === "win32" && total > 0 ? makeBadge(total) : null,
       });
     };
+    window.addEventListener("focusdesk-katex", function () {
+      try {
+        refreshAll();
+      } catch (e) {}
+    });
     window.__focusdeskScheduleDue = function () {
       if (dueT) return;
       dueT = setTimeout(function () {
@@ -26549,7 +26760,10 @@ window.addEventListener("error", function (e) {
             null,
             m === "off"
               ? "pick an assistant in Control Panel \u2192 Assistant"
-              : "powered by " + p.name
+              : "powered by " + p.name,
+            m !== "off" && !assistantState(m).ok
+              ? el("span", { class: "clipy-offline" }, " \u2022 " + assistantState(m).why)
+              : null
           )
         ),
         el(
@@ -26748,14 +26962,15 @@ window.addEventListener("error", function (e) {
     function paintMsgs() {
       msgs.textContent = "";
       msgs.append(wotdCard());
-      if (!S.clipy.msgs.length)
-        msgs.append(
-          el(
-            "div",
-            { class: "cm sys" },
-            "Ask me anything \u2014 what's due, how your week went, or just chat."
-          )
-        );
+      /* always the first message, even in a fresh chat; it isn't part of the saved conversation */
+      msgs.append(
+        el(
+          "div",
+          { class: "cm assistant greet" },
+          el("span", { class: "who2" }, "Clipy"),
+          "Hey, I'm Clipy. Ask me anything about your schedule, what's due, or just say hi."
+        )
+      );
       S.clipy.msgs.slice(-60).forEach(function (m) {
         msgs.append(bubble(m));
       });
@@ -26773,6 +26988,10 @@ window.addEventListener("error", function (e) {
           "sys",
           "Pick an assistant in Control Panel \u2192 Assistant, then try again."
         );
+        return;
+      }
+      if (navigator.onLine === false && m !== "ollama") {
+        pushMsg("sys", "You're offline, so " + PROVIDERS[m].name + " can't be reached. Fun facts, tips and the word of the day still work. Try again when you're back online.");
         return;
       }
       busy = true;
@@ -27088,6 +27307,15 @@ window.addEventListener("error", function (e) {
     );
     paintWho();
     paintMsgs();
+    /* keep the "offline" marker honest when the connection comes and goes */
+    aiNetListeners[opts.popout ? "clipyPop" : "clipy"] = function () {
+      paintWho();
+      inp.placeholder =
+        clipyAssistant() !== "off" && !assistantState(clipyAssistant()).ok
+          ? "Clipy's assistant is unavailable right now (" + assistantState(clipyAssistant()).why + ")"
+          : "Ask Clipy anything\u2026 (Enter to send, Shift+Enter for a new line)";
+    };
+    aiNetListeners[opts.popout ? "clipyPop" : "clipy"]();
     if (!curWotd) refreshWotd(false);
   }
 

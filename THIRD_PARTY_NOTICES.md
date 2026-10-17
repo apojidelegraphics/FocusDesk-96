@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-FocusDesk 96 is released under the MIT License (see `LICENSE`). The FocusDesk 96 code has **no runtime dependencies**: the browser version is plain HTML, CSS, and JavaScript, and it bundles no fonts, images, or libraries from other projects.
+FocusDesk 96 is released under the MIT License (see `LICENSE`). The FocusDesk 96 code has no runtime dependencies: the browser version is plain HTML, CSS, and JavaScript with no libraries from other projects. The Desktop Edition adds KaTeX for math (listed below).
 
 The Desktop Edition is packaged with the following third-party software.
 
@@ -11,6 +11,12 @@ Copyright (c) Electron contributors. Copyright (c) 2013-2020 GitHub Inc.
 https://github.com/electron/electron
 
 Electron includes **Chromium** and its own third-party components, which are licensed under their respective open-source licenses. The complete notices are included with every installed copy of the Desktop Edition in the files `LICENSE` and `LICENSES.chromium.html` in the application folder.
+
+**KaTeX** (MIT License), including its chemistry extension (mhchem) and math fonts
+Copyright (c) 2013-2020 Khan Academy and other contributors.
+https://github.com/KaTeX/KaTeX
+
+The Desktop Edition renders math with KaTeX. A copy of its license is included with the app in `vendor/katex/LICENSE`. The Browser Edition uses FocusDesk's own built-in math renderer and does not include KaTeX.
 
 ## Used only to build the installers (not shipped)
 
