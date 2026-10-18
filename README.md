@@ -18,17 +18,21 @@ accounts and no cloud. Everything runs on your computer.
 ![FocusDesk 96](docs/screenshot.png)
 
 **Study tools**
-- 📅 Calendar — Month and Week views, drag to reschedule, click any hour to time-block
-- 📝 Notepad — Markdown editor with live preview, note linking, task checkboxes, templates
+- 📅 Calendar — Month and Week views, drag to reschedule, click any hour to time-block. Click the taskbar clock for a mini calendar with a dot under every day you have something to do, plus your timers
+- 🔗 Calendar Link — Load a `.ics` file from Canvas, Infinite Campus or Apple Calendar; assignments and classes flow into everything else
+- 📝 Notepad — Markdown editor with live preview, note linking, task checkboxes, templates, LaTeX math, and pasted or dropped images
 - 🗂 Folders — Group assignments and notes, search, filter by class
-- 🃏 Flash Cards — Real spaced repetition (SM-2), import from Quizlet
+- 🃏 Flash Cards — Real spaced repetition (SM-2), cloze cards, image-occlusion cards, import from Quizlet
 - ⏱ Focus Timer — Pomodoro with background sound and auto-logged stats
-- 📚 Grade Calculator — Current grade and exactly what you need on the rest
+- 📚 Grade Calculator — Current grade, exactly what you need on the rest, and a "what if" slider
 - 🎓 Class Schedule — Weekly class times, semester start/end
-- 📊 Study Stats — 14-day chart, 6-month heatmap, weekly goal, day streak
+- 📊 Study Stats — 14-day chart, 6-month heatmap, weekly goal, day streak, and your best hour of the day
 - 📈 Weekly Review — Full summary of any week
 - ✅ Tasks, Reminders, Habits, Countdowns
-- 📖 Assignment Planner, Formula Sheet, Periodic Table, Dictionary
+- 🚫 Habit Breaker — Track something you want to stop: clean days, a slip log, and a note on what triggered it
+- 🏆 Achievements — 30 badges
+- 📖 Assignment Planner, Formula Sheet, Dictionary
+- ⚗️ Periodic Table — All 118 elements, an element card (configuration, melting and boiling points, density, oxidation states), colour views, a temperature slider that melts and boils the elements, a molar mass calculator, a quiz, and flash cards from the elements
 - ✍️ Citation Maker — APA 7, MLA 9, Chicago
 - 🔢 Unit Converter, Equation Solver, Math Grapher, Randomizer
 - 🗑 Recycle Bin, 🔍 Find, 📦 Migrate
@@ -37,14 +41,48 @@ accounts and no cloud. Everything runs on your computer.
 - Clipy — your study companion in the corner
 - Works with Claude, OpenRouter, OpenAI, DeepSeek, or Gemini (bring your own key)
 - Runs fully offline with M.X.E.S. via Ollama or LM Studio
+- If an answer comes back broken (like a bare safety label), Clipy quietly tries again, and every answer has a Regenerate button
+- Clipy and Control Panel show when an assistant can't be reached
 
 **Extras**
 - 🎮 Games — Solitaire, Sudoku, Tetris, Snake, 2048, Memory, Pong, Minesweeper, Typing, Board Games
 - 🎨 12 colour themes + Tritone icon themes
 - 🖱 Colourable pixel-art cursors
-- 💾 Portable JSON data — back up, sync, or move between machines
+- 💾 Portable JSON data — back up, sync, or move between machines. Merging a backup can bring over its look too
+- 💬 Feedback — report a problem or suggest an idea from Control Panel
 
 ## What's new in the desktop version
+
+### New in 1.2.x
+
+- 🧪 **Full LaTeX, offline.** Math is drawn by [KaTeX](https://katex.org/), bundled inside the app: aligned
+  multi-line equations, arrays, boxed and cancelled terms, colours, and chemistry with `\ce{2H2 + O2 -> 2H2O}`.
+- 🍎 **Apple Calendar and Reminders (Mac).** In Calendar Link, choose which Apple calendars and Reminders lists
+  to follow. They're mirrored into your calendar and Tasks and refreshed each time you sync, or when FocusDesk
+  starts. FocusDesk only reads them and never changes them. macOS asks for permission first.
+- 🔗 **Calendar feed sync.** Paste your Canvas (or Google, Apple, school) calendar feed link once. FocusDesk fetches it when it
+  starts, adds new assignments and events, and updates changed due dates. The link is kept in `keys.json`,
+  never in your backups.
+- 🎵 **Now Playing.** A small always-on-top pill with the song, its album cover, a scrub bar, and play, pause,
+  next and previous. It works with Spotify and Apple Music on Mac, any media player on Linux (needs `playerctl`),
+  and the system media controls on Windows. Drag it anywhere; it remembers where you left it.
+- ⏱ **Mini timer.** The focus timer as a small draggable pill that stays on top of your other windows.
+- 🐿 **Ask Clipy pop-out.** Clipy gets his own always-on-top window in the bottom-right corner of your screen,
+  with the same conversation as the one in the app.
+- 📥 **Menu bar and tray.** FocusDesk can keep running in your menu bar or system tray. Its menu lists what's due:
+  cards, tasks and assignments, with an option to include or leave out overdue ones. It also starts a focus
+  session, opens the mini timer and Now Playing, and adds a quick task.
+- ⚡ **Quick capture.** Press `Cmd/Ctrl+Shift+Space` from any app to add a task, note, reminder, event or
+  question for Clipy. It understands "tomorrow at 5pm" and "in 30 min".
+- 🔔 **Native notifications** for reminders and when a focus session ends.
+- 📁 **Choose where backups go.** Pick any folder (Dropbox, iCloud Drive, an external drive) and how many days to keep
+  (7, 14, 30, or all). **File → Save Backup Now** makes one on demand.
+- 🪟 **Windows touches.** A slim title bar with a `⋯` menu, a taskbar badge with what's due, and open-at-login with
+  an option to start hidden.
+- ⬆️ **Update checker.** FocusDesk tells you when a new version is out and links to the download. Silent
+  auto-update isn't included yet.
+
+### Since 1.0
 
 - 📁 **Real files on your computer.** Your data lives in a plain, readable
   `data.json` in your OS's standard user-data folder. Back it up, sync it
@@ -52,8 +90,8 @@ accounts and no cloud. Everything runs on your computer.
 - 🖥 **Native menus.** Standard Edit, View, File and Help menus on every platform.
 - 💾 **Native file dialogs.** Save backups, import `.ics` calendars, and
   export migration files through your OS's real save/open dialogs.
-- 🔄 **Automatic daily backups.** Seven rolling snapshots, written straight
-  to disk, no more relying on browser storage.
+- 🔄 **Automatic daily backups.** Rolling snapshots, written straight to disk,
+  no more relying on browser storage.
 - 🪟 **Window state persists.** FocusDesk remembers its size and position.
 - 📦 **Full session restore.** Every window you had open comes back exactly
   where you left it, even after a full quit and relaunch.
@@ -66,7 +104,8 @@ Grab the installer for your platform from the
 - **macOS** — `.dmg` (Apple Silicon `arm64` and Intel `x64`)
 - **Windows** — `.exe`
 - **Linux** — `.AppImage`
-- **Browser (Chrome, Edge, Firefox)**: `FocusDesk-96-Browser-2.7.zip`. This is the **browser version** saved to your computer: unzip it and open `index.html`. It is not the desktop app, and it keeps data in your browser rather than in files, so use Control Panel → Save backup file regularly.
+- **Browser (Chrome, Edge, Firefox)**: `FocusDesk-96-Browser-*.zip`. This is the **browser version** saved to your computer: unzip it and open `index.html`. It is not the desktop app, and it keeps data in your browser rather than in files, so use Control Panel → Save backup file regularly.
+- **Try it online**: the browser version also runs as a website at <https://apojidelegraphics.github.io/FocusDesk-96/>, and you can install it as an app from Chrome or Edge. It keeps working offline after your first visit.
 
 ## First launch
 
@@ -99,7 +138,7 @@ chmod +x FocusDesk-96-*.AppImage
 ./FocusDesk-96-*.AppImage
 ```
 
-If it doesn't start, run it from a terminal once to see the message. On newer Ubuntu releases it may ask you to install `libfuse2`.
+If it doesn't start, run it from a terminal once to see the message. On newer Ubuntu releases it may ask you to install `libfuse2`. For Now Playing on Linux, install `playerctl`.
 
 ## Your data
 
@@ -118,17 +157,20 @@ Inside it:
 | `data.json` | All your FocusDesk data, pretty-printed and human-readable |
 | `wall.json` | Your desktop wallpaper (kept separate because it can be large) |
 | `settings.json` | Small app settings, such as custom note templates |
-| `keys.json` | Your AI assistant API keys (see the note below) |
-| `backups/` | Automatic daily backups, one per day, the newest 7 kept |
+| `desktop.json` | Desktop options: notifications, hotkey, tray, open at login, backup folder |
+| `keys.json` | Your AI assistant API keys and your calendar feed link (see the note below) |
+| `backups/` | Automatic daily backups, one per day (newest 7 kept by default; you can choose another folder and how many to keep) |
 | `migrate/` | A copy of every file the Migrate app exports |
 | `window-state.json` | Window size and position |
+| `mini-timer.json`, `now-playing.json` | Where you left the mini timer and Now Playing pills |
 
 **Back up or move to another computer:** quit FocusDesk, copy the folder (or just `data.json`),
 and put it in the same place on the other machine. Syncing the folder with Dropbox or similar
 works too; just don't run FocusDesk on two computers at the same moment.
 
 **Restore a backup:** quit FocusDesk, then copy a file from `backups/` over `data.json`. Or use
-**Control Panel → Restore from file…** inside the app and pick the backup.
+**Control Panel → Restore from file…** inside the app and pick the backup. **Merge from file…** adds
+what's in a backup to what you have, and can bring over its theme, icons, cursors and wallpaper too.
 
 **Open the folder:** use **File → Open Backups Folder** in the app.
 
@@ -136,9 +178,22 @@ All writes are atomic (written to a temporary file, then swapped in), so a crash
 can't leave you with a half-written file. If a data file is ever unreadable, FocusDesk sets it
 aside as `*.corrupt-<timestamp>`, starts fresh, and tells you.
 
-> **API keys are stored unencrypted in `keys.json` in your user data folder. Keep that file private.**
+> **API keys and your calendar feed link are stored unencrypted in `keys.json` in your user data folder. Keep that file private.**
 > It's a separate file so you can share `data.json` without sharing your keys. Backup files made
-> from inside the app never include keys.
+> from inside the app never include them.
+
+## What it connects to
+
+FocusDesk has no servers of its own and sends nothing to us. It only reaches out when you use a feature that needs it:
+
+- your **AI assistant**, if you add a key (or your own computer, if you use Ollama or LM Studio)
+- **Research** lookups (Wikipedia, Crossref, Open Library, Datamuse, DuckDuckGo)
+- the **update check**, which asks GitHub for the latest version
+- your **calendar feed link**, if you save one
+- **album covers** in Now Playing, from the music service's image server
+- **Feedback**, which opens a pre-filled GitHub page in your browser (nothing is sent until you press Submit)
+
+Apple Calendar, Reminders and Now Playing are read on your own computer and stay there.
 
 ## Development
 
@@ -151,18 +206,23 @@ npm install
 npm start
 ```
 
-`npm start` launches the app with your real user data folder. To develop against a throwaway
+`npm install` also copies KaTeX into `vendor/katex/` (that folder isn't committed). `npm start`
+launches the app with your real user data folder. To develop against a throwaway
 copy instead, set a different config location first, for example
 `XDG_CONFIG_HOME=/tmp/fd-dev npm start` on Linux.
 
 How it fits together:
 
 - `focusdesk.js`, `focusdesk.css`, `index.html`: the app. It is still plain vanilla JavaScript
-  and still runs on its own in a browser (browser version 2.6.1).
-- `main.js`: Electron main process. Files, backups, dialogs, menus, window state.
-- `preload.js`: the small `window.focusdesk` API. The page never touches `fs` itself.
+  and still runs on its own in a browser (browser version 2.7.x).
+- `main.js`: Electron main process. Files, backups, dialogs, menus, tray, window state, and the small pill windows.
+- `preload.js`, `aux-preload.js`: the small `window.focusdesk` API (and a smaller one for the pills). The page never touches `fs` itself.
 - `focusdesk-desk.js`: desktop shim loaded before `focusdesk.js`. It swaps `localStorage` for
-  files and browser downloads and file pickers for native dialogs.
+  files and browser downloads and file pickers for native dialogs, and loads KaTeX.
+- `nowplaying.js`: reads what's playing on this computer. `apple.js` and `helper/macos/`: the read-only
+  Apple Calendar and Reminders helper (Swift).
+- `capture.html`, `timer-mini.html`, `nowplaying.html`: the quick-capture window and the two pills.
+- `pwa/`: the manifest, icons and offline helper for the website version.
 
 ## Building
 
@@ -175,18 +235,23 @@ npm run build:win     # .exe   (run on Windows)
 npm run build:linux   # .AppImage (run on Linux)
 ```
 
-Output goes to `dist/`. The app icon is generated from `apojilogo.js` automatically before each
-build (`scripts/build-icon.js`).
+Output goes to `dist/`. Before each build the app icon is generated from `apojilogo.js`
+(`scripts/build-icon.js`) and KaTeX is copied in (`scripts/vendor-katex.js`). The Mac build also compiles the
+Swift helper into one program for both Apple Silicon and Intel (`scripts/build-mac-helper.js`); if that step
+fails, a stand-in is packaged and the app just says Apple Calendar isn't available in that build.
 
 **Releasing:** bump `version` in `package.json`, commit, then push a matching tag:
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.2.3
+git push origin v1.2.3
 ```
 
-The GitHub Actions workflow builds all three installers and attaches them to a **draft**
+The GitHub Actions workflow builds all three installers and the browser zip, and attaches them to a **draft**
 release. Review it on the Releases page and publish when you're happy.
+
+**The website:** a second workflow (`.github/workflows/pages.yml`) publishes the browser version to GitHub Pages
+whenever the app files change on `main`. One-time setup: Settings → Pages → Source → **GitHub Actions**.
 
 ## About Apoji
 
