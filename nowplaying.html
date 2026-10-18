@@ -31,6 +31,7 @@
       }
       button:active { border-color: #404040 #fff #fff #404040; }
       button:disabled { color: #808080; }
+      button.on { border-color: #404040 #fff #fff #404040; background: #dcdcdc; color: #000080; }
       #bar { display: flex; align-items: center; gap: 8px; padding-left: 22px; }
       #bar span { font: 11px "Courier New", monospace; color: #202020; min-width: 38px; }
       #bar span:last-child { text-align: right; }
@@ -48,6 +49,8 @@
           <button id="prev" title="Previous">&#9198;</button>
           <button id="go" title="Play / pause">&#9654;</button>
           <button id="next" title="Next">&#9197;</button>
+          <button id="shuf" title="Shuffle">&#8644;</button>
+          <button id="rep" title="Repeat">&#8635;</button>
           <button id="x" title="Close">&#10005;</button>
         </div>
       </div>
@@ -60,6 +63,7 @@
     <script>
       var pill = document.getElementById("pill"), info = document.getElementById("info"), title = document.getElementById("title"), artist = document.getElementById("artist"), go = document.getElementById("go"), art = document.getElementById("art");
       var seek = document.getElementById("seek"), cur = document.getElementById("cur"), len = document.getElementById("len");
+      var shuf = document.getElementById("shuf"), rep = document.getElementById("rep");
       var ctl = [document.getElementById("prev"), go, document.getElementById("next")], lastArt = "";
       var base = { pos: 0, dur: 0, at: 0, playing: false }, scrubbing = false;
       function fmtT(s) {
@@ -98,6 +102,12 @@
         go.innerHTML = live && s.playing ? "&#10074;&#10074;" : "&#9654;";
         ctl.forEach(function (b) { b.disabled = !live; });
         setArt(live ? s.art || "" : "");
+        shuf.disabled = !live || s.shuffle == null;
+        shuf.classList.toggle("on", !!live && s.shuffle === true);
+        rep.disabled = !live || s.repeat == null;
+        rep.classList.toggle("on", !!live && (s.repeat === "all" || s.repeat === "one"));
+        rep.innerHTML = live && s.repeat === "one" ? "&#8635;1" : "&#8635;";
+        rep.title = "Repeat: " + (s.repeat === "one" ? "this song" : s.repeat === "all" ? "everything" : "off");
         base = live && s.duration > 0 && s.position != null ? { pos: s.position, dur: s.duration, at: Date.now(), playing: !!s.playing } : { pos: 0, dur: 0, at: 0, playing: false };
         paintBar();
       }
@@ -117,6 +127,8 @@
       document.getElementById("prev").onclick = function () { window.auxApi.send("np:cmd", "prev"); };
       go.onclick = function () { window.auxApi.send("np:cmd", "toggle"); };
       document.getElementById("next").onclick = function () { window.auxApi.send("np:cmd", "next"); };
+      shuf.onclick = function () { window.auxApi.send("np:cmd", "shuffle"); };
+      rep.onclick = function () { window.auxApi.send("np:cmd", "repeat"); };
       document.getElementById("x").onclick = function () { window.auxApi.send("np:cmd", "close"); };
       pill.ondblclick = function (e) { if (!e.target.closest("button, input")) window.auxApi.send("np:cmd", "open"); };
       /* Dragging is done here (not with the CSS drag region) so it works the same on every system. */

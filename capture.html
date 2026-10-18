@@ -33,6 +33,7 @@
     <div class="body">
       <div class="tabs" id="tabs"></div>
       <input id="in" autocomplete="off" spellcheck="false" />
+      <input id="in2" autocomplete="off" spellcheck="false" placeholder="Back of the card (the answer)" style="display:none;margin-top:6px" />
       <div class="hint" id="hint"></div>
     </div>
     <script>
@@ -41,9 +42,10 @@
         ["note", "Note", "A quick thought\u2026"],
         ["reminder", "Reminder", "Call mom at 5pm  \u00b7  or: in 30 min"],
         ["event", "Event", "Study group tomorrow at 3pm"],
+        ["card", "Card", "Front of the card (copied text goes here)"],
         ["ask", "Ask", "Ask Clipy anything\u2026"],
       ];
-      var cur = 0, tabs = document.getElementById("tabs"), inp = document.getElementById("in");
+      var cur = 0, tabs = document.getElementById("tabs"), inp = document.getElementById("in"), inp2 = document.getElementById("in2");
       function paint() {
         tabs.textContent = "";
         KINDS.forEach(function (k, i) {
@@ -55,28 +57,40 @@
           tabs.append(b);
         });
         inp.placeholder = KINDS[cur][2];
+        var card = KINDS[cur][0] === "card";
+        inp2.style.display = card ? "" : "none";
+        document.getElementById("hint").textContent = card ? "Enter: next / save   Tab: switch type   Esc: cancel" : "Tab: switch type   Enter: save   Esc: cancel";
+        window.captureApi.resize(card ? 172 : 126);
       }
-      document.getElementById("hint").textContent = "Tab: switch type   Enter: save   Esc: cancel";
-      inp.addEventListener("keydown", function (e) {
+      function keys(e) {
         if (e.key === "Tab") {
           e.preventDefault();
           cur = (cur + (e.shiftKey ? KINDS.length - 1 : 1)) % KINDS.length;
           paint();
+          (KINDS[cur][0] === "card" && inp.value.trim() ? inp2 : inp).focus();
         } else if (e.key === "Enter") {
           e.preventDefault();
           var t = inp.value.trim();
-          if (t) window.captureApi.submit(KINDS[cur][0], t);
+          if (KINDS[cur][0] === "card") {
+            if (!t) { inp.focus(); return; }
+            if (e.target === inp && !inp2.value.trim()) { inp2.focus(); return; }
+            window.captureApi.submit("card", JSON.stringify({ front: t, back: inp2.value.trim() }));
+          } else if (t) window.captureApi.submit(KINDS[cur][0], t);
         } else if (e.key === "Escape") {
           e.preventDefault();
           window.captureApi.cancel();
         }
-      });
+      }
+      inp.addEventListener("keydown", keys);
+      inp2.addEventListener("keydown", keys);
       window.captureApi.onInit(function (p) {
         var i = KINDS.map(function (k) { return k[0]; }).indexOf(p && p.kind);
         cur = i >= 0 ? i : 0;
         paint();
-        inp.value = "";
-        inp.focus();
+        inp.value = (p && p.kind === "card" && p.front) || "";
+        inp2.value = "";
+        if (p && p.kind === "card" && !p.front) document.getElementById("hint").textContent = "Nothing was copied yet. Copy some text first, or type the front here.";
+        (p && p.kind === "card" && p.front ? inp2 : inp).focus();
       });
       paint();
       inp.focus();

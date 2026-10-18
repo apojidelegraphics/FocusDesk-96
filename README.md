@@ -33,8 +33,9 @@ accounts and no cloud. Everything runs on your computer.
 - 🏆 Achievements — 30 badges
 - 📖 Assignment Planner, Formula Sheet, Dictionary
 - ⚗️ Periodic Table — All 118 elements, an element card (configuration, melting and boiling points, density, oxidation states), colour views, a temperature slider that melts and boils the elements, a molar mass calculator, a quiz, and flash cards from the elements
-- ✍️ Citation Maker — APA 7, MLA 9, Chicago
+- ✍️ Citation Maker — Websites, books, articles, videos, podcasts, lectures, datasets and AI text in APA, MLA, Chicago, Harvard, IEEE and Turabian. Fill in from a DOI or ISBN, in-text citations, BibTeX and RIS import and export, copy with italics, and `[@key]` markers that let a note cite its own sources
 - 🔢 Unit Converter, Equation Solver, Math Grapher, Randomizer
+- 🖌 Sketch Pad — Pencil, brush, shapes, arrows, eyedropper, select and move, zoom and pan, graph, lined and Cornell paper, undo and redo, insert a sketch into a note, or turn it into image-occlusion flash cards
 - 🗑 Recycle Bin, 🔍 Find, 📦 Migrate
 
 **Assistant**
@@ -54,6 +55,12 @@ accounts and no cloud. Everything runs on your computer.
 ## What's new in the desktop version
 
 ### New in 1.2.x
+
+- 🃏 **Flash card hotkey.** Press `Cmd/Ctrl+Shift+Y` anywhere to turn the text you just copied into a new flash card. The
+  quick capture window opens on the Card tab with the front filled in, so you only type the back.
+- ▶️ **Now Playing in the clock.** Click the taskbar clock for a player above the calendar: cover, scrub bar, play, pause, next,
+  previous, shuffle and repeat. An optional indicator next to the clock shows the song and opens it. The Now Playing pill has
+  shuffle and repeat too.
 
 - 🧪 **Full LaTeX, offline.** Math is drawn by [KaTeX](https://katex.org/), bundled inside the app: aligned
   multi-line equations, arrays, boxed and cancelled terms, colours, and chemistry with `\ce{2H2 + O2 -> 2H2O}`.
@@ -188,6 +195,7 @@ FocusDesk has no servers of its own and sends nothing to us. It only reaches out
 
 - your **AI assistant**, if you add a key (or your own computer, if you use Ollama or LM Studio)
 - **Research** lookups (Wikipedia, Crossref, Open Library, Datamuse, DuckDuckGo)
+- the **Citation Maker**, when you press Fill in with a DOI, an ISBN or (desktop app) a web link
 - the **update check**, which asks GitHub for the latest version
 - your **calendar feed link**, if you save one
 - **album covers** in Now Playing, from the music service's image server

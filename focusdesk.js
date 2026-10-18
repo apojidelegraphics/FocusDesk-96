@@ -20,8 +20,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.7.4";
-  var VERSION_DESKTOP = "1.2.3";
+  var VERSION_BROWSER = "2.7.5";
+  var VERSION_DESKTOP = "1.2.4";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -36,6 +36,31 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.7.5",
+      date: "October 2026",
+      title: "Citation Maker 2.0, Sketch Pad 2.0, characters fix",
+      apps: [],
+      notes: [
+        "Citation Maker: eight kinds of source (website, book, journal article, video, podcast, lecture, dataset and AI-generated text) in six styles (APA, MLA, Chicago, Harvard, IEEE and Turabian), with the in-text citation shown next to each one.",
+        "Citation Maker can fill itself in from a DOI or an ISBN (and from a web link in the desktop app), import and export BibTeX and RIS files, copy with italics and hanging indents, and change a whole bibliography to another style in one click.",
+        "In a note, type [@key] for an in-text citation and {{works-cited}} for the list of what that note cites. Tap [@] on a source to copy its marker.",
+        "Sketch Pad: redo, Ctrl/Cmd+Z, Arrow, Eyedropper, Select (drag a piece of your drawing around), zoom and pan, graph, lined and Cornell paper, pen pressure, Insert into note, and Make flash cards (turns your drawing into image-occlusion cards).",
+        "Fixed special characters (like the window close X) showing up as odd symbols on some websites.",
+      ],
+    },
+    {
+      v: "1.2.4",
+      date: "October 2026",
+      title: "Desktop 1.2.4: flash card hotkey, a player in the clock, shuffle and repeat",
+      apps: [],
+      notes: [
+        "Press Ctrl/Cmd+Shift+Y anywhere to turn whatever you just copied into a new flash card. It opens the quick capture window on the new Card tab with the front already filled in.",
+        "Click the taskbar clock for a Now Playing player above the calendar, with the cover, a scrub bar, and play, pause, next, previous, shuffle and repeat. Turn on Control Panel > Desktop > Show what's playing next to the taskbar clock for a small indicator you can click.",
+        "The Now Playing pill has shuffle and repeat buttons too.",
+        "Includes browser version 2.7.5: Citation Maker 2.0, Sketch Pad 2.0, and the special characters fix.",
       ],
     },
     {
@@ -325,7 +350,7 @@ window.addEventListener("error", function (e) {
     )
       return;
     var g = [
-      "# FocusDesk 96 — Complete Guide",
+      "# FocusDesk 96 \u2014 Complete Guide",
       "",
       "Welcome! This note is your manual. It's locked so it can't be edited or deleted by accident, but you can copy anything you want out of it.",
       "",
@@ -333,7 +358,7 @@ window.addEventListener("error", function (e) {
       "",
       "## What FocusDesk 96 is",
       "",
-      "A complete study environment that runs entirely in your browser. No accounts, no cloud, no tracking. Everything lives on your device. Close the tab, come back tomorrow — it's all still here.",
+      "A complete study environment that runs entirely in your browser. No accounts, no cloud, no tracking. Everything lives on your device. Close the tab, come back tomorrow \u2014 it's all still here.",
       "",
       "---",
       "",
@@ -352,23 +377,23 @@ window.addEventListener("error", function (e) {
       "",
       "Left to right:",
       "",
-      "1. **Start button** — the programs menu.",
-      "2. **Open windows** — click to switch, or click the active one to minimize.",
-      "3. **Tray** — the storage warning icon (only appears if saving is blocked), timer countdown, fullscreen toggle, sound on/off, and the clock.",
+      "1. **Start button** \u2014 the programs menu.",
+      "2. **Open windows** \u2014 click to switch, or click the active one to minimize.",
+      "3. **Tray** \u2014 the storage warning icon (only appears if saving is blocked), timer countdown, fullscreen toggle, sound on/off, and the clock.",
       "",
       "**Click the clock** to see a mini calendar.",
       "",
       "**Keyboard shortcuts:**",
-      "- `Alt+1` through `Alt+9` — jump to the Nth open window",
-      "- `Alt+Enter` — full screen",
-      "- `Escape` — close any open menu",
+      "- `Alt+1` through `Alt+9` \u2014 jump to the Nth open window",
+      "- `Alt+Enter` \u2014 full screen",
+      "- `Escape` \u2014 close any open menu",
       "",
       "---",
       "",
       "## The apps",
       "",
       "### Today",
-      "One glance at your whole day. Schedule, reminders, overdue items, what's due this week, exams, tasks, habits, countdowns and focus stats — all on one page. **Drag any section header** to reorder them. The order saves automatically.",
+      "One glance at your whole day. Schedule, reminders, overdue items, what's due this week, exams, tasks, habits, countdowns and focus stats \u2014 all on one page. **Drag any section header** to reorder them. The order saves automatically.",
       "",
       "### Calendar",
       "Month view and Week (time-block) view. In Month view, **drag an event chip** to another day to reschedule. In Week view, **click any hour slot** to add a study block, and **drag the bottom edge** of a chip to change its length. Import a `.ics` file from Canvas, Infinite Campus, Google Calendar, iCloud or any calendar app via **Calendar Link**.",
@@ -384,8 +409,8 @@ window.addEventListener("error", function (e) {
       "- **`#tag`** adds a searchable tag",
       "- **Ctrl+B** and **Ctrl+I** (Cmd on Mac) for bold and italic",
       "- **F5** stamps the current date and time",
-      "- **File → New from Template** for Cornell Notes, Lab Report, Essay Outline, and more",
-      "- **File → Import template from file** to save your own",
+      "- **File \u2192 New from Template** for Cornell Notes, Lab Report, Essay Outline, and more",
+      "- **File \u2192 Import template from file** to save your own",
       "- **Add to Folder** to file it into a Folder",
       "",
       "### Folders",
@@ -393,15 +418,15 @@ window.addEventListener("error", function (e) {
       "- **Search bar** filters items live",
       "- **Class dropdown** filters by course code (populated from your Calendar Link imports)",
       "- **Section headers** separate Assignments from Notes",
-      "- **Click an item** to open it — assignments open in the Assignment Viewer",
-      "- **Click the ×** on an item to remove it from the folder (the item itself isn't deleted)",
+      "- **Click an item** to open it \u2014 assignments open in the Assignment Viewer",
+      "- **Click the \u00d7** on an item to remove it from the folder (the item itself isn't deleted)",
       "",
       "### Assignment Viewer",
       "Click any assignment in Folders or Calendar Link to open it in its own window.",
-      "- **Its own notes area** — saves automatically",
+      "- **Its own notes area** \u2014 saves automatically",
       "- **Folder chips** show which folders it belongs to; click a chip to remove it",
       "- **Mark as done / Mark as open** button",
-      "- **Add to folder…** to file it",
+      "- **Add to folder\u2026** to file it",
       "",
       "### Reminders",
       "A reminder and a chime will pop up when it's time. Quick-add buttons for 10 min, 1 hour or tomorrow morning. Repeats (daily, weekdays, weekly, monthly) are supported.",
@@ -436,7 +461,7 @@ window.addEventListener("error", function (e) {
       "Build citations in APA 7, MLA 9 or Chicago. Copy to clipboard, add to your bibliography, or save the whole list to Notepad.",
       "",
       "### Find",
-      "Search everything at once — notes, tasks, assignments, events, reminders, classes, cards, courses, habits, countdowns, citations, folders.",
+      "Search everything at once \u2014 notes, tasks, assignments, events, reminders, classes, cards, courses, habits, countdowns, citations, folders.",
       "",
       "### Habit Tracker",
       "Daily habits with 7, 14, 30 or 90-day views. **Right-click any day cell** to attach a note. Shows current and best streaks.",
@@ -487,12 +512,12 @@ window.addEventListener("error", function (e) {
       "Your study companion lives in the bottom-right corner. Click him to chat. **Right-click him** for options: show a study tip, show a fun fact, sticky Word of the Day, or hide him.",
       "",
       "Clipy can:",
-      "- Chat about anything — what's due, how your week went, what to study first",
-      "- **Plan your week** — click the 'Plan my week' chip and he'll lay out study blocks you can send straight to your Calendar",
+      "- Chat about anything \u2014 what's due, how your week went, what to study first",
+      "- **Plan your week** \u2014 click the 'Plan my week' chip and he'll lay out study blocks you can send straight to your Calendar",
       "- Give you a **Word of the Day** (once per day, saved so it stays put)",
       "- **Mix tips and fun facts** into his nudges so you never get bored",
       "",
-      "Clipy needs an assistant key for most features. Go to **Control Panel → Assistant** to set one up.",
+      "Clipy needs an assistant key for most features. Go to **Control Panel \u2192 Assistant** to set one up.",
       "",
       "---",
       "",
@@ -502,13 +527,13 @@ window.addEventListener("error", function (e) {
       "Shows how much space you're using and whether autosave is working.",
       "",
       "### Backup",
-      "- **Save backup file…** — downloads a complete JSON backup",
-      "- **Restore from file…** — replaces everything with a backup",
-      "- **Merge from file…** — adds anything from a backup without deleting your current data",
-      "- **Export .csv** — for spreadsheets",
-      "- **Export appearance…** / **Import appearance…** — just the look",
-      "- **Migrate items…** — move items out to a file",
-      "- **Recover last restore point** — the automatic hourly snapshot",
+      "- **Save backup file\u2026** \u2014 downloads a complete JSON backup",
+      "- **Restore from file\u2026** \u2014 replaces everything with a backup",
+      "- **Merge from file\u2026** \u2014 adds anything from a backup without deleting your current data",
+      "- **Export .csv** \u2014 for spreadsheets",
+      "- **Export appearance\u2026** / **Import appearance\u2026** \u2014 just the look",
+      "- **Migrate items\u2026** \u2014 move items out to a file",
+      "- **Recover last restore point** \u2014 the automatic hourly snapshot",
       "",
       "### Display & Preferences",
       "12 colour themes plus custom desktop and accent colours. Icon themes (16-colour, monochrome, modern, and Tritone where you pick three colours). Colourable pixel cursors. Screen savers (Starfield, Mystify, Flying Text, Bubbles, Matrix, Pipes, Flurry, Warp Tunnel). Sound packs. Grey Mode. Clipy options.",
@@ -533,7 +558,7 @@ window.addEventListener("error", function (e) {
       "",
       "- Clearing your browser's site data **erases FocusDesk**",
       "- A browser cleanup tool might erase it",
-      "- **Save a backup file** regularly (Control Panel → Backup)",
+      "- **Save a backup file** regularly (Control Panel \u2192 Backup)",
       "",
       "FocusDesk takes an **automatic hourly snapshot** you can recover from, but that only protects against the last hour. Save a real backup for anything important.",
       "",
@@ -543,7 +568,7 @@ window.addEventListener("error", function (e) {
       "",
       "- **Notepad `[[Note Title]]` linking** turns your notes into a wiki. Link them together and never lose a train of thought.",
       "- **Calendar Link** is the fastest way to get assignments in. Import once a week.",
-      "- **Flash Cards** use real spaced repetition — the algorithm schedules reviews for you. Just grade honestly.",
+      "- **Flash Cards** use real spaced repetition \u2014 the algorithm schedules reviews for you. Just grade honestly.",
       "- **Clipy 'Plan my week'** is a genuine time-saver. Try it Sunday evening.",
       "- **Session persistence** reopens every window you had open when you come back.",
       "- **Drag sections** on Today to reorder. Whatever you use most goes at the top.",
@@ -595,13 +620,13 @@ window.addEventListener("error", function (e) {
       return false;
     }
     var body =
-      "FocusDesk 96 — Update " +
+      "FocusDesk 96 \u2014 Update " +
       VERSION +
       "\n" +
       new Date().toLocaleDateString() +
       "\n\n";
     fresh.forEach(function (p) {
-      body += "Version " + p.v + " — " + p.title + "  (" + p.date + ")\n";
+      body += "Version " + p.v + " \u2014 " + p.title + "  (" + p.date + ")\n";
       p.notes.forEach(function (n) {
         body += "  \u2022 " + n + "\n";
       });
@@ -784,6 +809,7 @@ window.addEventListener("error", function (e) {
         appleLists: [],
         appleAuto: false,
         appleRemAuto: false,
+        npTaskbar: false,
         appleLast: 0,
         appleMsg: "",
         calLast: 0,
@@ -1003,12 +1029,14 @@ window.addEventListener("error", function (e) {
         return isStr(b.text) && b.text.trim();
       })
       .map(function (b) {
-        return {
+        var r = {
           id: isStr(b.id) ? b.id : uid(),
           text: clip(b.text, 1500),
-          style:
-            ["apa", "mla", "chicago"].indexOf(b.style) >= 0 ? b.style : "apa",
+          style: ["apa", "mla", "chicago", "harvard", "ieee", "turabian"].indexOf(b.style) >= 0 ? b.style : "apa",
         };
+        if (isStr(b.key) && /^[A-Za-z0-9_\-]{1,40}$/.test(b.key)) r.key = b.key;
+        if (isObj(b.d) && CITE_TYPES.some(function (x) { return x[0] === b.d.type; })) r.d = { type: b.d.type, f: citeFieldsClean(b.d.f) };
+        return r;
       })
       .slice(0, 300);
     o.stickies = arr("stickies")
@@ -1432,6 +1460,7 @@ window.addEventListener("error", function (e) {
     o.prefs.appleLists = idList(pp.appleLists);
     o.prefs.appleAuto = pp.appleAuto === true;
     o.prefs.appleRemAuto = pp.appleRemAuto === true;
+    o.prefs.npTaskbar = pp.npTaskbar === true;
     o.prefs.appleLast = isNum(pp.appleLast) ? pp.appleLast : 0;
     o.prefs.appleMsg = isStr(pp.appleMsg) ? clip(pp.appleMsg, 160) : "";
     o.prefs.calLast = isNum(pp.calLast) ? pp.calLast : 0;
@@ -2515,7 +2544,7 @@ window.addEventListener("error", function (e) {
   }
 
   function mdToHtml(src) {
-    var lines = String(src || "").split("\n"),
+    var lines = expandCiteTokens(src).split("\n"),
       out = [],
       inCode = false,
       inList = null,
@@ -2912,7 +2941,7 @@ window.addEventListener("error", function (e) {
       name: "Lolbit",
       icon: "lolbit",
       kind: "openrouter",
-      blurb: "OpenRouter — one key, hundreds of models.",
+      blurb: "OpenRouter \u2014 one key, hundreds of models.",
     },
     handunit: {
       name: "HandUnit",
@@ -3432,9 +3461,9 @@ window.addEventListener("error", function (e) {
     var c = e && e.code;
     if (c === "cancelled") return "Stopped.";
     if (c === "no_backend")
-      return "Pick an assistant in Control Panel → Assistant first.";
+      return "Pick an assistant in Control Panel \u2192 Assistant first.";
     if (c === "no_key")
-      return "Add that assistant's API key in Control Panel → Assistant, then try again.";
+      return "Add that assistant's API key in Control Panel \u2192 Assistant, then try again.";
     if (c === "bad_key") return "The provider didn't accept that API key.";
     if (c === "no_credits")
       return "That account has no credit left. Try a free model.";
@@ -3445,7 +3474,7 @@ window.addEventListener("error", function (e) {
         return "You're offline, so this assistant can't be reached. It will work again when you're back online.";
       if (window.self === window.top)
         return "Couldn't reach the assistant. Check your connection (or that your local model is running), then try again.";
-      return "Couldn't reach the provider. Pages inside Claude block outside connections — download the page and open it in your browser (or host it).";
+      return "Couldn't reach the provider. Pages inside Claude block outside connections \u2014 download the page and open it in your browser (or host it).";
     }
     if (c === "not_granted") return "Claude access was declined for this page.";
     if (c === "rate_limited")
@@ -3465,7 +3494,7 @@ window.addEventListener("error", function (e) {
       return "The assistant couldn't help with that request.";
     if (c === "prompt_too_large") return "That note is too long.";
     if (c === "no_model")
-      return "M.X.E.S. needs a model name. Open Control Panel → Assistant, click \u201cFetch models\u201d next to M.X.E.S., then pick one from the list.";
+      return "M.X.E.S. needs a model name. Open Control Panel \u2192 Assistant, click \u201cFetch models\u201d next to M.X.E.S., then pick one from the list.";
     return (
       "Something went wrong with the assistant (" +
       (e && e.detail ? e.detail : c || "error") +
@@ -5477,7 +5506,7 @@ window.addEventListener("error", function (e) {
           closeWin(w);
         },
       },
-      "×"
+      "\u00d7"
     );
     var title = el(
       "div",
@@ -6052,7 +6081,7 @@ window.addEventListener("error", function (e) {
             draw();
           },
         },
-        "◄"
+        "\u25c4"
       ),
       title,
       el(
@@ -6077,7 +6106,7 @@ window.addEventListener("error", function (e) {
             draw();
           },
         },
-        "►"
+        "\u25ba"
       ),
       el(
         "button",
@@ -6196,7 +6225,7 @@ window.addEventListener("error", function (e) {
     var panel = el("div", { class: "sunk cal-panel" });
     var tIn = el("input", {
       class: "in",
-      placeholder: "Add a class, exam or study block…",
+      placeholder: "Add a class, exam or study block\u2026",
       style: "flex:1 1 150px",
     });
     var tm = el("input", { class: "in", type: "time", style: "width:96px" });
@@ -6656,7 +6685,7 @@ window.addEventListener("error", function (e) {
                   et +
                   " " +
                   e.title +
-                  " — drag the bottom edge to change length",
+                  " \u2014 drag the bottom edge to change length",
                 "data-event": e.id,
               },
               et + " " + e.title
@@ -6819,7 +6848,7 @@ window.addEventListener("error", function (e) {
     if (!S.notes.length) {
       S.notes.push({
         id: uid(),
-        text: "# Welcome to Notepad\n\nThis is a **Markdown** note. Everything saves automatically.\n\n## Headings\nUse # for H1, ## for H2, ### for H3 — or the toolbar above.\n\n## Emphasis\n**bold**, *italic*, ~~strikethrough~~, ==highlight==, and `inline code`.\n\n## Lists\n- bullet one\n- bullet two\n\n1. first item\n2. second item\n\n- [ ] unchecked task (click it in Preview!)\n- [x] done task\n\n## Links and tags\nVisit [Wikipedia](https://en.wikipedia.org) or tag with #study.\nLink another note with [[Biology Notes]].\n\n> A blockquote for a key idea.\n\nPress F5 to stamp the date and time.",
+        text: "# Welcome to Notepad\n\nThis is a **Markdown** note. Everything saves automatically.\n\n## Headings\nUse # for H1, ## for H2, ### for H3 \u2014 or the toolbar above.\n\n## Emphasis\n**bold**, *italic*, ~~strikethrough~~, ==highlight==, and `inline code`.\n\n## Lists\n- bullet one\n- bullet two\n\n1. first item\n2. second item\n\n- [ ] unchecked task (click it in Preview!)\n- [x] done task\n\n## Links and tags\nVisit [Wikipedia](https://en.wikipedia.org) or tag with #study.\nLink another note with [[Biology Notes]].\n\n> A blockquote for a key idea.\n\nPress F5 to stamp the date and time.",
         updated: Date.now(),
       });
       save();
@@ -6834,7 +6863,7 @@ window.addEventListener("error", function (e) {
     });
     var q = el("input", {
       class: "in",
-      placeholder: "Search notes…",
+      placeholder: "Search notes\u2026",
       oninput: function () {
         drawList();
       },
@@ -6852,7 +6881,7 @@ window.addEventListener("error", function (e) {
     var ta = el("textarea", {
       class: "in np-ta",
       spellcheck: "false",
-      placeholder: "Start typing…",
+      placeholder: "Start typing\u2026",
       style:
         "font-size:" +
         (S.prefs.noteSize || 13) +
@@ -7239,7 +7268,7 @@ window.addEventListener("error", function (e) {
       max: "96",
       step: "1",
       value: S.prefs.noteSize || 13,
-      title: "Editor text size (8–96 px)",
+      title: "Editor text size (8\u201396 px)",
       oninput: function () {
         var v = parseInt(this.value, 10);
         if (!isNum(v)) return;
@@ -7267,32 +7296,32 @@ window.addEventListener("error", function (e) {
         lineToggle("### ");
       }),
       el("span", { style: "width:6px" }),
-      fmtBtn("B", "Bold — **text**", function () {
+      fmtBtn("B", "Bold \u2014 **text**", function () {
         wrapSel("**", "**", "bold text");
       }),
-      fmtBtn("I", "Italic — *text*", function () {
+      fmtBtn("I", "Italic \u2014 *text*", function () {
         wrapSel("*", "*", "italic text");
       }),
-      fmtBtn("S", "Strikethrough — ~~text~~", function () {
+      fmtBtn("S", "Strikethrough \u2014 ~~text~~", function () {
         wrapSel("~~", "~~", "struck text");
       }),
-      fmtBtn("==", "Highlight — ==text==", function () {
+      fmtBtn("==", "Highlight \u2014 ==text==", function () {
         wrapSel("==", "==", "highlighted");
       }),
-      fmtBtn("<>", "Inline code — `code`", function () {
+      fmtBtn("<>", "Inline code \u2014 `code`", function () {
         wrapSel("`", "`", "code");
       }),
       el("span", { style: "width:6px" }),
-      fmtBtn("•", "Bullet list", function () {
+      fmtBtn("\u2022", "Bullet list", function () {
         lineToggle("- ");
       }),
       fmtBtn("1.", "Numbered list", function () {
         lineToggle("1. ");
       }),
-      fmtBtn("\u2610", "Task list — - [ ] item", function () {
+      fmtBtn("\u2610", "Task list \u2014 - [ ] item", function () {
         lineToggle("- [ ] ");
       }),
-      fmtBtn("\u201C\u201D", "Blockquote — > text", function () {
+      fmtBtn("\u201C\u201D", "Blockquote \u2014 > text", function () {
         lineToggle("> ");
       }),
       fmtBtn("\u2014", "Horizontal rule", function () {
@@ -7563,7 +7592,7 @@ window.addEventListener("error", function (e) {
               }),
             },
             {
-              label: "Import template from file…",
+              label: "Import template from file\u2026",
               fn: function () {
                 var inp = el("input", {
                   type: "file",
@@ -7618,8 +7647,8 @@ window.addEventListener("error", function (e) {
                 inp.click();
               },
             },
-            { label: "Delete Note…", fn: delNote },
-            { label: "Save As .md…", fn: saveNote },
+            { label: "Delete Note\u2026", fn: delNote },
+            { label: "Save As .md\u2026", fn: saveNote },
             { sep: 1 },
             {
               label: "Add to Folder\u2026",
@@ -7643,7 +7672,7 @@ window.addEventListener("error", function (e) {
           return [
             { label: "Time/Date  F5", fn: stamp },
             {
-              label: "Insert Note Link…",
+              label: "Insert Note Link\u2026",
               fn: function () {
                 askText(
                   "Insert Note Link",
@@ -7655,7 +7684,7 @@ window.addEventListener("error", function (e) {
                 );
               },
             },
-            { label: "Find and Replace…", fn: findReplace },
+            { label: "Find and Replace\u2026", fn: findReplace },
             {
               label: "Word Wrap",
               check: wrapOn,
@@ -7682,11 +7711,11 @@ window.addEventListener("error", function (e) {
         items: function () {
           return [
             {
-              label: "Custom size…",
+              label: "Custom size\u2026",
               fn: function () {
                 askText(
                   "Font Size",
-                  "Editor text size in pixels (8–96):",
+                  "Editor text size in pixels (8\u201396):",
                   String(S.prefs.noteSize || 13),
                   function (v) {
                     var n = Math.max(8, Math.min(96, parseInt(v, 10) || 13));
@@ -7774,7 +7803,7 @@ window.addEventListener("error", function (e) {
   function appReminders(w) {
     var tx = el("input", {
       class: "in",
-      placeholder: "Remind me to…",
+      placeholder: "Remind me to\u2026",
       style: "flex:1 1 180px",
     });
     var dt = el("input", {
@@ -7894,7 +7923,7 @@ window.addEventListener("error", function (e) {
           el(
             "div",
             { class: "dim" },
-            "No reminders yet. Type one above — a dialog box and a chime will pop up when it's time (keep this tab open)."
+            "No reminders yet. Type one above \u2014 a dialog box and a chime will pop up when it's time (keep this tab open)."
           )
         );
       rs.forEach(function (r) {
@@ -8368,7 +8397,7 @@ window.addEventListener("error", function (e) {
       w.status(
         T.running
           ? T.mode === "focus"
-            ? "Focusing… stay on task."
+            ? "Focusing\u2026 stay on task."
             : "On a break."
           : "Timer stopped."
       );
@@ -8658,7 +8687,7 @@ window.addEventListener("error", function (e) {
     var paste = el("textarea", {
       class: "in",
       rows: 3,
-      placeholder: "…or paste the text of the .ics file here",
+      placeholder: "\u2026or paste the text of the .ics file here",
       style: 'width:100%;resize:vertical;font:11px "Courier New",monospace',
     });
     var how = el(
@@ -8675,7 +8704,7 @@ window.addEventListener("error", function (e) {
         el(
           "li",
           null,
-          "In Canvas, open Calendar and click “Calendar Feed” (lower right). Copy the link."
+          "In Canvas, open Calendar and click \u201cCalendar Feed\u201d (lower right). Copy the link."
         ),
         el(
           "li",
@@ -8701,12 +8730,12 @@ window.addEventListener("error", function (e) {
             el(
               "li",
               null,
-              "In Apple Calendar on Mac, or at icloud.com → Calendar, right-click the calendar you want."
+              "In Apple Calendar on Mac, or at icloud.com \u2192 Calendar, right-click the calendar you want."
             ),
             el(
               "li",
               null,
-              "Choose “Export…” (Mac) or “Share Calendar” then copy the public webcal link."
+              "Choose \u201cExport\u2026\u201d (Mac) or \u201cShare Calendar\u201d then copy the public webcal link."
             ),
             el("li", null, "Load the downloaded .ics below.")
           )
@@ -8722,7 +8751,7 @@ window.addEventListener("error", function (e) {
             el(
               "li",
               null,
-              "Open Calendar, then look for “Export” or “Subscribe to Calendar”."
+              "Open Calendar, then look for \u201cExport\u201d or \u201cSubscribe to Calendar\u201d."
             ),
             el(
               "li",
@@ -8758,7 +8787,7 @@ window.addEventListener("error", function (e) {
               fileIn.click();
             },
           },
-          "Browse for .ics…"
+          "Browse for .ics\u2026"
         ),
         el(
           "button",
@@ -9224,11 +9253,11 @@ window.addEventListener("error", function (e) {
       });
       w.status(
         open.length +
-          " open · " +
+          " open \u00b7 " +
           open.filter(function (a) {
             return a.due < now;
           }).length +
-          " overdue · " +
+          " overdue \u00b7 " +
           S.assign.length +
           " total"
       );
@@ -9389,7 +9418,7 @@ window.addEventListener("error", function (e) {
           el(
             "div",
             { class: "sunk card" },
-            el("div", null, "No cards yet.\nOpen “Cards” to add some.")
+            el("div", null, "No cards yet.\nOpen \u201cCards\u201d to add some.")
           )
         );
         return;
@@ -9410,7 +9439,7 @@ window.addEventListener("error", function (e) {
               el("small", null, "All caught up"),
               "No cards are due right now.\n\n" +
                 (when ? "Next card due " + whenStr(when) + "." : "") +
-                "\n\nSwitch Show to “All cards” to review anyway."
+                "\n\nSwitch Show to \u201cAll cards\u201d to review anyway."
             )
           )
         );
@@ -9535,9 +9564,9 @@ window.addEventListener("error", function (e) {
       main.append(card, btns);
       w.status(
         dueCount +
-          " due · " +
+          " due \u00b7 " +
           newCount +
-          " new · " +
+          " new \u00b7 " +
           p.length +
           " total in deck"
       );
@@ -10323,7 +10352,7 @@ window.addEventListener("error", function (e) {
             el(
               "div",
               { class: "dim", style: "padding:8px" },
-              "No results came back. Your browser may be offline, or all the sources are blocked. Try the engine buttons below — they open the search in a new tab."
+              "No results came back. Your browser may be offline, or all the sources are blocked. Try the engine buttons below \u2014 they open the search in a new tab."
             )
           );
           stateLine.textContent = "No results.";
@@ -10379,13 +10408,13 @@ window.addEventListener("error", function (e) {
       setBusy(true);
       results.textContent = "";
       lastText = "";
-      stateLine.textContent = "Thinking…";
+      stateLine.textContent = "Thinking\u2026";
       out.classList.remove("rich");
       out.textContent = "";
       var opts = {
         signal: ctl.signal,
         onText: function (u) {
-          stateLine.textContent = "Writing…";
+          stateLine.textContent = "Writing\u2026";
           if (!asJson) {
             lastText = u.text;
             renderOut();
@@ -10791,7 +10820,7 @@ window.addEventListener("error", function (e) {
           el(
             "div",
             { class: "dim", style: "padding:0" },
-            "The assistant is off. Pick one in Control Panel → Assistant. Inline search above still works without any key."
+            "The assistant is off. Pick one in Control Panel \u2192 Assistant. Inline search above still works without any key."
           )
         );
         cbody.append(info);
@@ -10826,7 +10855,7 @@ window.addEventListener("error", function (e) {
             { class: "dim", style: "padding:6px 0 0" },
             "No API key saved for " +
               p.name +
-              " yet. Add one in Control Panel → Assistant."
+              " yet. Add one in Control Panel \u2192 Assistant."
           )
         );
         return;
@@ -10835,7 +10864,7 @@ window.addEventListener("error", function (e) {
         el(
           "div",
           { class: "dim", style: "padding:6px 0 0" },
-          "Keys, models and the Claude mode toggle all live in Control Panel → Assistant."
+          "Keys, models and the Claude mode toggle all live in Control Panel \u2192 Assistant."
         )
       );
       cbody.append(
@@ -10853,7 +10882,7 @@ window.addEventListener("error", function (e) {
       );
     }
     cbody.append(
-      el("div", { class: "dim", style: "padding:0" }, "Checking for Helpy…")
+      el("div", { class: "dim", style: "padding:0" }, "Checking for Helpy\u2026")
     );
     getCap("sample").then(function (sm) {
       capSample = typeof sm === "function" ? sm : null;
@@ -12699,7 +12728,7 @@ window.addEventListener("error", function (e) {
     var paste = el("textarea", {
       class: "in",
       rows: 2,
-      placeholder: "…or paste backup text here",
+      placeholder: "\u2026or paste backup text here",
       style: 'width:100%;resize:vertical;font:11px "Courier New",monospace',
     });
     var storageBar = el("div", {
@@ -12997,7 +13026,7 @@ window.addEventListener("error", function (e) {
         ["Sticky notes", curCounts.stickies, newCounts.stickies],
         ["Days with focus", curCounts.statsDays, newCounts.statsDays],
       ].forEach(function (r) {
-        var diff = r[1] !== r[2] ? "  →  " + r[2] : "";
+        var diff = r[1] !== r[2] ? "  \u2192  " + r[2] : "";
         lines.push("  " + r[0] + ": " + r[1] + diff);
       });
       var summary = lines.join("\n");
@@ -13311,10 +13340,10 @@ window.addEventListener("error", function (e) {
         spellcheck: "false",
         placeholder:
           kind === "openrouter"
-            ? "sk-or-v1-…"
+            ? "sk-or-v1-\u2026"
             : kind === "openai"
-            ? "sk-…"
-            : "paste key here…",
+            ? "sk-\u2026"
+            : "paste key here\u2026",
         value: getKey(kind),
         style: "flex:1 1 150px",
       });
@@ -13631,7 +13660,7 @@ window.addEventListener("error", function (e) {
                   style: "padding:0 6px",
                 });
                 aiC.append(info3);
-                info3.textContent = "Testing…";
+                info3.textContent = "Testing\u2026";
                 var m = S.prefs.ai;
                 if (m === "off") {
                   info3.textContent = "Pick an assistant first.";
@@ -13817,7 +13846,7 @@ window.addEventListener("error", function (e) {
         [
           "Helpy (Claude)",
           helpyOk === null
-            ? "Checking…"
+            ? "Checking\u2026"
             : helpyOk
             ? "Built-in Claude available"
             : "Not available here (use API mode)",
@@ -13871,6 +13900,7 @@ window.addEventListener("error", function (e) {
             var st = window.__focusdeskDStatus || {},
               bits = [];
             if (P.hotkey !== false && !st.hotkeyOk) bits.push("The quick capture hotkey is in use by another app, so it isn't active.");
+            if (P.cardHotkey !== false && !st.cardHotkeyOk) bits.push("The flash card hotkey is in use by another app, so it isn't active.");
             if (!st.trayOk) bits.push("No " + tray + " is available on this system, so tray options won't work.");
             if (extra) bits.push(extra);
             note.textContent = bits.join(" ");
@@ -13943,6 +13973,22 @@ window.addEventListener("error", function (e) {
               ),
               opt("dueOverdue", "Show overdue tasks and assignments in the " + tray + " menu, too", true),
               opt("hotkey", "Quick capture hotkey: " + (mac ? "Cmd" : "Ctrl") + "+Shift+Space", true),
+              opt("cardHotkey", "Flash card hotkey: " + (mac ? "Cmd" : "Ctrl") + "+Shift+Y (turns what you just copied into a new card)", true),
+              el(
+                "label",
+                { class: "row", style: "gap:6px;align-items:center" },
+                el("input", {
+                  type: "checkbox",
+                  checked: !!S.prefs.npTaskbar,
+                  onchange: function () {
+                    S.prefs.npTaskbar = this.checked;
+                    save();
+                    paintNpTray();
+                    npWatchSync();
+                  },
+                }),
+                "Show what's playing next to the taskbar clock"
+              ),
               opt("closeToTray", "Keep running in the " + tray + " when I close the window", false),
               opt("launchAtLogin", "Open FocusDesk when I log in", false),
               opt("startHidden", "\u2026and start hidden in the " + tray, false),
@@ -15112,7 +15158,7 @@ window.addEventListener("error", function (e) {
     var lastSelTask = null;
     var txt = el("input", {
       class: "in",
-      placeholder: "New task…",
+      placeholder: "New task\u2026",
       style: "flex:1 1 150px",
     });
     var pri = el(
@@ -17022,82 +17068,169 @@ window.addEventListener("error", function (e) {
   }
 
   /* ================= APP: SKETCH PAD ================= */
+  /* ===== Sketch Pad 2.0 ===== */
+  function paintPaperOn(pctx, W, H, kind) {
+    pctx.fillStyle = "#ffffff";
+    pctx.fillRect(0, 0, W, H);
+    function hline(y, col, wd) {
+      pctx.fillStyle = col;
+      pctx.fillRect(0, Math.round(y), W, wd || 1);
+    }
+    function vline(x, col, wd) {
+      pctx.fillStyle = col;
+      pctx.fillRect(Math.round(x), 0, wd || 1, H);
+    }
+    if (kind === "graph") {
+      for (var x = 0; x < W; x += 16) vline(x, x % 80 === 0 ? "#a9c3dc" : "#dbe8f3");
+      for (var y = 0; y < H; y += 16) hline(y, y % 80 === 0 ? "#a9c3dc" : "#dbe8f3");
+    } else if (kind === "lined" || kind === "cornell") {
+      for (var yy = kind === "cornell" ? 80 : 56; yy < (kind === "cornell" ? H * 0.8 : H); yy += 28) hline(yy, "#bcd2e8");
+      if (kind === "lined") vline(72, "#e8a3a3", 2);
+      else {
+        vline(Math.round(W * 0.27), "#d49a9a", 2);
+        hline(Math.round(H * 0.8), "#d49a9a", 2);
+        hline(52, "#d49a9a", 2);
+      }
+    }
+  }
+  /* put a canvas into the picture store used by notes and flash cards; cb(id) or cb(null, message) */
+  function storeCanvasImage(canvas, cb) {
+    if (Object.keys(S.images).length >= 200) return cb(null, "You've reached the limit of 200 images.");
+    var url = "";
+    try {
+      url = canvas.toDataURL("image/png");
+      if (url.length > 550000) url = "";
+      if (!url) {
+        var flat = document.createElement("canvas");
+        flat.width = canvas.width;
+        flat.height = canvas.height;
+        var fx = flat.getContext("2d");
+        fx.fillStyle = "#fff";
+        fx.fillRect(0, 0, flat.width, flat.height);
+        fx.drawImage(canvas, 0, 0);
+        var q = 0.85;
+        url = flat.toDataURL("image/jpeg", q);
+        while (url.length > 550000 && q > 0.4) {
+          q -= 0.15;
+          url = flat.toDataURL("image/jpeg", q);
+        }
+      }
+    } catch (e) {
+      return cb(null, "Couldn't create the image.");
+    }
+    if (!url || url.length > 1500000) return cb(null, "That sketch is too large to store. Try a smaller canvas.");
+    var id = uid();
+    S.images[id] = url;
+    save();
+    cb(id);
+  }
   function appPaint(w) {
     var W = 480,
-      H = 300;
-    var cv = el("canvas", { width: W, height: H });
+      H = 300,
+      Z = 1;
+    var cv = el("canvas", { width: W, height: H, class: "pt-draw", tabindex: "0", "aria-label": "Drawing canvas" });
+    var pcv = el("canvas", { width: W, height: H, class: "pt-paper" });
     var ctx = cv.getContext && cv.getContext("2d");
     if (!ctx) {
-      w.body.append(
-        el("div", { class: "dim" }, "Drawing isn't supported in this browser.")
-      );
+      w.body.append(el("div", { class: "dim" }, "Drawing isn't supported in this browser."));
       return;
     }
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, W, H);
-    var COLORS = [
-      "#000000",
-      "#808080",
-      "#800000",
-      "#808000",
-      "#008000",
-      "#008080",
-      "#000080",
-      "#800080",
-      "#ffffff",
-      "#c0c0c0",
-      "#ff0000",
-      "#ffff00",
-      "#00ff00",
-      "#00ffff",
-      "#0000ff",
-      "#ff00ff",
-    ];
+    var pctx = pcv.getContext("2d"),
+      paper = "blank";
+    var COLORS = ["#000000", "#808080", "#800000", "#808000", "#008000", "#008080", "#000080", "#800080", "#ffffff", "#c0c0c0", "#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff"];
     var tool = "pencil",
+      prevTool = "pencil",
       fg = "#000000",
       size = 2,
+      usePressure = false,
+      press = 0.5,
       drawing = false,
       start = null,
       last = null,
       snap = null,
-      undo = [];
+      undo = [],
+      redo = [],
+      sel = null,
+      selDrag = null,
+      moving = null,
+      baseData = null,
+      panning = null,
+      spaceHand = false;
+    var selBox = el("div", { class: "pt-sel", hidden: true });
+    var stack = el("div", { class: "pt-stack" }, pcv, cv, selBox);
     function hexRgb(h) {
-      return [
-        parseInt(h.slice(1, 3), 16),
-        parseInt(h.slice(3, 5), 16),
-        parseInt(h.slice(5, 7), 16),
-      ];
+      return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    }
+    function rgbHex(r, g, b) {
+      return "#" + [r, g, b].map(function (v) { return ("0" + v.toString(16)).slice(-2); }).join("");
+    }
+    function sizeStack() {
+      stack.style.width = Math.round(W * Z) + "px";
+      stack.style.height = Math.round(H * Z) + "px";
+      [cv, pcv].forEach(function (c) {
+        c.style.width = Math.round(W * Z) + "px";
+        c.style.height = Math.round(H * Z) + "px";
+      });
+      showSel();
+    }
+    function repaintPaper() {
+      pcv.width = W;
+      pcv.height = H;
+      paintPaperOn(pctx, W, H, paper);
+    }
+    function compose() {
+      var c = document.createElement("canvas");
+      c.width = W;
+      c.height = H;
+      var x = c.getContext("2d");
+      x.drawImage(pcv, 0, 0);
+      x.drawImage(cv, 0, 0);
+      return c;
     }
     function pushUndo() {
       try {
         undo.push(ctx.getImageData(0, 0, W, H));
-        if (undo.length > 15) undo.shift();
+        if (undo.length > 25) undo.shift();
+        redo = [];
       } catch (e) {}
     }
+    function restore(img) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.putImageData(img, 0, 0);
+    }
     function doUndo() {
+      commitSel();
       var u = undo.pop();
-      if (u) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, W, H);
-        ctx.putImageData(u, 0, 0);
-      }
+      if (!u) return;
+      try {
+        redo.push(ctx.getImageData(0, 0, W, H));
+      } catch (e) {}
+      restore(u);
+    }
+    function doRedo() {
+      commitSel();
+      var r = redo.pop();
+      if (!r) return;
+      try {
+        undo.push(ctx.getImageData(0, 0, W, H));
+      } catch (e) {}
+      restore(r);
     }
     function pos(e) {
       var r = cv.getBoundingClientRect();
       return {
-        x: Math.max(
-          0,
-          Math.min(W - 1, Math.floor(((e.clientX - r.left) * W) / r.width))
-        ),
-        y: Math.max(
-          0,
-          Math.min(H - 1, Math.floor(((e.clientY - r.top) * H) / r.height))
-        ),
+        x: Math.max(0, Math.min(W - 1, Math.floor(((e.clientX - r.left) * W) / r.width))),
+        y: Math.max(0, Math.min(H - 1, Math.floor(((e.clientY - r.top) * H) / r.height))),
       };
     }
     function dot(x, y, sz, col) {
-      ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x - sz / 2), Math.round(y - sz / 2), sz, sz);
+      var px = Math.round(x - sz / 2),
+        py = Math.round(y - sz / 2);
+      if (col === null) ctx.clearRect(px, py, sz, sz);
+      else {
+        ctx.fillStyle = col;
+        ctx.fillRect(px, py, sz, sz);
+      }
     }
     function line(x0, y0, x1, y1, sz, col) {
       var dx = Math.abs(x1 - x0),
@@ -17106,7 +17239,7 @@ window.addEventListener("error", function (e) {
         sy = y0 < y1 ? 1 : -1,
         e = dx + dy,
         n = 0;
-      while (n++ < 2000) {
+      while (n++ < 4000) {
         dot(x0, y0, sz, col);
         if (x0 === x1 && y0 === y1) break;
         var e2 = 2 * e;
@@ -17120,6 +17253,14 @@ window.addEventListener("error", function (e) {
         }
       }
     }
+    function arrow(a, b, sz, col) {
+      line(a.x, a.y, b.x, b.y, sz, col);
+      var ang = Math.atan2(b.y - a.y, b.x - a.x),
+        len = Math.max(9, sz * 4 + 5);
+      [0.45, -0.45].forEach(function (d) {
+        line(b.x, b.y, Math.round(b.x - Math.cos(ang + d) * len), Math.round(b.y - Math.sin(ang + d) * len), sz, col);
+      });
+    }
     function box(a, b, sz, col) {
       line(a.x, a.y, b.x, a.y, sz, col);
       line(b.x, a.y, b.x, b.y, sz, col);
@@ -17127,20 +17268,12 @@ window.addEventListener("error", function (e) {
       line(a.x, b.y, a.x, a.y, sz, col);
     }
     function fbox(a, b, col) {
-      var x = Math.min(a.x, b.x),
-        y = Math.min(a.y, b.y),
-        w = Math.abs(b.x - a.x),
-        h = Math.abs(b.y - a.y);
       ctx.fillStyle = col;
-      ctx.fillRect(x, y, Math.max(1, w), Math.max(1, h));
+      ctx.fillRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(1, Math.abs(b.x - a.x)), Math.max(1, Math.abs(b.y - a.y)));
     }
     function ellipse(a, b, sz, col, filled) {
-      var cx = (a.x + b.x) / 2,
-        cy = (a.y + b.y) / 2,
-        rx = Math.max(1, Math.abs(b.x - a.x) / 2),
-        ry = Math.max(1, Math.abs(b.y - a.y) / 2);
       ctx.beginPath();
-      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.ellipse((a.x + b.x) / 2, (a.y + b.y) / 2, Math.max(1, Math.abs(b.x - a.x) / 2), Math.max(1, Math.abs(b.y - a.y) / 2), 0, 0, Math.PI * 2);
       if (filled) {
         ctx.fillStyle = col;
         ctx.fill();
@@ -17157,11 +17290,12 @@ window.addEventListener("error", function (e) {
         i0 = (y * W + x) * 4,
         tr = d[i0],
         tg = d[i0 + 1],
-        tb = d[i0 + 2];
-      if (tr === rgb[0] && tg === rgb[1] && tb === rgb[2]) return;
+        tb = d[i0 + 2],
+        ta = d[i0 + 3];
+      if (tr === rgb[0] && tg === rgb[1] && tb === rgb[2] && ta === 255) return;
       var st = [x, y];
       function same(k) {
-        return d[k] === tr && d[k + 1] === tg && d[k + 2] === tb;
+        return d[k] === tr && d[k + 1] === tg && d[k + 2] === tb && d[k + 3] === ta;
       }
       while (st.length) {
         var yy = st.pop(),
@@ -17184,91 +17318,185 @@ window.addEventListener("error", function (e) {
       ctx.putImageData(img, 0, 0);
     }
     function brush() {
-      return tool === "pencil"
-        ? 1
-        : tool === "eraser"
-        ? Math.max(6, size * 3)
-        : size;
+      var base = tool === "pencil" ? 1 : tool === "eraser" ? Math.max(6, size * 3) : size;
+      return usePressure ? Math.max(1, Math.round(base * (0.25 + press * 1.5))) : base;
     }
     function colour() {
-      return tool === "eraser" ? "#ffffff" : fg;
+      return tool === "eraser" ? null : fg;
     }
     function constrainShape(a, b, tool2) {
       var dx = b.x - a.x,
         dy = b.y - a.y;
-      if (tool2 === "line") {
+      if (tool2 === "line" || tool2 === "arrow") {
         var angle = Math.atan2(dy, dx),
-          step = Math.PI / 4,
-          snapped = Math.round(angle / step) * step,
+          snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4),
           len = Math.sqrt(dx * dx + dy * dy);
-        return {
-          x: Math.round(a.x + Math.cos(snapped) * len),
-          y: Math.round(a.y + Math.sin(snapped) * len),
-        };
+        return { x: Math.round(a.x + Math.cos(snapped) * len), y: Math.round(a.y + Math.sin(snapped) * len) };
       }
-      if (
-        tool2 === "box" ||
-        tool2 === "fbox" ||
-        tool2 === "ellipse" ||
-        tool2 === "fellipse"
-      ) {
-        var sz = Math.max(Math.abs(dx), Math.abs(dy)),
-          sx = dx >= 0 ? 1 : -1,
-          sy = dy >= 0 ? 1 : -1;
-        return { x: a.x + sx * sz, y: a.y + sy * sz };
+      if (/^(box|fbox|ellipse|fellipse)$/.test(tool2)) {
+        var s2 = Math.max(Math.abs(dx), Math.abs(dy));
+        return { x: a.x + (dx >= 0 ? 1 : -1) * s2, y: a.y + (dy >= 0 ? 1 : -1) * s2 };
       }
       return b;
     }
+    /* ---- select and move ---- */
+    function showSel() {
+      if (!sel) {
+        selBox.hidden = true;
+        return;
+      }
+      selBox.hidden = false;
+      selBox.style.left = Math.round(sel.x * Z) + "px";
+      selBox.style.top = Math.round(sel.y * Z) + "px";
+      selBox.style.width = Math.max(1, Math.round(sel.w * Z)) + "px";
+      selBox.style.height = Math.max(1, Math.round(sel.h * Z)) + "px";
+    }
+    function inSel(p) {
+      return sel && p.x >= sel.x && p.x < sel.x + sel.w && p.y >= sel.y && p.y < sel.y + sel.h;
+    }
+    function lift() {
+      if (sel.float) return;
+      pushUndo();
+      var fc = document.createElement("canvas");
+      fc.width = sel.w;
+      fc.height = sel.h;
+      fc.getContext("2d").drawImage(cv, sel.x, sel.y, sel.w, sel.h, 0, 0, sel.w, sel.h);
+      ctx.clearRect(sel.x, sel.y, sel.w, sel.h);
+      sel.float = fc;
+      baseData = ctx.getImageData(0, 0, W, H);
+      ctx.drawImage(fc, sel.x, sel.y);
+    }
+    function commitSel() {
+      sel = null;
+      selDrag = null;
+      moving = null;
+      baseData = null;
+      showSel();
+    }
+    function deleteSel() {
+      if (!sel) return;
+      if (sel.float && baseData) ctx.putImageData(baseData, 0, 0);
+      else {
+        pushUndo();
+        ctx.clearRect(sel.x, sel.y, sel.w, sel.h);
+      }
+      commitSel();
+    }
+    function setTool(t) {
+      if (t !== "select") commitSel();
+      if (t !== "pick") prevTool = t;
+      tool = t;
+      for (var k in toolBtns) toolBtns[k].classList.toggle("on", k === tool);
+      cv.style.cursor = t === "hand" ? "grab" : t === "select" ? "default" : "crosshair";
+    }
+    function askLine(title, cb) {
+      var inp = el("input", { class: "in", style: "width:100%", placeholder: "Type here" });
+      msgBox({
+        title: title,
+        icon: "q",
+        text: "",
+        extra: inp,
+        buttons: [
+          {
+            label: "OK",
+            fn: function () {
+              cb(inp.value);
+            },
+          },
+          { label: "Cancel" },
+        ],
+      });
+      setTimeout(function () {
+        inp.focus();
+      }, 50);
+    }
     cv.addEventListener("pointerdown", function (e) {
       e.preventDefault();
+      cv.focus({ preventScroll: true });
+      if (e.pointerType === "pen") press = e.pressure || 0.5;
       var p = pos(e);
+      if (tool === "hand" || spaceHand || e.button === 1) {
+        panning = { x: e.clientX, y: e.clientY, l: area.scrollLeft, t: area.scrollTop };
+        try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+        return;
+      }
+      if (tool === "pick") {
+        var px = ctx.getImageData(p.x, p.y, 1, 1).data;
+        var hex = px[3] < 128 ? null : rgbHex(px[0], px[1], px[2]);
+        if (!hex) {
+          var pp = pctx.getImageData(p.x, p.y, 1, 1).data;
+          hex = rgbHex(pp[0], pp[1], pp[2]);
+        }
+        setColour(hex);
+        setTool(prevTool);
+        return;
+      }
+      if (tool === "select") {
+        if (inSel(p)) {
+          lift();
+          moving = { sx: p.x, sy: p.y, ox: sel.x, oy: sel.y };
+        } else {
+          commitSel();
+          selDrag = { a: p };
+          sel = { x: p.x, y: p.y, w: 1, h: 1, float: null };
+          showSel();
+        }
+        try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+        return;
+      }
       pushUndo();
       if (tool === "fill") {
         fillAt(p.x, p.y, fg);
         return;
       }
       if (tool === "text") {
-        var str = prompt("Text to draw:", "");
-        if (str) {
+        askLine("Text to draw", function (str) {
+          if (!str) return;
+          pushUndo();
           ctx.fillStyle = fg;
           ctx.font = Math.max(10, size * 6) + "px Tahoma, sans-serif";
           ctx.fillText(str, p.x, p.y);
-        }
+        });
         drawing = false;
         return;
       }
-      try {
-        cv.setPointerCapture(e.pointerId);
-      } catch (x) {}
+      try { cv.setPointerCapture(e.pointerId); } catch (x) {}
       drawing = true;
       start = last = p;
-      if (
-        tool === "line" ||
-        tool === "box" ||
-        tool === "fbox" ||
-        tool === "ellipse" ||
-        tool === "fellipse"
-      ) {
-        try {
-          snap = ctx.getImageData(0, 0, W, H);
-        } catch (x) {
-          snap = null;
-        }
+      if (/^(line|arrow|box|fbox|ellipse|fellipse)$/.test(tool)) {
+        try { snap = ctx.getImageData(0, 0, W, H); } catch (x) { snap = null; }
       } else dot(p.x, p.y, brush(), colour());
     });
     cv.addEventListener("pointermove", function (e) {
-      if (!drawing) return;
+      if (e.pointerType === "pen") press = e.pressure || press;
+      if (panning) {
+        area.scrollLeft = panning.l - (e.clientX - panning.x);
+        area.scrollTop = panning.t - (e.clientY - panning.y);
+        return;
+      }
       var p = pos(e);
-      if (
-        tool === "line" ||
-        tool === "box" ||
-        tool === "fbox" ||
-        tool === "ellipse" ||
-        tool === "fellipse"
-      ) {
+      if (tool === "select") {
+        if (selDrag) {
+          sel.x = Math.min(selDrag.a.x, p.x);
+          sel.y = Math.min(selDrag.a.y, p.y);
+          sel.w = Math.max(1, Math.abs(p.x - selDrag.a.x));
+          sel.h = Math.max(1, Math.abs(p.y - selDrag.a.y));
+          showSel();
+        } else if (moving && baseData) {
+          sel.x = moving.ox + (p.x - moving.sx);
+          sel.y = moving.oy + (p.y - moving.sy);
+          ctx.putImageData(baseData, 0, 0);
+          ctx.drawImage(sel.float, sel.x, sel.y);
+          showSel();
+        }
+        return;
+      }
+      if (!drawing) return;
+      if (/^(line|arrow|box|fbox|ellipse|fellipse)$/.test(tool)) {
         if (e.shiftKey) p = constrainShape(start, p, tool);
         if (snap) ctx.putImageData(snap, 0, 0);
         if (tool === "line") line(start.x, start.y, p.x, p.y, size, fg);
+        else if (tool === "arrow") arrow(start, p, size, fg);
         else if (tool === "box") box(start, p, size, fg);
         else if (tool === "fbox") fbox(start, p, fg);
         else ellipse(start, p, size, fg, tool === "fellipse");
@@ -17280,10 +17508,25 @@ window.addEventListener("error", function (e) {
     function end() {
       drawing = false;
       snap = null;
+      panning = null;
+      if (selDrag) {
+        selDrag = null;
+        if (sel && sel.w < 3 && sel.h < 3) {
+          sel = null;
+          showSel();
+        }
+      }
+      moving = null;
     }
     cv.addEventListener("pointerup", end);
     cv.addEventListener("pointercancel", end);
     var toolBtns = {};
+    function setColour(c) {
+      fg = c;
+      cur.style.background = c;
+      picker.value = c;
+      if (tool === "eraser") setTool("pencil");
+    }
     var tools = el(
       "div",
       { class: "pt-tools" },
@@ -17292,86 +17535,109 @@ window.addEventListener("error", function (e) {
         ["brush", "Brush"],
         ["eraser", "Eraser"],
         ["line", "Line"],
-        ["box", "Box"],
-        ["fbox", "Filled box"],
+        ["arrow", "Arrow"],
+        ["box", "Rectangle"],
+        ["fbox", "Filled rectangle"],
         ["ellipse", "Ellipse"],
         ["fellipse", "Filled ellipse"],
         ["text", "Text"],
         ["fill", "Fill"],
+        ["pick", "Eyedropper"],
+        ["select", "Select"],
+        ["hand", "Hand"],
       ].map(function (t2) {
-        var b = el(
-          "button",
-          {
-            class: "btn" + (t2[0] === tool ? " on" : ""),
-            onclick: function () {
-              tool = t2[0];
-              for (var k in toolBtns)
-                toolBtns[k].classList.toggle("on", k === tool);
-            },
-          },
-          t2[1]
-        );
+        var b = el("button", { class: "btn" + (t2[0] === tool ? " on" : ""), onclick: function () { setTool(t2[0]); } }, t2[1]);
         toolBtns[t2[0]] = b;
         return b;
       })
     );
     var sz = el(
       "select",
-      {
-        class: "in",
-        title: "Line width",
-        onchange: function () {
-          size = parseInt(this.value, 10) || 2;
-        },
-      },
+      { class: "in", title: "Line width", onchange: function () { size = parseInt(this.value, 10) || 2; } },
       [1, 2, 4, 8].map(function (n) {
         return el("option", { value: n, selected: n === 2 }, n + " px");
       })
     );
     var cur = el("div", { class: "pt-cur", style: "background:" + fg });
-    var picker = el("input", {
-      type: "color",
-      value: fg,
-      title: "Any colour",
-      oninput: function () {
-        fg = this.value;
-        cur.style.background = fg;
-        if (tool === "eraser") {
-          tool = "pencil";
-          for (var k in toolBtns)
-            toolBtns[k].classList.toggle("on", k === tool);
-        }
-      },
-    });
-    tools.append(
-      sz,
-      picker,
-      el("button", { class: "btn", onclick: doUndo }, "Undo")
+    var picker = el("input", { type: "color", value: fg, title: "Any colour", oninput: function () { setColour(this.value); } });
+    var zoomLbl = el("span", { style: "min-width:42px;text-align:center" }, "100%");
+    function setZoom(z) {
+      Z = Math.max(0.25, Math.min(4, Math.round(z * 100) / 100));
+      zoomLbl.textContent = Math.round(Z * 100) + "%";
+      sizeStack();
+      if (Z === 1) fit();
+    }
+    var paperSel = el(
+      "select",
+      { class: "in", title: "Paper", onchange: function () { paper = this.value; repaintPaper(); } },
+      [["blank", "Blank paper"], ["graph", "Graph paper"], ["lined", "Lined paper"], ["cornell", "Cornell notes"]].map(function (o) {
+        return el("option", { value: o[0] }, o[1]);
+      })
+    );
+    var pressChk = el("input", { type: "checkbox", onchange: function () { usePressure = this.checked; } });
+    tools.append(sz, picker, el("button", { class: "btn", onclick: doUndo, title: "Undo (Ctrl/Cmd+Z)" }, "Undo"), el("button", { class: "btn", onclick: doRedo, title: "Redo (Ctrl/Cmd+Shift+Z)" }, "Redo"));
+    var tools2 = el(
+      "div",
+      { class: "pt-tools" },
+      paperSel,
+      el("label", { class: "row", style: "gap:4px;align-items:center", title: "Pen lines get thicker when you press harder (needs a pressure-sensitive pen)" }, pressChk, "Pen pressure"),
+      el("button", { class: "btn", onclick: function () { setZoom(Z / 1.25); }, "aria-label": "Zoom out" }, "-"),
+      zoomLbl,
+      el("button", { class: "btn", onclick: function () { setZoom(Z * 1.25); }, "aria-label": "Zoom in" }, "+"),
+      el("button", { class: "btn", onclick: function () { setZoom(1); } }, "100%"),
+      el("button", { class: "btn", onclick: insertIntoNote }, "Insert into note\u2026"),
+      el("button", { class: "btn", onclick: makeCards }, "Make flash cards\u2026")
     );
     var sw = el(
       "div",
       { class: "pt-sw" },
       COLORS.map(function (c) {
-        return el("i", {
-          style: "background:" + c,
-          title: c,
-          onclick: function () {
-            fg = c;
-            cur.style.background = c;
-            if (picker) picker.value = c;
-            if (tool === "eraser") {
-              tool = "pencil";
-              for (var k in toolBtns)
-                toolBtns[k].classList.toggle("on", k === tool);
-            }
-          },
-        });
+        return el("i", { style: "background:" + c, title: c, onclick: function () { setColour(c); } });
       })
     );
     function clearAll() {
+      commitSel();
       pushUndo();
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, W, H);
+      ctx.clearRect(0, 0, W, H);
+    }
+    function insertIntoNote() {
+      commitSel();
+      var choice = el("select", { class: "in", style: "width:100%" }, [el("option", { value: "" }, "A new note")].concat(S.notes.slice(0, 80).map(function (n) {
+        return el("option", { value: n.id }, clip(String(n.text || "").split("\n")[0].replace(/^#+\s*/, "") || "(untitled)", 50));
+      })));
+      msgBox({
+        title: "Insert into Note",
+        icon: "q",
+        text: "Where should the sketch go?",
+        extra: choice,
+        buttons: [
+          {
+            label: "Insert",
+            fn: function () {
+              storeCanvasImage(compose(), function (id, err) {
+                if (err) return msgBox({ title: "Sketch Pad", icon: "warn", text: err });
+                var md = "![Sketch](img:" + id + ")";
+                var n = S.notes.filter(function (x) { return x.id === choice.value; })[0];
+                if (n) {
+                  n.text = clip(String(n.text || "") + "\n\n" + md + "\n", 300000);
+                  n.updated = Date.now();
+                } else S.notes.unshift({ id: uid(), text: "# Sketch\n\n" + md + "\n", updated: Date.now() });
+                save();
+                refreshAll();
+                msgBox({ title: "Sketch Pad", icon: "info", text: n ? "Added to the end of that note." : "Saved as a new note in Notepad." });
+              });
+            },
+          },
+          { label: "Cancel" },
+        ],
+      });
+    }
+    function makeCards() {
+      commitSel();
+      storeCanvasImage(compose(), function (id, err) {
+        if (err) return msgBox({ title: "Sketch Pad", icon: "warn", text: err });
+        occDialog("Diagrams", function () { refreshAll(); }, null, id);
+      });
     }
     w.menus([
       {
@@ -17379,25 +17645,27 @@ window.addEventListener("error", function (e) {
         items: function () {
           return [
             { label: "New", fn: clearAll },
+            { label: "Insert into Note\u2026", fn: insertIntoNote },
+            { label: "Make Flash Cards from This\u2026", fn: makeCards },
             {
               label: "Set as Desktop Background",
               fn: function () {
                 try {
-                  setWall(cv.toDataURL("image/jpeg", 0.9));
+                  var c = compose(),
+                    f = document.createElement("canvas");
+                  f.width = c.width;
+                  f.height = c.height;
+                  f.getContext("2d").drawImage(c, 0, 0);
+                  setWall(f.toDataURL("image/jpeg", 0.9));
                 } catch (e) {}
               },
             },
             {
               label: "Save as PNG\u2026",
               fn: function () {
-                cv.toBlob(function (b) {
+                compose().toBlob(function (b) {
                   if (b) saveFile("sketch-" + ymd(new Date()) + ".png", b);
-                  else
-                    msgBox({
-                      title: "Sketch Pad",
-                      icon: "err",
-                      text: "Couldn't create the image.",
-                    });
+                  else msgBox({ title: "Sketch Pad", icon: "err", text: "Couldn't create the image." });
                 });
               },
             },
@@ -17409,27 +17677,84 @@ window.addEventListener("error", function (e) {
         items: function () {
           return [
             { label: "Undo", fn: doUndo },
+            { label: "Redo", fn: doRedo },
+            { label: "Delete Selection", fn: deleteSel },
             { label: "Clear Image", fn: clearAll },
           ];
         },
       },
+      {
+        label: "View",
+        items: function () {
+          return [
+            { label: "Zoom In", fn: function () { setZoom(Z * 1.25); } },
+            { label: "Zoom Out", fn: function () { setZoom(Z / 1.25); } },
+            { label: "Actual Size", fn: function () { setZoom(1); } },
+          ];
+        },
+      },
     ]);
-    var area = el("div", { class: "pt-area" }, cv);
-    w.body.append(
-      el(
-        "div",
-        { class: "pt" },
-        tools,
-        area,
-        el("div", { class: "pt-pal" }, cur, sw),
-        el(
-          "div",
-          { class: "dim", style: "padding:4px 0 0;font-size:11px" },
-          "Hold Shift while dragging a line, box or ellipse to constrain it."
-        )
-      )
+    var area = el("div", { class: "pt-area", tabindex: "-1" }, stack);
+    area.addEventListener(
+      "wheel",
+      function (e) {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
+        setZoom(e.deltaY < 0 ? Z * 1.1 : Z / 1.1);
+      },
+      { passive: false }
     );
+    var root = el(
+      "div",
+      { class: "pt" },
+      tools,
+      tools2,
+      area,
+      el("div", { class: "pt-pal" }, cur, sw),
+      el("div", { class: "dim", style: "padding:4px 0 0;font-size:11px" }, "Shift while dragging a line, arrow or shape constrains it. Select drags a piece of your drawing around; Delete removes it. Hold Space and drag to scroll. Ctrl/Cmd+Z undoes.")
+    );
+    root.addEventListener("keydown", function (e) {
+      var t = e.target && e.target.tagName;
+      if (t === "INPUT" || t === "SELECT" || t === "TEXTAREA") return;
+      var mod = e.ctrlKey || e.metaKey,
+        k = String(e.key || "").toLowerCase();
+      if (mod && k === "z") {
+        e.preventDefault();
+        if (e.shiftKey) doRedo();
+        else doUndo();
+      } else if (mod && k === "y") {
+        e.preventDefault();
+        doRedo();
+      } else if (k === "delete" || k === "backspace") {
+        if (sel) {
+          e.preventDefault();
+          deleteSel();
+        }
+      } else if (k === "escape") commitSel();
+      else if (k === " ") {
+        e.preventDefault();
+        spaceHand = true;
+        cv.style.cursor = "grab";
+      } else if (mod && (k === "=" || k === "+")) {
+        e.preventDefault();
+        setZoom(Z * 1.25);
+      } else if (mod && k === "-") {
+        e.preventDefault();
+        setZoom(Z / 1.25);
+      } else if (mod && k === "0") {
+        e.preventDefault();
+        setZoom(1);
+      }
+    });
+    root.addEventListener("keyup", function (e) {
+      if (e.key === " ") {
+        spaceHand = false;
+        setTool(tool);
+      }
+    });
+    w.body.append(root);
     function fit() {
+      if (Z !== 1) return;
       var aw = Math.floor(area.clientWidth - 6),
         ah = Math.floor(area.clientHeight - 6);
       if (!(aw > 0 && ah > 0)) return;
@@ -17439,15 +17764,14 @@ window.addEventListener("error", function (e) {
       var old = document.createElement("canvas");
       old.width = W;
       old.height = H;
-      var octx = old.getContext("2d");
-      octx.drawImage(cv, 0, 0);
+      old.getContext("2d").drawImage(cv, 0, 0);
       cv.width = nw;
       cv.height = nh;
       W = nw;
       H = nh;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, W, H);
       ctx.drawImage(old, 0, 0);
+      repaintPaper();
+      sizeStack();
     }
     if (typeof ResizeObserver !== "undefined") {
       try {
@@ -17457,6 +17781,8 @@ window.addEventListener("error", function (e) {
       } catch (e) {}
     }
     w.onresize = fit;
+    repaintPaper();
+    sizeStack();
     setTimeout(fit, 0);
     setTimeout(fit, 250);
     w.refresh = null;
@@ -18732,280 +19058,886 @@ window.addEventListener("error", function (e) {
       }
     );
   }
+  /* ===== Citation Maker 2.0 ===== */
+  var CITE_TYPES = [
+    ["web", "Website"],
+    ["book", "Book"],
+    ["journal", "Journal article"],
+    ["video", "Video"],
+    ["podcast", "Podcast episode"],
+    ["lecture", "Lecture"],
+    ["dataset", "Dataset"],
+    ["ai", "AI-generated text"],
+  ];
+  var CITE_STYLES = [
+    ["apa", "APA 7"],
+    ["mla", "MLA 9"],
+    ["chicago", "Chicago"],
+    ["harvard", "Harvard"],
+    ["ieee", "IEEE"],
+    ["turabian", "Turabian"],
+  ];
+  var CITE_FIELDS = ["authors", "title", "container", "date", "url", "vol", "issue", "pages", "publisher", "city", "accessed", "version", "extra"];
+  var CITE_SHOW = {
+    web: ["authors", "title", "container", "date", "url", "accessed"],
+    book: ["authors", "title", "version", "publisher", "city", "date", "url"],
+    journal: ["authors", "title", "container", "vol", "issue", "pages", "date", "url"],
+    video: ["authors", "title", "container", "date", "url"],
+    podcast: ["authors", "title", "container", "publisher", "date", "url"],
+    lecture: ["authors", "title", "container", "date", "url"],
+    dataset: ["authors", "title", "version", "publisher", "date", "url"],
+    ai: ["authors", "title", "version", "date", "url", "extra"],
+  };
+  var CITE_LABELS = {
+    authors: ["Authors (one per line: Last, First)", "Smith, Jane\nLee, Chris"],
+    title: ["Title", "Title of the page, book or article"],
+    container: ["Website name", "e.g. National Geographic"],
+    date: ["Date or year", "2024-03-15 or 2024"],
+    url: ["URL or DOI", "https://..."],
+    vol: ["Volume", "12"],
+    issue: ["Issue", "3"],
+    pages: ["Pages", "45-67"],
+    publisher: ["Publisher", "e.g. Oxford University Press"],
+    city: ["City (Chicago, Harvard, IEEE)", "New York"],
+    accessed: ["Accessed date (optional)", "2025-01-20"],
+    version: ["Edition or version", "2nd ed."],
+    extra: ["Extra", ""],
+  };
+  var CITE_TYPE_LABELS = {
+    video: { authors: ["Creator or channel (Last, First or name)", "Kurzgesagt"], container: ["Platform", "YouTube"] },
+    podcast: { authors: ["Host (one per line: Last, First)", "Smith, Jane"], title: ["Episode title", "Episode title"], container: ["Podcast name", "e.g. Radiolab"], publisher: ["Network or publisher", "e.g. WNYC Studios"] },
+    lecture: { authors: ["Lecturer (Last, First)", "Smith, Jane"], title: ["Lecture title", "Title of the lecture"], container: ["Course or institution", "e.g. BIO 101, State University"] },
+    dataset: { authors: ["Author or organisation", "World Bank"], version: ["Version", "v2.1"] },
+    ai: { authors: ["Company", "OpenAI"], title: ["Tool or model name", "ChatGPT"], version: ["Version", "GPT-4, Mar 14 version"], extra: ["The prompt you used (MLA)", "Describe the causes of the French Revolution"] },
+    book: { version: ["Edition (optional)", "2nd ed."] },
+  };
+  function cStrip(s) {
+    return String(s == null ? "" : s).replace(/\*/g, "").trim();
+  }
+  function cAuthHarv(a) {
+    var l = a.map(function (x) {
+      return x.first ? x.last + ", " + cInit(x.first) : x.last;
+    });
+    if (l.length <= 1) return l.join("");
+    return l.slice(0, -1).join(", ") + " and " + l[l.length - 1];
+  }
+  function cAuthIeee(a) {
+    var l = a.map(function (x) {
+      return x.first ? cInit(x.first) + " " + x.last : x.last;
+    });
+    if (l.length > 6) return l[0] + " et al.";
+    if (l.length <= 1) return l.join("");
+    if (l.length === 2) return l[0] + " and " + l[1];
+    return l.slice(0, -1).join(", ") + ", and " + l[l.length - 1];
+  }
+  function cLongDate(dt) {
+    return !dt ? "" : dt.m ? MON_L[dt.m - 1] + (dt.d ? " " + dt.d + "," : "") + " " + dt.y : String(dt.y);
+  }
+  function cMlaDate(d) {
+    return !d ? "" : d.d ? d.d + " " + MON_S[d.m - 1] + " " + d.y : d.m ? MON_S[d.m - 1] + " " + d.y : String(d.y);
+  }
+  function cIeeeDate(d) {
+    return !d ? "" : (d.m ? MON_S[d.m - 1] + " " + (d.d ? d.d + ", " : "") : "") + d.y;
+  }
+  function citeAuthorLines(type, f) {
+    var raw = String((f && f.authors) || "");
+    if (["video", "dataset", "ai", "podcast"].indexOf(type) < 0) return raw;
+    return raw
+      .split("\n")
+      .map(function (l) {
+        l = l.trim();
+        return l && l.indexOf(",") < 0 ? l + "," : l;
+      })
+      .join("\n");
+  }
+  function cFullName(x) {
+    return x.first ? x.first + " " + x.last : x.last;
+  }
+  /* One entry in any of the six styles, for any of the eight source types. */
+  function formatCite2(style, type, f) {
+    var st = style === "turabian" ? "chicago" : style;
+    if (["apa", "mla", "chicago"].indexOf(st) >= 0 && ["web", "book", "journal"].indexOf(type) >= 0) return formatCite(st, type, f);
+    var a = cAuthors(citeAuthorLines(type, f)),
+      dt = cDate(f.date),
+      yr = dt ? String(dt.y) : "n.d.",
+      T = cStrip(f.title),
+      C = cStrip(f.container),
+      U = String(f.url || "").trim(),
+      P = cStrip(f.publisher),
+      City = cStrip(f.city),
+      V = cStrip(f.vol),
+      I = cStrip(f.issue),
+      Pg = cStrip(f.pages),
+      Ver = cStrip(f.version),
+      X = cStrip(f.extra),
+      acc = cDate(f.accessed),
+      parts = [],
+      dated = type === "video" || type === "podcast" || type === "lecture";
+    if (!T) return "";
+    if (st === "apa") {
+      var au = cAuthApa(a),
+        ad = "(" + (dated && dt && dt.m ? dt.y + ", " + MON_L[dt.m - 1] + (dt.d ? " " + dt.d : "") : yr) + ").",
+        tb;
+      var it = "*" + T + "*";
+      if (type === "video") tb = it + " [Video].";
+      else if (type === "podcast") tb = it + " [Audio podcast episode].";
+      else if (type === "lecture") tb = it + " [Lecture].";
+      else if (type === "dataset") tb = it + (Ver ? " (" + Ver + ")" : "") + " [Data set].";
+      else tb = it + (Ver ? " (" + Ver + ")" : "") + " [Large language model].";
+      parts = au ? [cDot(au), ad, tb] : [tb, ad];
+      if (type === "video" && C) parts.push(cDot(C));
+      if (type === "podcast") {
+        if (C) parts.push("In *" + C + "*.");
+        if (P) parts.push(cDot(P));
+      }
+      if (type === "lecture" && C) parts.push(cDot(C));
+      if (type === "dataset" && P) parts.push(cDot(P));
+      if (U) parts.push(U);
+    } else if (st === "mla") {
+      var am = cAuthMla(a),
+        md = cMlaDate(dt),
+        who = a.length ? cFullName(a[0]) : "";
+      if (type === "dataset" || type === "lecture") {
+        if (am) parts.push(cDot(am));
+        parts.push(type === "lecture" ? cQuote(T) : cItal(T));
+        var dc = [];
+        if (type === "dataset") {
+          if (Ver) dc.push(Ver);
+          if (P) dc.push(P);
+        } else if (C) dc.push(C);
+        if (md) dc.push(md);
+        if (U) dc.push(U);
+        if (dc.length) parts.push(dc.join(", ") + ".");
+        if (type === "lecture") parts.push("Lecture.");
+      } else {
+        var mc = [];
+        if (type === "ai") {
+          if (X) parts.push('"' + X.replace(/"/g, "'").replace(/[.?!]+$/, "") + '" prompt.');
+          mc.push("*" + T + "*");
+          if (Ver) mc.push(Ver);
+          if (who) mc.push(who);
+        } else {
+          parts.push(cQuote(T));
+          if (C) mc.push("*" + C + "*");
+          if (type === "video" && who) mc.push("uploaded by " + who);
+          if (type === "podcast") {
+            if (who) mc.push("hosted by " + who);
+            if (P) mc.push(P);
+          }
+        }
+        if (md) mc.push(md);
+        if (U) mc.push(U);
+        if (mc.length) parts.push(mc.join(", ") + ".");
+      }
+    } else if (st === "chicago") {
+      var ac = cAuthChi(a),
+        ld = cLongDate(dt);
+      if (ac) parts.push(cDot(ac));
+      if (type === "video") {
+        parts.push(cQuote(T));
+        parts.push((C ? C + " video" : "Video") + (ld ? ", " + ld : "") + ".");
+      } else if (type === "podcast") {
+        parts.push(cQuote(T));
+        if (C) parts.push("*" + C + "*.");
+        parts.push("Podcast audio" + (ld ? ", " + ld : "") + ".");
+      } else if (type === "lecture") {
+        parts.push(cQuote(T));
+        parts.push("Lecture" + (C ? ", " + C : "") + (ld ? ", " + ld : "") + ".");
+      } else if (type === "dataset") {
+        parts.push(cItal(T));
+        if (Ver) parts.push(cDot(Ver));
+        parts.push((P ? P + ", " : "") + yr + ".");
+      } else {
+        parts.push(cItal(T));
+        if (Ver) parts.push(cDot(Ver));
+        if (ld) parts.push(cDot(ld));
+      }
+      if (U) parts.push(U + ".");
+    } else if (st === "harvard") {
+      var ah = cAuthHarv(a),
+        pre = (ah ? ah + " " : "") + "(" + yr + ") ",
+        tag = { video: "Video", podcast: "Podcast", lecture: "Lecture", dataset: "Dataset", ai: "Large language model" }[type],
+        avail = U ? "Available at: " + U + (acc ? " (Accessed: " + cLongDate(acc) + ")" : "") + "." : "";
+      if (type === "web") parts = [pre + cItal(T), C ? cDot(C) : "", avail];
+      else if (type === "book") parts = [pre + cItal(T), Ver ? cDot(Ver) : "", (City ? City + ": " : "") + (P ? P + "." : ""), avail];
+      else if (type === "journal") parts = [pre + "'" + T + "',", "*" + C + "*" + (V ? ", " + V + (I ? "(" + I + ")" : "") : "") + (Pg ? ", pp. " + Pg : "") + ".", avail];
+      else parts = [pre + "*" + T + "* [" + tag + "].", Ver ? cDot(Ver) : "", C ? cDot(C) : "", P ? cDot(P) : "", avail];
+    } else {
+      var ai = cAuthIeee(a),
+        id = cIeeeDate(dt);
+      if (type === "web") parts = [(ai ? ai + ", " : "") + '"' + T + ',"', C ? "*" + C + "*." : "", U + (acc ? " (accessed " + cIeeeDate(acc) + ")." : "")];
+      else if (type === "book") parts = [(ai ? ai + ", " : "") + "*" + T + "*" + (Ver ? ", " + Ver : "") + ".", (City ? City + ": " : "") + (P ? P + ", " : "") + yr + "."];
+      else if (type === "journal") parts = [(ai ? ai + ", " : "") + '"' + T + ',"', "*" + C + "*" + (V ? ", vol. " + V : "") + (I ? ", no. " + I : "") + (Pg ? ", pp. " + Pg : "") + ", " + (id || "n.d.") + ".", U];
+      else if (type === "video") parts = [(ai ? ai + ", " : "") + '"' + T + ',"', (C ? "*" + C + "*, " : "") + (id || "n.d.") + ". [Online Video].", U ? "Available: " + U : ""];
+      else if (type === "podcast") parts = [(ai ? ai + ", " : "") + '"' + T + ',"', (C ? "*" + C + "*, " : "") + (P ? P + ", " : "") + (id || "n.d.") + ". [Podcast].", U ? "Available: " + U : ""];
+      else if (type === "lecture") parts = [(ai ? ai + ", " : "") + '"' + T + ',"', (C ? C + ", " : "") + (id || "n.d.") + ". [Lecture]."];
+      else if (type === "dataset") parts = [(ai ? ai + ", " : "") + '"' + T + ',"', (P ? P + ", " : "") + (Ver ? Ver + ", " : "") + yr + ". [Online].", U ? "Available: " + U : ""];
+      else parts = [(ai ? ai + ", " : "") + '"' + T + ',"', (Ver ? Ver + ", " : "") + yr + ". [Online].", U ? "Available: " + U : ""];
+    }
+    return parts
+      .filter(function (p) {
+        return p;
+      })
+      .join(" ");
+  }
+  /* the short version that goes in your writing, like (Smith & Lee, 2024) */
+  function citeInText(style, type, f, n) {
+    if (style === "ieee") return "[" + (n || 1) + "]";
+    var a = cAuthors(citeAuthorLines(type, f)),
+      dt = cDate(f.date),
+      yr = dt ? String(dt.y) : "n.d.",
+      names = a.map(function (x) {
+        return x.last;
+      }),
+      amp = style === "apa" ? " & " : " and ",
+      who;
+    if (!names.length) {
+      var short = cStrip(f.title).split(/\s+/).slice(0, 4).join(" ");
+      who = ["book", "dataset", "ai", "video"].indexOf(type) >= 0 ? "*" + short + "*" : '"' + short + '"';
+    } else if (names.length === 1) who = names[0];
+    else if (names.length === 2) who = names[0] + amp + names[1];
+    else if (style === "harvard" && names.length === 3) who = names[0] + ", " + names[1] + " and " + names[2];
+    else who = names[0] + " et al.";
+    if (style === "mla") return "(" + who + ")";
+    return "(" + who + (style === "apa" || style === "harvard" ? ", " : " ") + yr + ")";
+  }
+  function citeKey(f, taken) {
+    var a = cAuthors(f.authors),
+      dt = cDate(f.date),
+      base = (a.length ? a[0].last : cStrip(f.title).split(/\s+/)[0] || "source").toLowerCase().replace(/[^a-z0-9]/g, "") || "source";
+    base = base.slice(0, 20) + (dt ? dt.y : "nd");
+    var k = base,
+      i = 0;
+    while (taken[k]) k = base + String.fromCharCode(97 + (i++ % 26)) + (i > 26 ? i : "");
+    return k;
+  }
+  function citeFieldsClean(f) {
+    var o = {};
+    CITE_FIELDS.forEach(function (k) {
+      if (isStr(f && f[k]) && f[k].trim()) o[k] = clip(f[k], 600);
+    });
+    return o;
+  }
+  /* ---- BibTeX and RIS ---- */
+  function bibAuthorsList(f, type) {
+    return cAuthors(citeAuthorLines(type || "", f)).map(function (x) {
+      return x.first ? x.last + ", " + x.first : x.last;
+    });
+  }
+  function bibClean(s) {
+    return String(s || "").replace(/[{}\\]/g, "").trim();
+  }
+  function toBibtex(entries) {
+    return entries
+      .filter(function (e) {
+        return e.d;
+      })
+      .map(function (e) {
+        var f = e.d.f,
+          t = e.d.type,
+          dt = cDate(f.date),
+          kind = t === "journal" ? "article" : t === "book" ? "book" : "misc",
+          rows = [];
+        function add(k, v) {
+          if (v) rows.push("  " + k + " = {" + bibClean(v) + "}");
+        }
+        add("author", bibAuthorsList(f, t).join(" and "));
+        add("title", f.title);
+        if (t === "journal") add("journal", f.container);
+        else if (f.container) add(t === "book" ? "series" : "howpublished", f.container);
+        add("year", dt ? String(dt.y) : "");
+        if (dt && dt.m) add("month", String(dt.m));
+        add("volume", f.vol);
+        add("number", f.issue);
+        add("pages", String(f.pages || "").replace(/[-\u2013\u2014]+/g, "--"));
+        add("publisher", f.publisher);
+        add("address", f.city);
+        add("edition", t === "book" ? f.version : "");
+        var u = String(f.url || "").trim(),
+          doi = /doi\.org\/(10\.[^\s]+)/i.exec(u);
+        if (doi) add("doi", doi[1]);
+        else add("url", u);
+        if (["web", "journal", "book"].indexOf(t) < 0) add("note", (CITE_TYPES.filter(function (x) { return x[0] === t; })[0] || [0, t])[1] + (f.version ? ", " + f.version : ""));
+        return "@" + kind + "{" + (e.key || "source") + ",\n" + rows.join(",\n") + "\n}";
+      })
+      .join("\n\n");
+  }
+  var RIS_TY = { web: "ELEC", book: "BOOK", journal: "JOUR", video: "VIDEO", podcast: "SOUND", lecture: "GEN", dataset: "DATA", ai: "GEN" };
+  function toRis(entries) {
+    return entries
+      .filter(function (e) {
+        return e.d;
+      })
+      .map(function (e) {
+        var f = e.d.f,
+          dt = cDate(f.date),
+          r = ["TY  - " + (RIS_TY[e.d.type] || "GEN")];
+        bibAuthorsList(f, e.d.type).forEach(function (n) {
+          r.push("AU  - " + n);
+        });
+        r.push("TI  - " + String(f.title || ""));
+        if (f.container) r.push("T2  - " + f.container);
+        if (dt) {
+          r.push("PY  - " + dt.y);
+          r.push("DA  - " + dt.y + "/" + (dt.m ? ("0" + dt.m).slice(-2) : "") + "/" + (dt.d ? ("0" + dt.d).slice(-2) : ""));
+        }
+        if (f.vol) r.push("VL  - " + f.vol);
+        if (f.issue) r.push("IS  - " + f.issue);
+        if (f.pages) {
+          var pp = String(f.pages).split(/[-\u2013\u2014]+/);
+          r.push("SP  - " + pp[0]);
+          if (pp[1]) r.push("EP  - " + pp[1]);
+        }
+        if (f.publisher) r.push("PB  - " + f.publisher);
+        if (f.city) r.push("CY  - " + f.city);
+        if (f.version) r.push("ET  - " + f.version);
+        if (f.url) r.push("UR  - " + f.url);
+        r.push("ER  - ");
+        return r.join("\n");
+      })
+      .join("\n\n");
+  }
+  function bibNames(s) {
+    return String(s || "")
+      .split(/\s+and\s+/i)
+      .map(function (n) {
+        n = n.trim();
+        if (!n) return "";
+        if (n.indexOf(",") >= 0) return n;
+        var w = n.split(/\s+/);
+        return w.length > 1 ? w.pop() + ", " + w.join(" ") : n;
+      })
+      .filter(Boolean);
+  }
+  function parseBibtex(txt) {
+    var out = [],
+      re = /@(\w+)\s*\{\s*([^,\s]*)\s*,/g,
+      m;
+    txt = String(txt || "");
+    while ((m = re.exec(txt))) {
+      var kind = m[1].toLowerCase(),
+        i = re.lastIndex,
+        depth = 1,
+        j = i;
+      while (j < txt.length && depth > 0) {
+        var ch = txt.charAt(j);
+        if (ch === "{") depth++;
+        else if (ch === "}") depth--;
+        j++;
+      }
+      var body = txt.slice(i, j - 1),
+        fd = {},
+        fre = /(\w+)\s*=\s*/g,
+        fm;
+      while ((fm = fre.exec(body))) {
+        var p = fre.lastIndex,
+          val = "";
+        if (body.charAt(p) === "{") {
+          var d = 1,
+            q = p + 1;
+          while (q < body.length && d > 0) {
+            if (body.charAt(q) === "{") d++;
+            else if (body.charAt(q) === "}") d--;
+            q++;
+          }
+          val = body.slice(p + 1, q - 1);
+          fre.lastIndex = q;
+        } else if (body.charAt(p) === '"') {
+          var q2 = body.indexOf('"', p + 1);
+          if (q2 < 0) q2 = body.length;
+          val = body.slice(p + 1, q2);
+          fre.lastIndex = q2 + 1;
+        } else {
+          var mm = /^[^,}\n]+/.exec(body.slice(p));
+          val = mm ? mm[0].trim() : "";
+          fre.lastIndex = p + (mm ? mm[0].length : 0);
+        }
+        fd[fm[1].toLowerCase()] = val.replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
+      }
+      var type = kind === "article" ? "journal" : /^(book|inbook|incollection|proceedings|phdthesis|mastersthesis)$/.test(kind) ? "book" : kind === "dataset" ? "dataset" : "web",
+        doi = fd.doi ? "https://doi.org/" + fd.doi.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "") : "";
+      out.push({
+        type: type,
+        f: citeFieldsClean({
+          authors: bibNames(fd.author).join("\n"),
+          title: fd.title,
+          container: fd.journal || fd.booktitle || fd.howpublished || fd.series || "",
+          date: [fd.year, fd.month && /^\d+$/.test(fd.month) ? ("0" + fd.month).slice(-2) : ""].filter(Boolean).join("-"),
+          vol: fd.volume,
+          issue: fd.number,
+          pages: String(fd.pages || "").replace(/--+/g, "-"),
+          publisher: fd.publisher,
+          city: fd.address,
+          version: fd.edition,
+          url: doi || fd.url,
+        }),
+      });
+      re.lastIndex = j;
+    }
+    return out.filter(function (x) {
+      return x.f.title;
+    });
+  }
+  function parseRis(txt) {
+    var out = [],
+      cur = null,
+      MAP = { JOUR: "journal", JFULL: "journal", BOOK: "book", CHAP: "book", VIDEO: "video", MPCT: "video", SOUND: "podcast", DATA: "dataset", ELEC: "web", WEB: "web", GEN: "web" };
+    String(txt || "")
+      .split(/\r?\n/)
+      .forEach(function (line) {
+        var m = /^([A-Z][A-Z0-9])\s\s-\s?(.*)$/.exec(line);
+        if (!m) return;
+        var tag = m[1],
+          v = m[2].trim();
+        if (tag === "TY") cur = { type: MAP[v] || "web", au: [], f: {} };
+        else if (!cur) return;
+        else if (tag === "ER") {
+          var f = cur.f;
+          f.authors = cur.au.join("\n");
+          if (f.title) out.push({ type: cur.type, f: citeFieldsClean(f) });
+          cur = null;
+        } else if (tag === "AU" || tag === "A1") cur.au.push(v.indexOf(",") >= 0 ? v : bibNames(v)[0] || v);
+        else if (tag === "TI" || tag === "T1") cur.f.title = v;
+        else if (tag === "T2" || tag === "JO" || tag === "JF") cur.f.container = cur.f.container || v;
+        else if (tag === "PY" || tag === "Y1") cur.f.date = cur.f.date || v.split("/")[0];
+        else if (tag === "DA") cur.f.date = v.split("/").filter(Boolean).join("-") || cur.f.date;
+        else if (tag === "VL") cur.f.vol = v;
+        else if (tag === "IS") cur.f.issue = v;
+        else if (tag === "SP") cur.f.pages = v + (cur.f.pages ? "-" + cur.f.pages : "");
+        else if (tag === "EP") cur.f.pages = (cur.f.pages ? cur.f.pages + "-" : "") + v;
+        else if (tag === "PB") cur.f.publisher = v;
+        else if (tag === "CY") cur.f.city = v;
+        else if (tag === "ET") cur.f.version = v;
+        else if (tag === "UR" || tag === "L1") cur.f.url = cur.f.url || v;
+        else if (tag === "DO") cur.f.url = "https://doi.org/" + v.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "");
+      });
+    return out;
+  }
+  /* ---- fill the form from a DOI, an ISBN or (desktop app) a web page ---- */
+  function detectSource(q) {
+    q = String(q || "").trim();
+    var doi = /(10\.\d{4,9}\/[^\s"<>]+)/i.exec(q);
+    if (doi) return { kind: "doi", v: doi[1].replace(/[.,;)\]]+$/, "") };
+    var digits = q.replace(/[\s-]/g, "");
+    if ((digits.length === 10 || digits.length === 13) && /^(97[89])?\d{9}[\dXx]$/.test(digits)) return { kind: "isbn", v: digits.toUpperCase() };
+    if (/^https?:\/\//i.test(q)) return { kind: "url", v: q };
+    return null;
+  }
+  function apiFirstLast(given, family) {
+    return family ? family + (given ? ", " + given : "") : given || "";
+  }
+  function lookupDoi(doi) {
+    return fetch("https://api.crossref.org/works/" + encodeURI(doi).replace(/#/g, "%23"))
+      .then(function (r) {
+        if (!r.ok) throw new Error("Crossref doesn't know that DOI.");
+        return r.json();
+      })
+      .then(function (j) {
+        var m = j.message || {},
+          dp = (m.issued && m.issued["date-parts"] && m.issued["date-parts"][0]) || [],
+          ty = String(m.type || ""),
+          f = {
+            authors: (m.author || []).map(function (a) { return apiFirstLast(a.given, a.family || a.name); }).join("\n"),
+            title: (m.title && m.title[0]) || "",
+            container: (m["container-title"] && m["container-title"][0]) || "",
+            date: dp.length ? dp.map(function (x, i) { return i ? ("0" + x).slice(-2) : String(x); }).join("-") : "",
+            vol: m.volume || "",
+            issue: m.issue || "",
+            pages: m.page || "",
+            publisher: m.publisher || "",
+            url: "https://doi.org/" + (m.DOI || doi),
+          };
+        var type = /^book|monograph|edited-book|reference-book/.test(ty) ? "book" : ty === "dataset" ? "dataset" : f.container ? "journal" : "web";
+        return { type: type, f: f };
+      });
+  }
+  function lookupIsbn(isbn) {
+    return fetch("https://openlibrary.org/api/books?bibkeys=ISBN:" + isbn + "&format=json&jscmd=data")
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (j) {
+        var b = j["ISBN:" + isbn];
+        if (!b) throw new Error("Open Library doesn't have that ISBN.");
+        var y = /\d{4}/.exec(b.publish_date || "");
+        return {
+          type: "book",
+          f: {
+            authors: (b.authors || []).map(function (a) { return bibNames(a.name)[0] || a.name; }).join("\n"),
+            title: b.title + (b.subtitle ? ": " + b.subtitle : ""),
+            publisher: (b.publishers && b.publishers[0] && b.publishers[0].name) || "",
+            city: (b.publish_places && b.publish_places[0] && b.publish_places[0].name) || "",
+            date: y ? y[0] : "",
+            url: "",
+          },
+        };
+      });
+  }
+  function lookupPage(url) {
+    if (!(window.focusdesk && window.focusdesk.fetchPage)) return Promise.reject(new Error("Looking up a web link works in the desktop app. Paste a DOI or an ISBN here instead, or type the details in."));
+    return window.focusdesk.fetchPage(url).then(function (r) {
+      if (!r || !r.ok) throw new Error((r && r.error) || "Couldn't read that page.");
+      var doc = new DOMParser().parseFromString(r.text, "text/html");
+      function metas(names) {
+        var out = [];
+        names.forEach(function (n) {
+          Array.prototype.forEach.call(doc.querySelectorAll('meta[name="' + n + '"],meta[property="' + n + '"]'), function (m) {
+            var c = (m.getAttribute("content") || "").trim();
+            if (c && out.indexOf(c) < 0) out.push(c);
+          });
+        });
+        return out;
+      }
+      var doi = metas(["citation_doi", "dc.identifier"]).filter(function (x) { return /10\.\d{4,9}\//.test(x); })[0];
+      if (doi) return lookupDoi(/(10\.\d{4,9}\/\S+)/.exec(doi)[1]);
+      var title = metas(["citation_title", "og:title", "twitter:title"])[0] || (doc.title || "").trim(),
+        auth = metas(["citation_author", "author", "article:author", "dc.creator"]).filter(function (x) { return !/^https?:/.test(x); }),
+        date = (metas(["citation_publication_date", "citation_date", "article:published_time", "dc.date", "date"])[0] || "").slice(0, 10),
+        site = metas(["og:site_name", "application-name"])[0] || "",
+        host = "";
+      try {
+        host = new URL(url).hostname.replace(/^www\./, "");
+      } catch (e) {}
+      var journal = metas(["citation_journal_title"])[0];
+      return {
+        type: journal ? "journal" : "web",
+        f: { authors: auth.map(function (n) { return bibNames(n)[0] || n; }).join("\n"), title: title, container: journal || site || host, date: date, url: url, accessed: ymd(new Date()) },
+      };
+    });
+  }
+  /* copy with italics (and hanging indents when pasted into Word or Docs) */
+  function copyRich(html, plain) {
+    try {
+      if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
+        var item = new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([plain], { type: "text/plain" }) });
+        return navigator.clipboard.write([item]).then(
+          function () {
+            return true;
+          },
+          function () {
+            return copyText(plain);
+          }
+        );
+      }
+    } catch (e) {}
+    return copyText(plain);
+  }
+  function hangingHtml(texts) {
+    return texts
+      .map(function (t) {
+        return '<p style="margin:0 0 8pt 0.5in;text-indent:-0.5in">' + citeHtml(t) + "</p>";
+      })
+      .join("");
+  }
+  /* in your notes: [@smith2024] becomes an in-text citation, and {{works-cited}} becomes the list of what the note cites */
+  function expandCiteTokens(md) {
+    md = String(md || "");
+    if (md.indexOf("[@") < 0 && md.indexOf("{{works-cited}}") < 0) return md;
+    var order = [];
+    md = md.replace(/\[@([A-Za-z0-9_\-]{1,40})\]/g, function (all, key) {
+      var e = S.bib.filter(function (b) {
+        return b.key === key;
+      })[0];
+      if (!e) return all;
+      if (order.indexOf(key) < 0) order.push(key);
+      return e.d ? citeInText(e.style, e.d.type, e.d.f, order.indexOf(key) + 1) : "(" + key + ")";
+    });
+    return md.replace(/\{\{works-cited\}\}/g, function () {
+      var list = order
+        .map(function (k) {
+          return S.bib.filter(function (b) {
+            return b.key === k;
+          })[0];
+        })
+        .filter(Boolean);
+      var ieee = list.length && list.every(function (b) {
+        return b.style === "ieee";
+      });
+      if (!ieee)
+        list.sort(function (a, b) {
+          return citePlain(a.text).toLowerCase() < citePlain(b.text).toLowerCase() ? -1 : 1;
+        });
+      return list.length
+        ? list
+            .map(function (b, i) {
+              return (ieee ? "[" + (i + 1) + "] " : "") + b.text;
+            })
+            .join("\n\n")
+        : "(No sources cited yet. Add [@key] markers to this note.)";
+    });
+  }
   function appCite(w) {
     var type = "web",
       style = "apa";
-    var typeSel = el(
-      "select",
-      {
-        class: "in",
-        onchange: function () {
-          type = this.value;
-          layout();
-          upd();
-        },
-      },
-      [
-        ["web", "Website"],
-        ["book", "Book"],
-        ["journal", "Journal article"],
-      ].map(function (o) {
-        return el("option", { value: o[0] }, o[1]);
-      })
-    );
-    var styleSel = el(
-      "select",
-      {
-        class: "in",
-        onchange: function () {
-          style = this.value;
-          layout();
-          upd();
-        },
-      },
-      [
-        ["apa", "APA 7"],
-        ["mla", "MLA 9"],
-        ["chicago", "Chicago"],
-      ].map(function (o) {
-        return el("option", { value: o[0] }, o[1]);
-      })
-    );
-    var F = {};
-    function field(key, label, ph, area) {
-      var inp = area
-        ? el("textarea", {
-            class: "in",
-            rows: 2,
-            placeholder: ph,
-            style: "resize:vertical",
-          })
-        : el("input", { class: "in", placeholder: ph });
+    function sel(opts, fn) {
+      return el(
+        "select",
+        { class: "in", onchange: fn },
+        opts.map(function (o) {
+          return el("option", { value: o[0] }, o[1]);
+        })
+      );
+    }
+    var typeSel = sel(CITE_TYPES, function () {
+      type = this.value;
+      layout();
+      upd();
+    });
+    var styleSel = sel(CITE_STYLES, function () {
+      style = this.value;
+      layout();
+      upd();
+    });
+    var F = {},
+      boxes = [],
+      byKey = {};
+    CITE_FIELDS.forEach(function (key) {
+      var area = key === "authors" || key === "extra",
+        inp = area ? el("textarea", { class: "in", rows: 2, style: "resize:vertical" }) : el("input", { class: "in" });
       inp.addEventListener("input", upd);
       F[key] = inp;
-      var box = el("div", { class: "cite-f" }, el("label", null, label), inp);
+      var box = el("div", { class: "cite-f" }, el("label", null, ""), inp);
       box._key = key;
-      return box;
-    }
-    var boxes = [
-      field(
-        "authors",
-        "Authors (one per line: Last, First)",
-        "Smith, Jane\nLee, Chris",
-        true
-      ),
-      field("title", "Title", "Title of the page, book or article"),
-      field("container", "Website name", "e.g. National Geographic"),
-      field("date", "Date or year", "2024-03-15 or 2024"),
-      field("url", "URL or DOI", "https://\u2026"),
-      field("vol", "Volume", "12"),
-      field("issue", "Issue", "3"),
-      field("pages", "Pages", "45-67"),
-      field("publisher", "Publisher", "e.g. Oxford University Press"),
-      field("city", "City (Chicago)", "New York"),
-      field("accessed", "Accessed date (MLA, optional)", "2025-01-20"),
-    ];
-    var byKey = {};
-    boxes.forEach(function (b) {
-      byKey[b._key] = b;
+      boxes.push(box);
+      byKey[key] = box;
     });
     var form = el("div", { class: "col", style: "gap:6px" }, boxes);
-    var out = el(
-      "div",
-      { class: "sunk cite-out" },
-      "Fill in the fields to build a citation."
-    );
-    var bibBox = el("div", {
-      class: "sunk list",
-      style: "flex:none;min-height:90px;max-height:200px;margin:0",
-    });
+    var out = el("div", { class: "sunk cite-out" }, "Fill in the fields to build a citation.");
+    var inTextOut = el("div", { class: "dim", style: "padding:0" });
+    var lookupIn = el("input", { class: "in", placeholder: "Paste a DOI, a link or an ISBN to fill this in", style: "flex:1;min-width:180px", "aria-label": "DOI, link or ISBN" });
+    var lookupMsg = el("div", { class: "dim", style: "padding:0" });
+    var bibBox = el("div", { class: "sunk list", style: "flex:none;min-height:90px;max-height:220px;margin:0" });
+    var reSel = sel(CITE_STYLES, function () {});
     var cur = "";
     function layout() {
-      var show = { authors: 1, title: 1, date: 1, url: 1 };
-      if (type === "web") {
-        show.container = 1;
-        if (style === "mla") show.accessed = 1;
-      }
-      if (type === "book") {
-        show.publisher = 1;
-        if (style === "chicago") show.city = 1;
-      }
-      if (type === "journal") {
-        show.container = 1;
-        show.vol = 1;
-        show.issue = 1;
-        show.pages = 1;
-      }
+      var show = CITE_SHOW[type] || CITE_SHOW.web;
       boxes.forEach(function (b) {
-        b.hidden = !show[b._key];
+        b.hidden = show.indexOf(b._key) < 0;
+        var lab = (CITE_TYPE_LABELS[type] && CITE_TYPE_LABELS[type][b._key]) || CITE_LABELS[b._key];
+        b.firstChild.textContent = lab[0];
+        F[b._key].placeholder = lab[1];
       });
-      byKey.container.firstChild.textContent =
-        type === "journal" ? "Journal name" : "Website name";
-      F.container.placeholder =
-        type === "journal" ? "e.g. Nature" : "e.g. National Geographic";
+      if (type === "journal") byKey.container.firstChild.textContent = "Journal name";
     }
     function vals() {
       var o = {};
-      for (var k in F) o[k] = F[k].value;
+      CITE_FIELDS.forEach(function (k) {
+        o[k] = F[k].value;
+      });
       return o;
     }
     function upd() {
-      cur = formatCite(style, type, vals());
-      if (cur) out.innerHTML = citeHtml(cur);
-      else out.textContent = "Fill in the fields to build a citation.";
-    }
-    function drawBib() {
-      bibBox.textContent = "";
-      if (!S.bib.length)
-        bibBox.append(
-          el("div", { class: "dim" }, "Your bibliography is empty.")
-        );
-      S.bib
-        .slice()
-        .sort(function (a, b) {
-          return citePlain(a.text).toLowerCase() <
-            citePlain(b.text).toLowerCase()
-            ? -1
-            : 1;
-        })
-        .forEach(function (b) {
-          var t = el("div", { class: "t cite-bib" });
-          t.innerHTML = citeHtml(b.text);
-          bibBox.append(
-            el(
-              "div",
-              { class: "lrow", style: "align-items:flex-start" },
-              t,
-              el(
-                "button",
-                {
-                  class: "btn xs",
-                  "aria-label": "Remove",
-                  onclick: function () {
-                    softDelete("bib", function (x) {
-                      return x.id === b.id;
-                    });
-                  },
-                },
-                "X"
-              )
-            )
-          );
-        });
-    }
-    function sortedPlain() {
-      return S.bib
-        .slice()
-        .sort(function (a, b) {
-          return citePlain(a.text).toLowerCase() <
-            citePlain(b.text).toLowerCase()
-            ? -1
-            : 1;
-        })
-        .map(function (b) {
-          return citePlain(b.text);
-        });
+      var v = vals();
+      cur = formatCite2(style, type, v);
+      if (cur) {
+        out.innerHTML = citeHtml(cur);
+        inTextOut.innerHTML = "In your writing: " + citeHtml(citeInText(style, type, v, S.bib.length + 1));
+      } else {
+        out.textContent = "Fill in the fields to build a citation.";
+        inTextOut.textContent = "";
+      }
     }
     function note(t) {
       msgBox({ title: "Citation Maker", icon: "info", text: t });
     }
+    function setForm(res) {
+      type = res.type;
+      typeSel.value = type;
+      CITE_FIELDS.forEach(function (k) {
+        F[k].value = (res.f && res.f[k]) || "";
+      });
+      layout();
+      upd();
+    }
+    function fill() {
+      var src = detectSource(lookupIn.value);
+      if (!src) {
+        lookupMsg.textContent = "That doesn't look like a DOI, a link starting with http, or an ISBN.";
+        return;
+      }
+      lookupMsg.textContent = "Looking it up\u2026";
+      (src.kind === "doi" ? lookupDoi(src.v) : src.kind === "isbn" ? lookupIsbn(src.v) : lookupPage(src.v)).then(
+        function (res) {
+          setForm(res);
+          lookupMsg.textContent = "Filled in. Please check it over, since online records are sometimes incomplete.";
+        },
+        function (e) {
+          lookupMsg.textContent = (e && e.message) || "Couldn't look that up. You can still type it in.";
+        }
+      );
+    }
+    onEnter(lookupIn, fill);
+    function sortedBib() {
+      var l = S.bib.map(function (b, i) {
+        return { b: b, i: i };
+      });
+      if (style !== "ieee")
+        l.sort(function (x, y) {
+          return citePlain(x.b.text).toLowerCase() < citePlain(y.b.text).toLowerCase() ? -1 : 1;
+        });
+      return l;
+    }
+    function drawBib() {
+      bibBox.textContent = "";
+      if (!S.bib.length) bibBox.append(el("div", { class: "dim" }, "Your bibliography is empty."));
+      sortedBib().forEach(function (x) {
+        var b = x.b,
+          t = el("div", { class: "t cite-bib" });
+        t.innerHTML = (b.style === "ieee" ? "[" + (x.i + 1) + "] " : "") + citeHtml(b.text);
+        bibBox.append(
+          el(
+            "div",
+            { class: "lrow", style: "align-items:flex-start" },
+            t,
+            b.key
+              ? el("button", { class: "btn xs", title: "Copy the marker to paste in a note, so the note can cite this", onclick: function () { copyText("[@" + b.key + "]").then(function (ok) { note(ok ? "Copied " + "[@" + b.key + "]. Paste it in a note, and the note shows the in-text citation." : "Couldn't copy."); }); } }, "[@]")
+              : null,
+            el("button", { class: "btn xs", "aria-label": "Remove", onclick: function () { softDelete("bib", function (y) { return y.id === b.id; }); } }, "X")
+          )
+        );
+      });
+    }
+    function listTexts() {
+      return sortedBib().map(function (x) {
+        return (x.b.style === "ieee" ? "[" + (x.i + 1) + "] " : "") + x.b.text;
+      });
+    }
+    function exportFile(name, text) {
+      if (!S.bib.some(function (b) { return b.d; })) {
+        note("Add sources with the form above first. Older entries without details can't be exported.");
+        return;
+      }
+      saveFile(name, text);
+    }
+    function importText(txt) {
+      var items = /^\s*@/m.test(txt) ? parseBibtex(txt) : /^TY\s\s-/m.test(txt) ? parseRis(txt) : [];
+      if (!items.length) {
+        note("I couldn't find any sources in that file. It should be BibTeX (.bib) or RIS (.ris).");
+        return;
+      }
+      var taken = {};
+      S.bib.forEach(function (b) {
+        if (b.key) taken[b.key] = 1;
+      });
+      var n = 0;
+      items.forEach(function (it) {
+        if (S.bib.length >= 300) return;
+        var key = citeKey(it.f, taken);
+        taken[key] = 1;
+        S.bib.push({ id: uid(), text: clip(formatCite2(style, it.type, it.f), 1500), style: style, key: key, d: { type: it.type, f: it.f } });
+        n++;
+      });
+      save();
+      refreshAll();
+      note("Added " + n + " source(s) in " + (CITE_STYLES.filter(function (s) { return s[0] === style; })[0] || [0, style])[1] + " style.");
+    }
+    function pickImport() {
+      var inp = el("input", { type: "file", accept: ".bib,.ris,.txt,text/plain", style: "display:none" });
+      inp.onchange = function () {
+        var f = inp.files && inp.files[0];
+        if (!f) return;
+        var r = new FileReader();
+        r.onload = function () {
+          importText(String(r.result || ""));
+        };
+        r.readAsText(f);
+      };
+      w.body.append(inp);
+      inp.click();
+      setTimeout(function () {
+        inp.remove();
+      }, 60000);
+    }
+    var btn = function (label, fn, title) {
+      return el("button", { class: "btn sm", title: title || "", onclick: fn }, label);
+    };
     w.body.append(
       el(
         "div",
-        {
-          class: "col",
-          style: "flex:1;min-height:0;padding:6px;gap:6px;overflow:auto",
-        },
-        el(
-          "div",
-          { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
-          el("span", null, "Source:"),
-          typeSel,
-          el("span", null, "Style:"),
-          styleSel
-        ),
+        { class: "col", style: "flex:1;min-height:0;padding:6px;gap:6px;overflow:auto" },
+        el("div", { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" }, el("span", null, "Source:"), typeSel, el("span", null, "Style:"), styleSel),
+        el("div", { class: "row", style: "gap:6px;align-items:center" }, lookupIn, btn("Fill in", fill, "Looks up a DOI, an ISBN, or (desktop app) a web page")),
+        lookupMsg,
         form,
         out,
+        inTextOut,
         el(
           "div",
           { class: "row", style: "gap:6px;flex-wrap:wrap" },
-          el(
-            "button",
-            {
-              class: "btn sm",
-              onclick: function () {
-                if (!cur) {
-                  note("Fill in at least a title first.");
-                  return;
-                }
-                copyText(citePlain(cur)).then(function (ok) {
-                  note(
-                    ok ? "Citation copied." : "Couldn't copy automatically."
-                  );
-                });
-              },
-            },
-            "Copy"
-          ),
-          el(
-            "button",
-            {
-              class: "btn sm",
-              onclick: function () {
-                if (!cur) {
-                  note("Fill in at least a title first.");
-                  return;
-                }
-                if (S.bib.length >= 300) return;
-                S.bib.push({ id: uid(), text: clip(cur, 1500), style: style });
-                save();
-                refreshAll();
-              },
-            },
-            "Add to bibliography"
-          )
+          btn("Copy", function () {
+            if (!cur) return note("Fill in at least a title first.");
+            copyRich(hangingHtml([cur]), citePlain(cur)).then(function (ok) {
+              note(ok ? "Citation copied, with its italics." : "Couldn't copy automatically.");
+            });
+          }),
+          btn("Copy in-text", function () {
+            if (!cur) return note("Fill in at least a title first.");
+            copyText(citePlain(citeInText(style, type, vals(), S.bib.length + 1))).then(function (ok) {
+              note(ok ? "Copied." : "Couldn't copy.");
+            });
+          }),
+          btn("Add to bibliography", function () {
+            if (!cur) return note("Fill in at least a title first.");
+            if (S.bib.length >= 300) return;
+            var taken = {};
+            S.bib.forEach(function (b) {
+              if (b.key) taken[b.key] = 1;
+            });
+            var v = citeFieldsClean(vals());
+            S.bib.push({ id: uid(), text: clip(cur, 1500), style: style, key: citeKey(v, taken), d: { type: type, f: v } });
+            save();
+            refreshAll();
+          })
         ),
         el("div", { style: "font-weight:bold;margin-top:4px" }, "Bibliography"),
         bibBox,
         el(
           "div",
           { class: "row", style: "gap:6px;flex-wrap:wrap" },
-          el(
-            "button",
-            {
-              class: "btn sm",
-              onclick: function () {
-                if (!S.bib.length) return;
-                copyText(sortedPlain().join("\n\n")).then(function (ok) {
-                  note(ok ? "Bibliography copied." : "Couldn't copy.");
-                });
-              },
-            },
-            "Copy all"
-          ),
-          el(
-            "button",
-            {
-              class: "btn sm",
-              onclick: function () {
-                if (!S.bib.length) return;
-                S.notes.push({
-                  id: uid(),
-                  text: "Bibliography\n\n" + sortedPlain().join("\n\n"),
-                  updated: Date.now(),
-                });
-                save();
-                refreshAll();
-                note("Saved to a new note in Notepad.");
-              },
-            },
-            "Save to Notepad"
-          )
+          btn("Copy all", function () {
+            if (!S.bib.length) return;
+            copyRich(hangingHtml(listTexts()), listTexts().map(citePlain).join("\n\n")).then(function (ok) {
+              note(ok ? "Bibliography copied, with italics and hanging indents." : "Couldn't copy.");
+            });
+          }),
+          btn("Save to Notepad", function () {
+            if (!S.bib.length) return;
+            S.notes.push({ id: uid(), text: "Bibliography\n\n" + listTexts().join("\n\n"), updated: Date.now() });
+            save();
+            refreshAll();
+            note("Saved to a new note in Notepad.");
+          }),
+          btn("Export BibTeX", function () {
+            exportFile("focusdesk-sources.bib", toBibtex(S.bib));
+          }),
+          btn("Export RIS", function () {
+            exportFile("focusdesk-sources.ris", toRis(S.bib));
+          }),
+          btn("Import\u2026", pickImport, "Add sources from a BibTeX (.bib) or RIS (.ris) file")
+        ),
+        el(
+          "div",
+          { class: "row", style: "gap:6px;flex-wrap:wrap;align-items:center" },
+          el("span", null, "Change every source to:"),
+          reSel,
+          btn("Apply", function () {
+            var s2 = reSel.value,
+              n = 0;
+            S.bib.forEach(function (b) {
+              if (!b.d) return;
+              b.text = clip(formatCite2(s2, b.d.type, b.d.f), 1500);
+              b.style = s2;
+              n++;
+            });
+            save();
+            refreshAll();
+            note(n ? "Changed " + n + " source(s)." + (n < S.bib.length ? " Older entries without details were left as they are." : "") : "None of these sources can be changed (they were saved before this feature).");
+          })
         ),
         el(
           "div",
           { class: "dim", style: "padding:0" },
-          "These follow the common formats, but always double-check against your instructor's style guide."
+          "In a note, type a marker like [@smith2024] for an in-text citation, and {{works-cited}} where the list should go. Tap [@] on a source to copy its marker. These follow the common formats, but always double-check against your instructor's style guide."
         )
       )
     );
@@ -19014,6 +19946,7 @@ window.addEventListener("error", function (e) {
     upd();
     drawBib();
   }
+
 
   /* ================= APP: FIND ================= */
   function appFind(w) {
@@ -20147,7 +21080,7 @@ window.addEventListener("error", function (e) {
     });
   }
   /* Image occlusion: create, or edit an existing set (add or remove boxes; kept boxes keep their history). */
-  function occDialog(deckName, done, edit) {
+  function occDialog(deckName, done, edit, startImg) {
     var sibs = edit
       ? edit.grp
         ? S.cards.filter(function (c) {
@@ -20155,7 +21088,7 @@ window.addEventListener("error", function (e) {
           })
         : [edit]
       : [];
-    var imgId = edit ? edit.occ.img : null,
+    var imgId = edit ? edit.occ.img : startImg || null,
       boxes = edit
         ? edit.occ.boxes.map(function (b, i) {
             return { x: b.x, y: b.y, w: b.w, h: b.h, key: i };
@@ -20496,6 +21429,15 @@ window.addEventListener("error", function (e) {
         var ed = w.d || new Date();
         S.events.push({ id: uid(), title: label, date: ymd(ed), time: w.hasTime ? pad(ed.getHours()) + ":" + pad(ed.getMinutes()) : "", kind: "other", repeat: "none" });
         msg = "Event added for " + ymd(ed) + ": " + clip(label, 50);
+      } else if (kind === "card") {
+        var cd = null;
+        try {
+          cd = JSON.parse(text);
+        } catch (e) {}
+        if (!cd || !isStr(cd.front) || !cd.front.trim()) return { ok: false, msg: "" };
+        if (S.cards.length >= 5000) return { ok: false, msg: "Your flash cards are full (5000)." };
+        S.cards.push(newCardBase("Quick cards", clip(cd.front.trim(), 500), { a: clip((isStr(cd.back) && cd.back.trim()) || "(add the answer later)", 500) }));
+        msg = "Flash card added to Quick cards: " + clip(cd.front.trim(), 50);
       } else return { ok: false, msg: "" };
       save();
       refreshAll();
@@ -20594,6 +21536,18 @@ window.addEventListener("error", function (e) {
         if (S.prefs.appleRemAuto && S.prefs.appleLists.length) appleSyncReminders().catch(function () {});
       }
     }, 7000);
+    window.__focusdeskNP = function (st) {
+      NP.s = st;
+      NP.at = Date.now();
+      paintNpTray();
+      if (npFly) npFly.paint();
+    };
+    var trayNp = $("#trayNp");
+    if (trayNp)
+      trayNp.addEventListener("click", function () {
+        showClockFlyout();
+      });
+    setTimeout(npWatchSync, 1200);
     window.addEventListener("focusdesk-katex", function () {
       try {
         refreshAll();
@@ -29381,8 +30335,8 @@ window.addEventListener("error", function (e) {
       id: "paint",
       title: "Sketch Pad",
       icon: "paint",
-      w: 540,
-      h: 540,
+      w: 640,
+      h: 600,
       build: appPaint,
     },
     schedule: {
@@ -29413,8 +30367,8 @@ window.addEventListener("error", function (e) {
       id: "cite",
       title: "Citation Maker",
       icon: "book",
-      w: 500,
-      h: 640,
+      w: 560,
+      h: 720,
       build: appCite,
     },
     find: {
@@ -30316,6 +31270,119 @@ window.addEventListener("error", function (e) {
   }
   tick();
   setInterval(tick, 5000);
+  /* ---- Now Playing inside FocusDesk (desktop app): a taskbar indicator and a box in the clock flyout ---- */
+  var NP = { s: null, at: 0 },
+    npFly = null;
+  function npFmt(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var h = Math.floor(sec / 3600),
+      m = Math.floor((sec % 3600) / 60),
+      x = ("0" + (sec % 60)).slice(-2);
+    return h ? h + ":" + ("0" + m).slice(-2) + ":" + x : m + ":" + x;
+  }
+  function npPosNow() {
+    var s = NP.s;
+    if (!s || !(s.duration > 0) || s.position == null) return 0;
+    return Math.max(0, Math.min(s.position + (s.playing ? (Date.now() - NP.at) / 1000 : 0), s.duration));
+  }
+  function npWatchSync() {
+    if (window.focusdesk && window.focusdesk.watchNowPlaying) window.focusdesk.watchNowPlaying(!!(S.prefs.npTaskbar || npFly));
+  }
+  function paintNpTray() {
+    var t = $("#trayNp");
+    if (!t) return;
+    var s = NP.s;
+    if (!(S.prefs.npTaskbar && s && s.available && !s.idle && s.title)) {
+      t.hidden = true;
+      return;
+    }
+    t.hidden = false;
+    t.textContent = (s.playing ? "\u266a " : "\u275a\u275a ") + clip(s.title, 26);
+    t.title = s.title + (s.artist ? " \u2014 " + s.artist : "") + ". Click to open the player.";
+  }
+  function buildNpBox() {
+    var art = el("div", { class: "cf-np-art" }, "\u266b"),
+      ttl = el("div", { class: "cf-np-t" }, "Looking for music\u2026"),
+      sub = el("div", { class: "cf-np-s" }),
+      seek = el("input", { type: "range", min: "0", max: "1000", step: "1", value: "0", disabled: true, "aria-label": "Song position", style: "flex:1;min-width:0;margin:0" }),
+      cur = el("span", null, "-:--"),
+      len = el("span", null, "-:--"),
+      scrubbing = false,
+      lastArt = "";
+    function send(c) {
+      return function () {
+        window.focusdesk.nowPlayingCmd({ cmd: c });
+      };
+    }
+    function b(label, tip, fn) {
+      return el("button", { class: "btn xs", title: tip, "aria-label": tip, onclick: fn }, label);
+    }
+    var bPrev = b("\u23ee", "Previous", send("prev")),
+      bGo = b("\u25b6", "Play or pause", send("toggle")),
+      bNext = b("\u23ed", "Next", send("next")),
+      bShuf = b("\u21c4", "Shuffle", send("shuffle")),
+      bRep = b("\u21bb", "Repeat", send("repeat"));
+    seek.addEventListener("input", function () {
+      scrubbing = true;
+      cur.textContent = npFmt((seek.value / 1000) * (NP.s && NP.s.duration));
+    });
+    seek.addEventListener("change", function () {
+      var sec = (seek.value / 1000) * (NP.s && NP.s.duration ? NP.s.duration : 0);
+      if (NP.s) {
+        NP.s.position = sec;
+        NP.at = Date.now();
+      }
+      scrubbing = false;
+      window.focusdesk.nowPlayingCmd({ cmd: "seek", sec: Math.round(sec * 10) / 10 });
+    });
+    var box = el(
+      "div",
+      { class: "cf-np" },
+      el("div", { class: "row", style: "gap:8px;align-items:center" }, art, el("div", { style: "flex:1;min-width:0" }, ttl, sub)),
+      el("div", { class: "row", style: "gap:3px;align-items:center;justify-content:center" }, bPrev, bGo, bNext, bShuf, bRep),
+      el("div", { class: "row", style: "gap:6px;align-items:center;font-size:11px" }, cur, seek, len)
+    );
+    function paint() {
+      var s = NP.s,
+        live = s && s.available && !s.idle && s.title;
+      ttl.textContent = live ? s.title : s && s.available === false ? s.hint || "Not available here" : s ? "Nothing playing" : "Looking for music\u2026";
+      sub.textContent = live ? s.artist || "" : "";
+      bGo.textContent = live && s.playing ? "\u275a\u275a" : "\u25b6";
+      [bPrev, bGo, bNext].forEach(function (x) {
+        x.disabled = !live;
+      });
+      bShuf.disabled = !live || s.shuffle == null;
+      bShuf.classList.toggle("on", !!live && s.shuffle === true);
+      bRep.disabled = !live || s.repeat == null;
+      bRep.classList.toggle("on", !!live && (s.repeat === "all" || s.repeat === "one"));
+      bRep.textContent = live && s.repeat === "one" ? "\u21bb1" : "\u21bb";
+      var src = live ? s.art || "" : "";
+      if (src !== lastArt) {
+        lastArt = src;
+        art.textContent = "";
+        if (src) art.append(el("img", { src: src, alt: "" }));
+        else art.textContent = "\u266b";
+      }
+      bar();
+    }
+    function bar() {
+      if (scrubbing) return;
+      var s = NP.s;
+      if (!s || !(s.duration > 0) || s.position == null) {
+        seek.disabled = true;
+        seek.value = 0;
+        cur.textContent = "-:--";
+        len.textContent = "-:--";
+        return;
+      }
+      var p = npPosNow();
+      seek.disabled = false;
+      seek.value = Math.round((p / s.duration) * 1000);
+      cur.textContent = npFmt(p);
+      len.textContent = npFmt(s.duration);
+    }
+    return { box: box, paint: paint, bar: bar };
+  }
   function showClockFlyout() {
     var cur = new Date();
     var vy = cur.getFullYear(),
@@ -30389,7 +31456,14 @@ window.addEventListener("error", function (e) {
     });
     var list = el("div", { class: "cf-list" });
     var timers = el("div", { class: "cf-sec" });
-    wrap.append(head, grid, list, timers);
+    var npUi = null;
+    if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.watchNowPlaying) {
+      npUi = buildNpBox();
+      npFly = npUi;
+      npUi.paint();
+      window.focusdesk.watchNowPlaying(true);
+    }
+    wrap.append.apply(wrap, (npUi ? [npUi.box] : []).concat([head, grid, list, timers]));
     var place = function () {};
     function draw() {
       titleEl.textContent = MONTHS[vm] + " " + vy;
@@ -30504,9 +31578,21 @@ window.addEventListener("error", function (e) {
       place();
       /* keep the timer line live while the flyout is open */
       var iv = setInterval(function () {
-        if (!pop.isConnected) return clearInterval(iv);
+        if (!pop.isConnected) {
+          clearInterval(iv);
+          if (npUi) {
+            npFly = null;
+            npWatchSync();
+          }
+          return;
+        }
         paintTimers();
       }, 1000);
+      if (npUi)
+        var iv2 = setInterval(function () {
+          if (!pop.isConnected) return clearInterval(iv2);
+          npUi.bar();
+        }, 250);
     }
   }
   $("#clock").addEventListener("click", function (e) {

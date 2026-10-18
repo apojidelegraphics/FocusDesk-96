@@ -1,3 +1,4 @@
+@charset "UTF-8";
 :root {
   --face: #c0c0c0;
   --hi: #ffffff;
@@ -3266,7 +3267,7 @@ html.grey .snap-ind {
   background: rgba(255, 208, 0, 0.14);
 }
 
-/* ===== Folders app — polished layout ===== */
+/* ===== Folders app \2014  polished layout ===== */
 
 /* Folder header (name, count, actions) */
 .fl-header {
@@ -3330,7 +3331,7 @@ html.grey .snap-ind {
   flex: none;
 }
 
-/* Left pane — folder list */
+/* Left pane \2014  folder list */
 .fl-list {
   display: flex;
   flex-direction: column;
@@ -3387,7 +3388,7 @@ html.grey .snap-ind {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Right pane — item rows */
+/* Right pane \2014  item rows */
 .fl-row {
   display: flex;
   align-items: center;
@@ -3526,7 +3527,7 @@ html.grey .fl-sec-ct {
   background: #404060;
   color: #d0d0d0;
 }
-/* ===== Apoji Studios logo — boot screen (bottom-left) ===== */
+/* ===== Apoji Studios logo \2014  boot screen (bottom-left) ===== */
 #boot .apojilogo {
   position: absolute;
   bottom: 22px;
@@ -3569,7 +3570,7 @@ html.grey .fl-sec-ct {
   }
 }
 
-/* ===== Control Panel footer — two-column with logo on the right ===== */
+/* ===== Control Panel footer \2014  two-column with logo on the right ===== */
 .cp-footer {
   display: flex;
   align-items: center;
@@ -3804,7 +3805,7 @@ html.grey .mig-status { color:#909090; }
   }
 }
 
-/* ===== Windows slim title bar: menu behind a ⋯ button (opt-in) ===== */
+/* ===== Windows slim title bar: menu behind a \22ef  button (opt-in) ===== */
 #dt-titlebar { display: none; }
 html.dt-tb #dt-titlebar {
   display: flex;
@@ -3918,3 +3919,21 @@ html.dt-tb.dt-tb-off #desktop { top: 0; }
 .cf-row { display: flex; gap: 8px; }
 .cf-row span { color: #404040; min-width: 64px; flex: none; }
 .cf-row b { font-weight: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== Sketch Pad 2.0 ===== */
+.pt-stack { position: relative; background: #fff; }
+.pt-stack canvas { position: absolute; left: 0; top: 0; display: block; background: transparent; }
+.pt-area .pt-stack canvas.pt-paper { image-rendering: auto; cursor: default; }
+.pt-area .pt-stack canvas.pt-draw { background: transparent; outline: none; }
+.pt-sel { position: absolute; pointer-events: none; outline: 1px dashed #000; box-shadow: 0 0 0 1px #fff; }
+.pt-tools .btn.on { box-shadow: inset 1px 1px #404040, inset -1px -1px #fff; background: #d8d8d8; }
+
+/* ===== Now Playing inside FocusDesk (desktop) ===== */
+#trayNp { cursor: default; padding: 0 6px; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #000080; }
+.cf-np { display: flex; flex-direction: column; gap: 4px; padding-bottom: 6px; margin-bottom: 2px; border-bottom: 1px solid #808080; box-shadow: 0 1px #fff; }
+.cf-np-art { width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; background: #000080; color: #fff; font-size: 20px; overflow: hidden; box-shadow: inset 1px 1px #404040, inset -1px -1px #fff; }
+.cf-np-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cf-np-t { font-weight: bold; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cf-np-s { font-size: 11px; color: #404040; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cf-np .btn.on { box-shadow: inset 1px 1px #404040, inset -1px -1px #fff; background: #d8d8d8; color: #000080; }
+.cf-np input[type="range"] { accent-color: #000080; height: 14px; }

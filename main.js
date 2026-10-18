@@ -14,7 +14,7 @@
  *  - Every file write is atomic: write a temp file, fsync it, rename over the target.
  */
 
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen, globalShortcut, Tray, nativeImage, Notification, net } = require("electron");
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen, globalShortcut, Tray, nativeImage, Notification, net, clipboard } = require("electron");
 const nowPlaying = require("./nowplaying");
 const path = require("path");
 const fs = require("fs");
@@ -297,6 +297,7 @@ function bootPayload() {
     appVersion: app.getVersion(),
     dprefs: dprefs,
     hotkeyOk: hotkeyOk,
+    cardHotkeyOk: cardHotkeyOk,
     trayOk: !!tray,
     titleBar: compactActive,
   };
@@ -513,6 +514,7 @@ const DEFAULT_DPREFS = {
   notifyAlways: true, // show native notifications even while FocusDesk is the front window
   dueOverdue: true, // include overdue tasks and assignments in the tray / menu bar list
   hotkey: true,
+  cardHotkey: true, // Ctrl/Cmd+Shift+Y sends the text on your clipboard to a new flash card
   closeToTray: false,
   launchAtLogin: false,
   startHidden: false,
@@ -522,6 +524,8 @@ const DEFAULT_DPREFS = {
 };
 let compactActive = false; // was the current window built with the slim title bar? (Windows only, set at creation)
 const HOTKEY = "CommandOrControl+Shift+Space";
+const CARD_HOTKEY = "CommandOrControl+Shift+Y";
+let cardHotkeyOk = false;
 let dprefs = Object.assign({}, DEFAULT_DPREFS);
 let tray = null;
 let captureWin = null;
@@ -579,16 +583,31 @@ function notifyNative(title, body, opts) {
   }
 }
 
+async function captureInit(kind) {
+  const p = { kind: kind };
+  if (kind === "card") {
+    try {
+      // whatever you just copied becomes the front of the card (newer Electron versions read the clipboard asynchronously)
+      p.front = String((await clipboard.readText()) || "").trim().slice(0, 500);
+    } catch (_) {
+      p.front = "";
+    }
+  }
+  return p;
+}
 function openCapture(kind) {
   if (captureWin && !captureWin.isDestroyed()) {
-    captureWin.webContents.send("capture:init", { kind: kind });
+    const cw = captureWin;
+    captureInit(kind).then((init) => {
+      if (!cw.isDestroyed()) cw.webContents.send("capture:init", init);
+    });
     captureWin.show();
     captureWin.focus();
     return;
   }
   const a = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
   const w = 560,
-    h = 126;
+    h = kind === "card" ? 172 : 126;
   const win = new BrowserWindow({
     width: w,
     height: h,
@@ -616,8 +635,10 @@ function openCapture(kind) {
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   win.webContents.on("will-navigate", (ev) => ev.preventDefault());
   win.loadFile(path.join(__dirname, "capture.html"));
-  win.webContents.once("did-finish-load", () => {
-    win.webContents.send("capture:init", { kind: kind });
+  win.webContents.once("did-finish-load", async () => {
+    const init = await captureInit(kind);
+    if (win.isDestroyed()) return;
+    win.webContents.send("capture:init", init);
     win.show();
     win.focus();
   });
@@ -636,13 +657,23 @@ function openCapture(kind) {
 function registerHotkey() {
   try {
     globalShortcut.unregister(HOTKEY);
+    globalShortcut.unregister(CARD_HOTKEY);
   } catch (_) {}
   hotkeyOk = false;
-  if (!dprefs.hotkey) return;
-  try {
-    hotkeyOk = globalShortcut.register(HOTKEY, () => openCapture("task")) && globalShortcut.isRegistered(HOTKEY);
-  } catch (_) {
-    hotkeyOk = false;
+  cardHotkeyOk = false;
+  if (dprefs.hotkey) {
+    try {
+      hotkeyOk = globalShortcut.register(HOTKEY, () => openCapture("task")) && globalShortcut.isRegistered(HOTKEY);
+    } catch (_) {
+      hotkeyOk = false;
+    }
+  }
+  if (dprefs.cardHotkey) {
+    try {
+      cardHotkeyOk = globalShortcut.register(CARD_HOTKEY, () => openCapture("card")) && globalShortcut.isRegistered(CARD_HOTKEY);
+    } catch (_) {
+      cardHotkeyOk = false;
+    }
   }
 }
 
@@ -693,6 +724,7 @@ function buildTrayMenu() {
     { label: "Mini timer", click: openMiniTimer },
     { label: "Now playing", click: openNowPlaying },
     { label: "Add quick task\u2026", click: () => openCapture("task") },
+    { label: "New flash card from clipboard\u2026", click: () => openCapture("card") },
     { label: "Ask Clipy\u2026", click: () => openClipyChat("") },
     { type: "separator" },
     {
@@ -864,8 +896,25 @@ async function resolveArt(s) {
 }
 let npKey = "";
 let npArt = "";
+let npMainWatch = false; // the clock flyout and taskbar indicator inside FocusDesk are listening too
+const npNeeded = () => (npWin && !npWin.isDestroyed()) || npMainWatch;
+function npEnsureTimer() {
+  if (npNeeded()) {
+    if (!npTimer) {
+      npTimer = setInterval(npPoll, 3500); // only while something is showing it
+      npPoll();
+    }
+  } else if (npTimer) {
+    clearInterval(npTimer);
+    npTimer = null;
+  }
+}
+function npBroadcast(payload) {
+  if (npWin && !npWin.isDestroyed()) npWin.webContents.send("np:status", payload);
+  if (npMainWatch && mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("focusdesk:np", payload);
+}
 async function npPoll() {
-  if (!npWin || npWin.isDestroyed()) return;
+  if (!npNeeded()) return;
   const s = await nowPlaying.status();
   npLast = s;
   const key = s && s.title ? [s.source, s.title, s.artist].join("|") : "";
@@ -876,10 +925,29 @@ async function npPoll() {
       resolveArt(s).then((a) => {
         if (npKey !== key) return; // the song changed again while the cover was loading
         npArt = a || "";
-        if (npWin && !npWin.isDestroyed()) npWin.webContents.send("np:status", Object.assign({}, npLast, { art: npArt }));
+        npBroadcast(Object.assign({}, npLast, { art: npArt }));
       });
   }
-  if (npWin && !npWin.isDestroyed()) npWin.webContents.send("np:status", Object.assign({}, s, { art: npArt }));
+  npBroadcast(Object.assign({}, s, { art: npArt }));
+}
+/* play, pause, skip, seek, shuffle and repeat, from the pill or from inside FocusDesk */
+async function npControl(msg, fromPill) {
+  const cmd = msg && typeof msg === "object" ? msg.cmd : msg;
+  if (fromPill && cmd === "close") return closeNowPlaying();
+  if (fromPill && cmd === "open") return showMainWindow();
+  const src = npLast && npLast.source;
+  if (cmd === "toggle" || cmd === "next" || cmd === "prev") await nowPlaying.control(cmd, src);
+  else if (cmd === "seek") {
+    const sec = Number(msg && msg.sec);
+    if (!Number.isFinite(sec)) return;
+    await nowPlaying.control("seek", src, sec);
+  } else if (cmd === "shuffle") await nowPlaying.control("shuffle", src, !(npLast && npLast.shuffle));
+  else if (cmd === "repeat") {
+    const cyc = { off: "all", all: "one", one: "off" };
+    if (src === "Spotify") cyc.all = "off"; // Spotify only has repeat on or off
+    await nowPlaying.control("repeat", src, cyc[(npLast && npLast.repeat) || "off"] || "all");
+  } else return;
+  setTimeout(npPoll, 350); // show the new state right away
 }
 function openNowPlaying() {
   if (npWin && !npWin.isDestroyed()) {
@@ -890,7 +958,7 @@ function openNowPlaying() {
   try {
     pos = JSON.parse(fs.readFileSync(NP_FILE, "utf8"));
   } catch (_) {}
-  const w = 420,
+  const w = 480,
     h = 106;
   const onScreen =
     pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) && screen.getAllDisplays().some((d) => {
@@ -926,7 +994,7 @@ function openNowPlaying() {
     win.show();
     npPoll();
   });
-  npTimer = setInterval(npPoll, 3500); // only while the pill is open
+  npEnsureTimer();
   let saveT = null;
   win.on("move", () => {
     clearTimeout(saveT);
@@ -938,11 +1006,10 @@ function openNowPlaying() {
     }, 400);
   });
   win.on("closed", () => {
+    if (npWin === win) npWin = null;
     npKey = "";
     npArt = "";
-    clearInterval(npTimer);
-    npTimer = null;
-    if (npWin === win) npWin = null;
+    npEnsureTimer();
   });
 }
 function closeNowPlaying() {
@@ -1020,7 +1087,7 @@ function registerDesktopIpc() {
       await ensureDailyBackup();
     }
     const login = applyLoginItem();
-    return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, trayOk: !!tray, login: login };
+    return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, cardHotkeyOk: cardHotkeyOk, trayOk: !!tray, login: login };
   });
 
   ipcMain.handle("focusdesk:popupMenu", (e, p) => {
@@ -1035,7 +1102,7 @@ function registerDesktopIpc() {
   ipcMain.handle("focusdesk:openCapture", (e, p) => {
     assertTrusted(e);
     const k = p && p.kind;
-    openCapture(["task", "note", "reminder", "event", "ask"].indexOf(k) >= 0 ? k : "task");
+    openCapture(["task", "note", "reminder", "event", "card", "ask"].indexOf(k) >= 0 ? k : "task");
     return { ok: true };
   });
 
@@ -1053,6 +1120,43 @@ function registerDesktopIpc() {
     win.setBounds({ x: x, y: y, width: b.width, height: b.height }); // keep the size fixed while moving
   });
 
+  /* Download a web page so the Citation Maker can read its title, author and date. https only, size and time limited. */
+  ipcMain.handle("focusdesk:fetchPage", async (e, p) => {
+    assertTrusted(e);
+    let u;
+    try {
+      u = new URL(String((p && p.url) || "").trim());
+    } catch (_) {
+      return { ok: false, error: "That isn't a valid link." };
+    }
+    if (u.protocol !== "https:") return { ok: false, error: "The link has to start with https://." };
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 15000);
+    try {
+      const res = await net.fetch(u.toString(), { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; FocusDesk96)", Accept: "text/html,application/xhtml+xml" } });
+      if (!res.ok) return { ok: false, error: "The site answered " + res.status + "." };
+      if (res.url && !/^https:/i.test(res.url)) return { ok: false, error: "The link redirected to an unsecured page, so it was blocked." };
+      const reader = res.body.getReader();
+      const chunks = [];
+      let size = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.length;
+        if (size > 2 * 1024 * 1024) {
+          ctl.abort();
+          break; // the title and author are near the top, so a partial page is fine
+        }
+        chunks.push(Buffer.from(value));
+      }
+      return { ok: true, text: Buffer.concat(chunks).toString("utf8").slice(0, 2 * 1024 * 1024) };
+    } catch (err) {
+      return { ok: false, error: err && err.name === "AbortError" ? "The page didn't answer in time." : "Couldn't reach that page." };
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+
   /* Apple Calendar and Reminders (Mac only, read-only). */
   ipcMain.handle("focusdesk:apple", (e, p) => {
     assertTrusted(e);
@@ -1065,20 +1169,20 @@ function registerDesktopIpc() {
     else openNowPlaying();
     return { ok: true };
   });
-  ipcMain.on("np:cmd", async (e, msg) => {
+  ipcMain.on("np:cmd", (e, msg) => {
     if (!npWin || npWin.isDestroyed() || e.sender !== npWin.webContents) return;
-    const cmd = msg && typeof msg === "object" ? msg.cmd : msg;
-    if (cmd === "close") return closeNowPlaying();
-    if (cmd === "open") return showMainWindow();
-    if (cmd === "toggle" || cmd === "next" || cmd === "prev") {
-      await nowPlaying.control(cmd, npLast && npLast.source);
-      setTimeout(npPoll, 350); // show the new state right away
-    } else if (cmd === "seek") {
-      const sec = Number(msg && msg.sec);
-      if (!Number.isFinite(sec)) return;
-      await nowPlaying.control("seek", npLast && npLast.source, sec);
-      setTimeout(npPoll, 350);
-    }
+    npControl(msg, true);
+  });
+  ipcMain.handle("focusdesk:npCmd", async (e, msg) => {
+    assertTrusted(e);
+    await npControl(msg, false);
+    return { ok: true };
+  });
+  ipcMain.handle("focusdesk:npWatch", (e, p) => {
+    assertTrusted(e);
+    npMainWatch = !!(p && p.on);
+    npEnsureTimer();
+    return { ok: true };
   });
 
   /* Download a calendar (.ics) feed for the Calendar Link app. https only, size and time limited. */
@@ -1205,11 +1309,30 @@ function registerDesktopIpc() {
   ipcMain.on("capture:cancel", (e) => {
     if (isCaptureSender(e)) captureWin.close();
   });
+  ipcMain.on("capture:resize", (e, h) => {
+    if (!isCaptureSender(e) || !captureWin || captureWin.isDestroyed()) return;
+    h = Math.round(Number(h));
+    if (Number.isFinite(h)) captureWin.setContentSize(560, Math.max(100, Math.min(260, h)));
+  });
   ipcMain.on("capture:submit", async (e, p) => {
     if (!isCaptureSender(e)) return;
     const kind = p && p.kind;
-    const text = p && typeof p.text === "string" ? p.text.trim().slice(0, 500) : "";
+    let text = p && typeof p.text === "string" ? p.text.trim().slice(0, 1200) : "";
     captureWin.close();
+    if (kind === "card") {
+      // the window sends {front, back}; each side is limited on its own
+      let o = null;
+      try {
+        o = JSON.parse(text);
+      } catch (_) {}
+      const front = o && typeof o.front === "string" ? o.front.trim().slice(0, 500) : "";
+      const back = o && typeof o.back === "string" ? o.back.trim().slice(0, 500) : "";
+      if (!front) return;
+      const wc2 = await whenMainReady();
+      wc2.send("focusdesk:capture", { kind: "card", text: JSON.stringify({ front: front, back: back }) });
+      return;
+    }
+    text = text.slice(0, 500);
     if (!text || ["task", "note", "reminder", "event", "ask"].indexOf(kind) < 0) return;
     if (kind === "ask") {
       openClipyChat(text);
@@ -1447,6 +1570,7 @@ function buildMenu() {
       { label: "New Note", accelerator: "CmdOrCtrl+N", click: () => sendCmd("new-note", true) },
       { label: "New Task\u2026", click: () => openCapture("task") },
       { label: "Quick Capture\u2026", click: () => openCapture("task") },
+      { label: "New Flash Card from Clipboard\u2026", click: () => openCapture("card") },
       { label: "Ask Clipy\u2026", click: () => openClipyChat("") },
       { type: "separator" },
       { label: "Save Backup Now", click: () => sendCmd("backup-now", true) },

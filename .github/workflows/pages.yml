@@ -12,6 +12,7 @@ on:
       - focusdesk.css
       - apojilogo.js
       - pwa/**
+      - scripts/check-ascii.js
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -36,6 +37,7 @@ jobs:
       - name: Build the site
         shell: bash
         run: |
+          node scripts/check-ascii.js
           mkdir site
           cp focusdesk.js focusdesk.css apojilogo.js site/
           cp pwa/* site/
