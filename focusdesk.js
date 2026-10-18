@@ -1,4 +1,11 @@
 window.addEventListener("error", function (e) {
+  /* "ResizeObserver loop..." is a harmless browser notice, not a crash, so it must never show an error screen */
+  if (/ResizeObserver loop/i.test(String((e && e.message) || ""))) {
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    return;
+  }
+  /* this screen is only for problems while FocusDesk is still starting up; later ones get a normal message */
+  if (window.__fdBootDone) return;
   var b = document.getElementById("boot");
   if (!b) return;
   b.style.display = "flex";
@@ -17775,8 +17782,14 @@ window.addEventListener("error", function (e) {
     }
     if (typeof ResizeObserver !== "undefined") {
       try {
+        var roPending = false;
         new ResizeObserver(function () {
-          fit();
+          if (roPending) return;
+          roPending = true;
+          requestAnimationFrame(function () {
+            roPending = false;
+            fit();
+          });
         }).observe(area);
       } catch (e) {}
     }
@@ -31819,6 +31832,7 @@ window.addEventListener("error", function (e) {
     function finish() {
       if (done) return;
       done = true;
+      window.__fdBootDone = true;
       clearInterval(iv);
       b.style.display = "none";
       try {
@@ -31869,6 +31883,7 @@ window.addEventListener("error", function (e) {
   }
   var lastErr = 0;
   function reportErr(msg) {
+    if (/ResizeObserver loop/i.test(String(msg || ""))) return;
     var n = Date.now();
     if (n - lastErr < 5000) return;
     lastErr = n;
