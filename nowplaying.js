@@ -28,6 +28,12 @@ function parseFields(line, source) {
   const out = { title: clean(parts[0]), artist: clean(parts[1]), playing: parts[2].trim().toLowerCase() === "playing", source: source };
   const art = (parts[3] || "").trim();
   if (art && /^(https:|file:)/i.test(art) && art.length < 2000) out.artUrl = art;
+  const n = (v) => {
+    const x = parseFloat(String(v == null ? "" : v).replace(",", "."));
+    return Number.isFinite(x) && x >= 0 ? x : null;
+  };
+  out.position = n(parts[4]);
+  out.duration = n(parts[5]);
   return out;
 }
 
@@ -40,30 +46,39 @@ async function macStatus() {
     if (!r.ok || r.out.trim() !== "true") continue;
     const t = await run("osascript", [
       "-e",
-      'tell application "' + app + '" to return (name of current track) & (ASCII character 9) & (artist of current track) & (ASCII character 9) & (player state as string)' +
-        (app === "Spotify" ? ' & (ASCII character 9) & (artwork url of current track)' : ""),
+      'tell application "' + app + '" to return (name of current track) & (ASCII character 9) & (artist of current track) & (ASCII character 9) & (player state as string) & (ASCII character 9) & ' +
+        (app === "Spotify" ? "(artwork url of current track)" : '""') +
+        " & (ASCII character 9) & (player position) & (ASCII character 9) & (duration of current track)",
     ]);
     const s = t.ok ? parseFields(t.out, app) : null;
+    if (s && app === "Spotify" && s.duration != null) s.duration = s.duration / 1000; // Spotify reports milliseconds
     if (s && (!found || s.playing)) found = s;
     if (found && found.playing) break;
   }
   return found ? Object.assign({ available: true }, found) : { available: true, idle: true };
 }
-async function macControl(cmd, source) {
+async function macControl(cmd, source, arg) {
   const app = MAC_APPS.indexOf(source) >= 0 ? source : "Spotify";
-  const verb = { toggle: "playpause", next: "next track", prev: "previous track" }[cmd];
+  let verb = { toggle: "playpause", next: "next track", prev: "previous track" }[cmd];
+  if (cmd === "seek") verb = "set player position to " + arg; // arg has been checked to be a plain number
   if (!verb) return;
   await run("osascript", ["-e", 'tell application "' + app + '" to ' + verb]);
 }
 
 /* ---------- Linux (playerctl) ---------- */
 async function linuxStatus() {
-  const r = await run("playerctl", ["metadata", "--format", "{{title}}\t{{artist}}\t{{status}}\t{{mpris:artUrl}}"]);
+  const r = await run("playerctl", ["metadata", "--format", "{{title}}\t{{artist}}\t{{status}}\t{{mpris:artUrl}}\t{{position}}\t{{mpris:length}}"]);
   if (!r.ok && r.code === "ENOENT") return { available: false, hint: "Install the playerctl package to see what's playing on Linux." };
   const s = r.ok ? parseFields(r.out, "playerctl") : null;
+  if (s) {
+    // playerctl reports microseconds
+    if (s.position != null) s.position = s.position / 1e6;
+    if (s.duration != null) s.duration = s.duration / 1e6;
+  }
   return s ? Object.assign({ available: true }, s) : { available: true, idle: true };
 }
-async function linuxControl(cmd) {
+async function linuxControl(cmd, arg) {
+  if (cmd === "seek") return void (await run("playerctl", ["position", String(arg)]));
   const verb = { toggle: "play-pause", next: "next", prev: "previous" }[cmd];
   if (verb) await run("playerctl", [verb]);
 }
@@ -83,7 +98,9 @@ const WIN_STATUS =
   "\n" +
   "$p = Await ($s.TryGetMediaPropertiesAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])\n" +
   "$st = $s.GetPlaybackInfo().PlaybackStatus\n" +
-  'Write-Output ("{0}`t{1}`t{2}" -f $p.Title, $p.Artist, $st)';
+  "$pos = ''; $dur = ''\n" +
+  "try { $tl = $s.GetTimelineProperties(); $inv = [Globalization.CultureInfo]::InvariantCulture; $pos = ([math]::Round($tl.Position.TotalSeconds, 1)).ToString($inv); $dur = ([math]::Round(($tl.EndTime - $tl.StartTime).TotalSeconds, 1)).ToString($inv) } catch {}\n" +
+  'Write-Output ("{0}`t{1}`t{2}`t`t{3}`t{4}" -f $p.Title, $p.Artist, $st, $pos, $dur)';
 const winControl = (method) => WIN_PRELUDE + "\n" + "Await ($s." + method + "()) ([bool]) | Out-Null";
 const encode = (script) => Buffer.from(script, "utf16le").toString("base64");
 async function winRun(script) {
@@ -96,7 +113,8 @@ async function winStatus() {
   const s = parseFields(r.out.trim(), "windows");
   return s ? Object.assign({ available: true }, s) : { available: true, idle: true };
 }
-async function winControlCmd(cmd) {
+async function winControlCmd(cmd, arg) {
+  if (cmd === "seek") return void (await winRun(WIN_PRELUDE + "\n" + "Await ($s.TryChangePlaybackPositionAsync([long](" + Number(arg) + " * 10000000))) ([bool]) | Out-Null"));
   const m = { toggle: "TryTogglePlayPauseAsync", next: "TrySkipNextAsync", prev: "TrySkipPreviousAsync" }[cmd];
   if (m) await winRun(winControl(m));
 }
@@ -159,11 +177,17 @@ async function status() {
   } catch (e) {}
   return { available: false, hint: "Now playing isn't supported on this system." };
 }
-async function control(cmd, source) {
+/** cmd: toggle | next | prev | seek (arg = seconds from the start) */
+async function control(cmd, source, arg) {
   try {
-    if (process.platform === "darwin") await macControl(cmd, source);
-    else if (process.platform === "linux") await linuxControl(cmd);
-    else if (process.platform === "win32") await winControlCmd(cmd);
+    if (cmd === "seek") {
+      arg = Number(arg);
+      if (!Number.isFinite(arg) || arg < 0 || arg > 864000) return; // only ever a plain, sensible number
+      arg = Math.round(arg * 10) / 10;
+    }
+    if (process.platform === "darwin") await macControl(cmd, source, arg);
+    else if (process.platform === "linux") await linuxControl(cmd, arg);
+    else if (process.platform === "win32") await winControlCmd(cmd, arg);
   } catch (e) {}
 }
 

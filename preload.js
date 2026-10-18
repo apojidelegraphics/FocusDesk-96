@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld("focusdesk", {
   notify: (title, body) => ipcRenderer.invoke("focusdesk:notify", { title, body }),
   setDesktopPrefs: (p) => ipcRenderer.invoke("focusdesk:setDesktopPrefs", p),
   testNotify: () => ipcRenderer.invoke("focusdesk:testNotify"),
+  apple: (action, args) => ipcRenderer.invoke("focusdesk:apple", { action: action, args: args || {} }),
   openNowPlaying: (close) => ipcRenderer.invoke("focusdesk:nowPlaying", { close: !!close }),
   fetchIcs: (url) => ipcRenderer.invoke("focusdesk:fetchIcs", { url }),
   openMiniTimer: (close) => ipcRenderer.invoke("focusdesk:miniTimer", { close: !!close }),

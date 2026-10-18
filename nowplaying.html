@@ -8,17 +8,18 @@
       html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; }
       body { background: #c0c0c0; font: 12px Tahoma, "Segoe UI", Arial, sans-serif; }
       #pill {
-        height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 8px;
+        height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 0 12px 0 8px;
         border: 2px solid; border-color: #fff #404040 #404040 #fff; outline: 1px solid #000; cursor: grab;
       }
       #pill.dragging { cursor: grabbing; }
+      #top { display: flex; align-items: center; gap: 10px; }
       #grip { color: #808080; font-size: 15px; letter-spacing: -2px; line-height: 1; width: 12px; flex: none; overflow: hidden; white-space: nowrap; }
       #art {
         width: 58px; height: 58px; flex: none; display: flex; align-items: center; justify-content: center;
         background: #000080; color: #fff; font-size: 26px; overflow: hidden;
         border: 2px solid; border-color: #404040 #fff #fff #404040;
       }
-      #art img { width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: auto; }
+      #art img { width: 100%; height: 100%; object-fit: cover; display: block; }
       #info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
       #title { font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #artist { color: #404040; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
@@ -30,29 +31,62 @@
       }
       button:active { border-color: #404040 #fff #fff #404040; }
       button:disabled { color: #808080; }
+      #bar { display: flex; align-items: center; gap: 8px; padding-left: 22px; }
+      #bar span { font: 11px "Courier New", monospace; color: #202020; min-width: 38px; }
+      #bar span:last-child { text-align: right; }
+      #seek { flex: 1; min-width: 0; margin: 0; height: 16px; accent-color: #000080; cursor: default; }
+      #seek:disabled { opacity: 0.5; }
     </style>
   </head>
   <body>
     <div id="pill" title="Drag to move. Double-click to open FocusDesk.">
-      <div id="grip">&#8942;&#8942;</div>
-      <div id="art">&#9835;</div>
-      <div id="info" class="idle"><div id="title">Looking for music&hellip;</div><div id="artist"></div></div>
-      <div id="btns">
-        <button id="prev" title="Previous">&#9198;</button>
-        <button id="go" title="Play / pause">&#9654;</button>
-        <button id="next" title="Next">&#9197;</button>
-        <button id="x" title="Close">&#10005;</button>
+      <div id="top">
+        <div id="grip">&#8942;&#8942;</div>
+        <div id="art">&#9835;</div>
+        <div id="info" class="idle"><div id="title">Looking for music&hellip;</div><div id="artist"></div></div>
+        <div id="btns">
+          <button id="prev" title="Previous">&#9198;</button>
+          <button id="go" title="Play / pause">&#9654;</button>
+          <button id="next" title="Next">&#9197;</button>
+          <button id="x" title="Close">&#10005;</button>
+        </div>
+      </div>
+      <div id="bar">
+        <span id="cur">0:00</span>
+        <input id="seek" type="range" min="0" max="1000" step="1" value="0" disabled aria-label="Song position" />
+        <span id="len">0:00</span>
       </div>
     </div>
     <script>
       var pill = document.getElementById("pill"), info = document.getElementById("info"), title = document.getElementById("title"), artist = document.getElementById("artist"), go = document.getElementById("go"), art = document.getElementById("art");
+      var seek = document.getElementById("seek"), cur = document.getElementById("cur"), len = document.getElementById("len");
       var ctl = [document.getElementById("prev"), go, document.getElementById("next")], lastArt = "";
+      var base = { pos: 0, dur: 0, at: 0, playing: false }, scrubbing = false;
+      function fmtT(s) {
+        s = Math.max(0, Math.floor(s || 0));
+        var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = ("0" + (s % 60)).slice(-2);
+        return h ? h + ":" + ("0" + m).slice(-2) + ":" + x : m + ":" + x;
+      }
       function setArt(src) {
         if (src === lastArt) return;
         lastArt = src;
         art.textContent = "";
         if (src) { var im = document.createElement("img"); im.alt = ""; im.src = src; art.appendChild(im); }
         else art.textContent = "\u266b";
+      }
+      function now() {
+        if (!base.dur) return 0;
+        var p = base.pos + (base.playing ? (Date.now() - base.at) / 1000 : 0);
+        return Math.max(0, Math.min(p, base.dur));
+      }
+      function paintBar() {
+        if (scrubbing) return;
+        if (!base.dur) { seek.disabled = true; seek.value = 0; cur.textContent = "-:--"; len.textContent = "-:--"; return; }
+        var p = now();
+        seek.disabled = false;
+        seek.value = Math.round((p / base.dur) * 1000);
+        cur.textContent = fmtT(p);
+        len.textContent = fmtT(base.dur);
       }
       function paint(s) {
         if (!s) return;
@@ -64,18 +98,32 @@
         go.innerHTML = live && s.playing ? "&#10074;&#10074;" : "&#9654;";
         ctl.forEach(function (b) { b.disabled = !live; });
         setArt(live ? s.art || "" : "");
+        base = live && s.duration > 0 && s.position != null ? { pos: s.position, dur: s.duration, at: Date.now(), playing: !!s.playing } : { pos: 0, dur: 0, at: 0, playing: false };
+        paintBar();
       }
       window.auxApi.on("np:status", paint);
+      setInterval(paintBar, 250);
+      seek.addEventListener("input", function () {
+        scrubbing = true;
+        cur.textContent = fmtT((seek.value / 1000) * base.dur);
+      });
+      seek.addEventListener("change", function () {
+        var sec = (seek.value / 1000) * base.dur;
+        base.pos = sec;
+        base.at = Date.now();
+        scrubbing = false;
+        window.auxApi.send("np:cmd", { cmd: "seek", sec: Math.round(sec * 10) / 10 });
+      });
       document.getElementById("prev").onclick = function () { window.auxApi.send("np:cmd", "prev"); };
       go.onclick = function () { window.auxApi.send("np:cmd", "toggle"); };
       document.getElementById("next").onclick = function () { window.auxApi.send("np:cmd", "next"); };
       document.getElementById("x").onclick = function () { window.auxApi.send("np:cmd", "close"); };
-      pill.ondblclick = function (e) { if (!e.target.closest("button")) window.auxApi.send("np:cmd", "open"); };
+      pill.ondblclick = function (e) { if (!e.target.closest("button, input")) window.auxApi.send("np:cmd", "open"); };
       /* Dragging is done here (not with the CSS drag region) so it works the same on every system. */
       (function () {
         var drag = null;
         pill.addEventListener("pointerdown", function (e) {
-          if (e.button !== 0 || e.target.closest("button")) return;
+          if (e.button !== 0 || e.target.closest("button, input")) return;
           drag = { sx: e.screenX, sy: e.screenY, wx: window.screenX, wy: window.screenY };
           try { pill.setPointerCapture(e.pointerId); } catch (x) {}
           pill.classList.add("dragging");

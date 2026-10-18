@@ -26,3 +26,9 @@ $RECYCLE.BIN/
 .idea/
 *.swp
 vendor/
+
+helper/macos/focusdesk-mac
+helper/macos/focusdesk-mac-*
+
+helper/macos/focusdesk-mac
+helper/macos/focusdesk-mac-*

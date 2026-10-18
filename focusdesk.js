@@ -20,8 +20,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.7.3";
-  var VERSION_DESKTOP = "1.2.2";
+  var VERSION_BROWSER = "2.7.4";
+  var VERSION_DESKTOP = "1.2.3";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -36,6 +36,29 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.7.4",
+      date: "October 2026",
+      title: "Periodic Table 2.0, clock calendar, install as an app",
+      apps: [],
+      notes: [
+        "Periodic Table 2.0: a complete table (periods 6 and 7 and the lanthanides and actinides were missing before), an element card with electron configuration, melting and boiling points, density, oxidation states and more, colour views for electronegativity, radius, ionization energy, density, melting and boiling points, and a temperature slider that melts and boils the elements.",
+        "The Periodic Table also has a molar mass calculator (try Ca(OH)2 or CuSO4\u00b75H2O), a quiz, and a button that makes flash cards from the elements.",
+        "Click the clock in the taskbar for a calendar with a dot under every day you have something to do (classes don't count), a list for the day you pick, and your focus timer and countdowns.",
+        "The website version can now be installed as an app from Chrome or Edge, and keeps working offline after your first visit.",
+      ],
+    },
+    {
+      v: "1.2.3",
+      date: "October 2026",
+      title: "Desktop 1.2.3: Apple Calendar and Reminders, song scrubbing",
+      apps: [],
+      notes: [
+        "Mac: Calendar Link can read your Apple Calendar and Apple Reminders. Choose which calendars and lists to follow, and they stay up to date every time you sync. FocusDesk only reads them and never changes them; macOS asks your permission first.",
+        "The Now Playing pill has a scrub bar: see how far into the song you are and drag to jump around.",
+        "Includes browser version 2.7.4: Periodic Table 2.0, the clock calendar with dots and timers, and installing the website as an app.",
       ],
     },
     {
@@ -757,6 +780,12 @@ window.addEventListener("error", function (e) {
         updAuto: !!window.__focusdeskIsDesktop,
         aiRetry: true,
         calAuto: true,
+        appleCals: [],
+        appleLists: [],
+        appleAuto: false,
+        appleRemAuto: false,
+        appleLast: 0,
+        appleMsg: "",
         calLast: 0,
         calMsg: "",
         dur: { focus: 25, short: 5, long: 15 },
@@ -890,7 +919,7 @@ window.addEventListener("error", function (e) {
         return isStr(t.text);
       })
       .map(function (t) {
-        return {
+        var r = {
           id: isStr(t.id) ? t.id : uid(),
           text: clip(t.text, 300),
           done: !!t.done,
@@ -899,6 +928,9 @@ window.addEventListener("error", function (e) {
           created: isNum(t.created) ? t.created : Date.now(),
           repeat: REPEATS_V.indexOf(t.repeat) >= 0 ? t.repeat : "none",
         };
+        if (isStr(t.uid)) r.uid = clip(t.uid, 300);
+        if (isStr(t.src)) r.src = clip(t.src, 20);
+        return r;
       })
       .slice(0, 500);
     o.grades = arr("grades")
@@ -1387,6 +1419,21 @@ window.addEventListener("error", function (e) {
     o.prefs.restoreSession = pp.restoreSession !== false;
     o.prefs.aiRetry = pp.aiRetry !== false;
     o.prefs.calAuto = pp.calAuto !== false;
+    var idList = function (v) {
+      return Array.isArray(v)
+        ? v
+            .filter(function (x) {
+              return isStr(x) && /^[A-Za-z0-9:_.\-]{1,100}$/.test(x);
+            })
+            .slice(0, 60)
+        : [];
+    };
+    o.prefs.appleCals = idList(pp.appleCals);
+    o.prefs.appleLists = idList(pp.appleLists);
+    o.prefs.appleAuto = pp.appleAuto === true;
+    o.prefs.appleRemAuto = pp.appleRemAuto === true;
+    o.prefs.appleLast = isNum(pp.appleLast) ? pp.appleLast : 0;
+    o.prefs.appleMsg = isStr(pp.appleMsg) ? clip(pp.appleMsg, 160) : "";
     o.prefs.calLast = isNum(pp.calLast) ? pp.calLast : 0;
     o.prefs.calMsg = isStr(pp.calMsg) ? clip(pp.calMsg, 160) : "";
     o.prefs.updAuto = typeof pp.updAuto === "boolean" ? pp.updAuto : pp.updCheck === false ? false : !!window.__focusdeskIsDesktop;
@@ -3260,6 +3307,14 @@ window.addEventListener("error", function (e) {
     fireAiNet();
   });
   window.addEventListener("offline", fireAiNet);
+  /* website version: remember Chrome's "install as an app" offer so Control Panel can show a button */
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    window.__fdInstall = e;
+  });
+  window.addEventListener("appinstalled", function () {
+    window.__fdInstall = null;
+  });
   function aiChat(prov, prompt, opts) {
     return aiChat0(prov, prompt, opts).then(
       function (r) {
@@ -8412,6 +8467,178 @@ window.addEventListener("error", function (e) {
       }
     );
   }
+  /* ---- Apple Calendar / Reminders (Mac): mirrored read-only into the calendar and Tasks ---- */
+  function appleOn() {
+    return !!(window.__focusdeskIsDesktop && window.__focusdeskPlatform === "darwin" && window.focusdesk && window.focusdesk.apple);
+  }
+  function appleWindow() {
+    var a = new Date();
+    a.setHours(0, 0, 0, 0);
+    return { from: a.getTime() - 7 * 86400000, to: a.getTime() + 180 * 86400000 };
+  }
+  function appleMergeEvents(list, fromMs, toMs) {
+    var seen = {},
+      added = 0,
+      upd = 0,
+      gone = 0;
+    list.forEach(function (x) {
+      var d = new Date(x.start),
+        key = "apple:" + x.uid,
+        title = clip(x.title || "(no title)", 200),
+        date = ymd(d),
+        time = x.allDay ? "" : hm(d),
+        dur = !x.allDay && x.end > x.start ? Math.round((x.end - x.start) / 60000) : 0,
+        ex = S.events.filter(function (e) {
+          return e.uid === key;
+        })[0];
+      seen[key] = 1;
+      if (ex) {
+        if (ex.title !== title || ex.date !== date || ex.time !== time) {
+          ex.title = title;
+          ex.date = date;
+          ex.time = time;
+          upd++;
+        }
+        if (dur >= 5 && dur <= 480) ex.dur = dur;
+        else delete ex.dur;
+        return;
+      }
+      var e = { id: uid(), uid: key, title: title, date: date, time: time, kind: "other", src: "apple", repeat: "none" };
+      if (dur >= 5 && dur <= 480) e.dur = dur;
+      S.events.push(e);
+      added++;
+    });
+    /* ones deleted in Apple Calendar disappear here too, but only inside the range we just asked about */
+    S.events = S.events.filter(function (e) {
+      if (e.src !== "apple" || seen[e.uid]) return true;
+      var t = new Date(e.date + "T00:00").getTime();
+      if (t < fromMs || t > toMs) return true;
+      gone++;
+      return false;
+    });
+    return { added: added, upd: upd, gone: gone };
+  }
+  function appleMergeReminders(list) {
+    var seen = {},
+      added = 0,
+      upd = 0,
+      gone = 0;
+    list.forEach(function (r) {
+      var key = "apple-rem:" + r.id,
+        ex = S.tasks.filter(function (t) {
+          return t.uid === key;
+        })[0],
+        due = r.due != null ? r.due : null;
+      seen[key] = 1;
+      if (ex) {
+        var text = clip(r.title, 300);
+        if (ex.text !== text || ex.due !== due || ex.pri !== r.priority) upd++;
+        ex.text = text;
+        ex.due = due;
+        ex.pri = r.priority;
+        if (r.done) ex.done = true; /* finishing it in Reminders finishes it here; finishing it here is kept */
+        return;
+      }
+      if (S.tasks.length >= 500) return;
+      S.tasks.push({ id: uid(), uid: key, src: "apple", text: clip(r.title, 300), done: !!r.done, pri: r.priority, due: due, created: Date.now(), repeat: "none" });
+      added++;
+    });
+    S.tasks = S.tasks.filter(function (t) {
+      if (t.src !== "apple" || seen[t.uid]) return true;
+      gone++;
+      return false;
+    });
+    return { added: added, upd: upd, gone: gone };
+  }
+  function appleStatus(msg) {
+    S.prefs.appleLast = Date.now();
+    S.prefs.appleMsg = clip(msg, 160);
+    save();
+  }
+  function appleSyncEvents() {
+    if (!appleOn()) return Promise.resolve({ ok: false, msg: "" });
+    if (!S.prefs.appleCals.length) return Promise.resolve({ ok: false, msg: "Choose which calendars to read first." });
+    var w = appleWindow();
+    return window.focusdesk.apple("events", { from: w.from, to: w.to, ids: S.prefs.appleCals }).then(
+      function (r) {
+        if (!r || !r.ok) {
+          var m = "Couldn't sync Apple Calendar: " + ((r && r.error) || "it didn't answer");
+          appleStatus(m);
+          return { ok: false, msg: m };
+        }
+        var c = appleMergeEvents(r.events, w.from, w.to);
+        if (c.added || c.upd || c.gone) refreshAll();
+        var msg = "Apple Calendar: " + c.added + " added, " + c.upd + " updated, " + c.gone + " removed.";
+        appleStatus(msg);
+        return { ok: true, msg: msg };
+      },
+      function () {
+        appleStatus("Couldn't sync Apple Calendar.");
+        return { ok: false, msg: "Couldn't sync Apple Calendar." };
+      }
+    );
+  }
+  function appleSyncReminders() {
+    if (!appleOn()) return Promise.resolve({ ok: false, msg: "" });
+    if (!S.prefs.appleLists.length) return Promise.resolve({ ok: false, msg: "Choose which Reminders lists to read first." });
+    return window.focusdesk.apple("reminders", { ids: S.prefs.appleLists }).then(
+      function (r) {
+        if (!r || !r.ok) {
+          var m = "Couldn't read Reminders: " + ((r && r.error) || "it didn't answer");
+          appleStatus(m);
+          return { ok: false, msg: m };
+        }
+        var c = appleMergeReminders(r.reminders);
+        if (c.added || c.upd || c.gone) refreshAll();
+        var msg = "Reminders: " + c.added + " added, " + c.upd + " updated, " + c.gone + " removed.";
+        appleStatus(msg);
+        return { ok: true, msg: msg };
+      },
+      function () {
+        appleStatus("Couldn't read Reminders.");
+        return { ok: false, msg: "Couldn't read Reminders." };
+      }
+    );
+  }
+  /* a dialog with one checkbox per calendar (or Reminders list) */
+  function applePick(kind, done) {
+    var isCal = kind === "calendars";
+    window.focusdesk.apple(kind, {}).then(function (r) {
+      if (!r || !r.ok) {
+        msgBox({ title: isCal ? "Apple Calendar" : "Apple Reminders", icon: "warn", text: (r && r.error) || "It didn't answer." });
+        return;
+      }
+      var items = r[kind] || [],
+        chosen = isCal ? S.prefs.appleCals : S.prefs.appleLists,
+        boxes = {},
+        wrap = el("div", { style: "text-align:left;max-height:240px;overflow:auto" });
+      if (!items.length) wrap.append(el("div", { class: "dim" }, "Nothing found."));
+      items.forEach(function (c) {
+        boxes[c.id] = el("input", { type: "checkbox", checked: chosen.indexOf(c.id) >= 0 });
+        wrap.append(el("label", { class: "row", style: "gap:6px;align-items:center" }, boxes[c.id], c.title + (c.account ? "  (" + c.account + ")" : "")));
+      });
+      msgBox({
+        title: isCal ? "Choose Calendars" : "Choose Reminders Lists",
+        icon: "q",
+        width: 380,
+        text: "FocusDesk only reads these. It never changes anything in Apple " + (isCal ? "Calendar" : "Reminders") + ".",
+        extra: wrap,
+        buttons: [
+          {
+            label: "Save",
+            fn: function () {
+              var ids = items.filter(function (c) { return boxes[c.id].checked; }).map(function (c) { return c.id; });
+              if (isCal) S.prefs.appleCals = ids;
+              else S.prefs.appleLists = ids;
+              save();
+              done(ids);
+            },
+          },
+          { label: "Cancel" },
+        ],
+      });
+    });
+  }
   function appCanvas(w) {
     var fileIn = el("input", {
       type: "file",
@@ -8837,7 +9064,44 @@ window.addEventListener("error", function (e) {
           );
         })()
       : el("div", { class: "pad dim" }, "Tip: the desktop app can keep this calendar updated automatically. Browsers aren't allowed to fetch a calendar link, so here you load the .ics file yourself.");
-    w.body.append(how, syncBox, manual, filt, list);
+    var appleBox = appleOn()
+      ? (function () {
+          var status = el("div", { class: "dim", style: "padding:4px 0 0" });
+          function paint() {
+            status.textContent = S.prefs.appleLast ? "Last sync " + new Date(S.prefs.appleLast).toLocaleString() + ". " + (S.prefs.appleMsg || "") : "Nothing synced yet.";
+          }
+          function run(fn) {
+            status.textContent = "Syncing\u2026";
+            fn().then(function (r) {
+              if (r && r.msg) status.textContent = r.msg;
+              else paint();
+            });
+          }
+          paint();
+          return el(
+            "details",
+            { class: "pad", open: S.prefs.appleCals.length > 0 || S.prefs.appleLists.length > 0 },
+            el("summary", { style: "cursor:default;font-weight:bold" }, "Apple Calendar and Reminders (Mac)"),
+            el("div", { class: "dim", style: "padding:4px 0" }, "FocusDesk reads your Apple Calendar events and Reminders and shows them here. It only reads; it never changes them. They stay up to date each time you sync, and macOS asks your permission the first time. If you finish a reminder here, it stays finished here."),
+            el(
+              "div",
+              { class: "row", style: "gap:6px;flex-wrap:wrap;align-items:center" },
+              el("button", { class: "btn sm", onclick: function () { applePick("calendars", function () { run(appleSyncEvents); }); } }, "Choose calendars\u2026"),
+              el("button", { class: "btn sm", onclick: function () { run(appleSyncEvents); } }, "Sync calendar now"),
+              el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.appleAuto, onchange: function () { S.prefs.appleAuto = this.checked; save(); } }), "Sync when FocusDesk starts")
+            ),
+            el(
+              "div",
+              { class: "row", style: "gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px" },
+              el("button", { class: "btn sm", onclick: function () { applePick("lists", function () { run(appleSyncReminders); }); } }, "Choose Reminders lists\u2026"),
+              el("button", { class: "btn sm", onclick: function () { run(appleSyncReminders); } }, "Import Reminders now"),
+              el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.appleRemAuto, onchange: function () { S.prefs.appleRemAuto = this.checked; save(); } }), "Update when FocusDesk starts")
+            ),
+            status
+          );
+        })()
+      : null;
+    w.body.append(how, syncBox, appleBox, manual, filt, list);
     function draw() {
       var courses = {};
       S.assign.forEach(function (a) {
@@ -13741,6 +14005,22 @@ window.addEventListener("error", function (e) {
       el(
         "div",
         { class: "row", style: "gap:8px;align-items:center;flex-wrap:wrap" },
+        window.__fdInstall
+          ? el(
+              "button",
+              {
+                class: "btn sm",
+                onclick: function () {
+                  var ev = window.__fdInstall;
+                  ev.prompt();
+                  ev.userChoice.then(function () {
+                    window.__fdInstall = null;
+                  });
+                },
+              },
+              "Install as an app"
+            )
+          : null,
         el("button", { class: "btn sm", onclick: function () { checkUpdate(true); } }, window.__focusdeskIsDesktop || location.protocol === "file:" ? "Check for updates" : "Check for the desktop app"),
         window.__focusdeskIsDesktop || location.protocol === "file:"
           ? el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.updAuto === true, onchange: function () { S.prefs.updAuto = this.checked; save(); } }), "Check automatically when FocusDesk starts")
@@ -20309,6 +20589,10 @@ window.addEventListener("error", function (e) {
     setTimeout(function () {
       if (S.prefs.calAuto !== false && calFeedUrl())
         calendarSyncNow().catch(function () {});
+      if (appleOn()) {
+        if (S.prefs.appleAuto && S.prefs.appleCals.length) appleSyncEvents().catch(function () {});
+        if (S.prefs.appleRemAuto && S.prefs.appleLists.length) appleSyncReminders().catch(function () {});
+      }
     }, 7000);
     window.addEventListener("focusdesk-katex", function () {
       try {
@@ -22482,87 +22766,833 @@ window.addEventListener("error", function (e) {
     ln: "#e0c0ff",
     an: "#ffc0e0",
   };
-  function appPeriodic(w) {
-    var info = el(
-      "div",
-      { class: "sunk pt-info" },
-      "Click an element to see details. Colours show element families."
+  /* Extra element properties: [electron configuration, electronegativity, atomic radius pm, first ionization energy kJ/mol, electron affinity kJ/mol, oxidation states, state, melting K, boiling K, density g/cm3, discovered]. Source: the "periodic-table" npm package (ISC License); see THIRD_PARTY_NOTICES.md. Generated by scripts/gen-elements.js. */
+  var PTD = [
+    ["1s1",2.2,37,1312,-73,"-1, 1","gas",14,20,0.0000899,"1766"],
+    ["1s2",null,32,2372,0,null,"gas",null,4,0.0001785,"1868"],
+    ["[He] 2s1",0.98,134,520,-60,"1","solid",454,1615,0.535,"1817"],
+    ["[He] 2s2",1.57,90,900,0,"2","solid",1560,2743,1.848,"1798"],
+    ["[He] 2s2 2p1",2.04,82,801,-27,"1, 2, 3","solid",2348,4273,2.46,"1807"],
+    ["[He] 2s2 2p2",2.55,77,1087,-154,"-4, -3, -2, -1, 1, 2, 3, 4","solid",3823,4300,2.26,"Ancient"],
+    ["[He] 2s2 2p3",3.04,75,1402,-7,"-3, -2, -1, 1, 2, 3, 4, 5","gas",63,77,0.001251,"1772"],
+    ["[He] 2s2 2p4",3.44,73,1314,-141,"-2, -1, 1, 2","gas",55,90,0.001429,"1774"],
+    ["[He] 2s2 2p5",3.98,71,1681,-328,"-1","gas",54,85,0.001696,"1670"],
+    ["[He] 2s2 2p6",null,69,2081,0,null,"gas",25,27,0.0009,"1898"],
+    ["[Ne] 3s1",0.93,154,496,-53,"-1, 1","solid",371,1156,0.968,"1807"],
+    ["[Ne] 3s2",1.31,130,738,0,"1, 2","solid",923,1363,1.738,"1808"],
+    ["[Ne] 3s2 3p1",1.61,118,578,-43,"1, 3","solid",933,2792,2.7,"Ancient"],
+    ["[Ne] 3s2 3p2",1.9,111,787,-134,"-4, -3, -2, -1, 1, 2, 3, 4","solid",1687,3173,2.33,"1854"],
+    ["[Ne] 3s2 3p3",2.19,106,1012,-72,"-3, -2, -1, 1, 2, 3, 4, 5","solid",317,554,1.823,"1669"],
+    ["[Ne] 3s2 3p4",2.58,102,1000,-200,"-2, -1, 1, 2, 3, 4, 5, 6","solid",388,718,1.96,"Ancient"],
+    ["[Ne] 3s2 3p5",3.16,99,1251,-349,"-1, 1, 2, 3, 4, 5, 6, 7","gas",172,239,0.003214,"1774"],
+    ["[Ne] 3s2 3p6",null,97,1521,0,null,"gas",84,87,0.001784,"1894"],
+    ["[Ar] 4s1",0.82,196,419,-48,"1","solid",337,1032,0.856,"1807"],
+    ["[Ar] 4s2",1,174,590,-2,"2","solid",1115,1757,1.55,"Ancient"],
+    ["[Ar] 3d1 4s2",1.36,144,633,-18,"1, 2, 3","solid",1814,3103,2.985,"1876"],
+    ["[Ar] 3d2 4s2",1.54,136,659,-8,"-1, 2, 3, 4","solid",1941,3560,4.507,"1791"],
+    ["[Ar] 3d3 4s2",1.63,125,651,-51,"-1, 2, 3, 4","solid",2183,3680,6.11,"1803"],
+    ["[Ar] 3d5 4s1",1.66,127,653,-64,"-2, -1, 1, 2, 3, 4, 5, 6","solid",2180,2944,7.14,"Ancient"],
+    ["[Ar] 3d5 4s2",1.55,139,717,0,"-3, -2, -1, 1, 2, 3, 4, 5, 6, 7","solid",1519,2334,7.47,"1774"],
+    ["[Ar] 3d6 4s2",1.83,125,763,-16,"-2, -1, 1, 2, 3, 4, 5, 6","solid",1811,3134,7.874,"Ancient"],
+    ["[Ar] 3d7 4s2",1.88,126,760,-64,"-1, 1, 2, 3, 4, 5","solid",1768,3200,8.9,"Ancient"],
+    ["[Ar] 3d8 4s2",1.91,121,737,-112,"-1, 1, 2, 3, 4","solid",1728,3186,8.908,"1751"],
+    ["[Ar] 3d10 4s1",1.9,138,746,-118,"1, 2, 3, 4","solid",1358,3200,8.92,"Ancient"],
+    ["[Ar] 3d10 4s2",1.65,131,906,0,"2","solid",693,1180,7.14,"1746"],
+    ["[Ar] 3d10 4s2 4p1",1.81,126,579,-29,"1, 2, 3","solid",303,2477,5.904,"1875"],
+    ["[Ar] 3d10 4s2 4p2",2.01,122,762,-119,"-4, 1, 2, 3, 4","solid",1211,3093,5.323,"1886"],
+    ["[Ar] 3d10 4s2 4p3",2.18,119,947,-78,"-3, 2, 3, 5","solid",1090,887,5.727,"Ancient"],
+    ["[Ar] 3d10 4s2 4p4",2.55,116,941,-195,"-2, 2, 4, 6","solid",494,958,4.819,"1817"],
+    ["[Ar] 3d10 4s2 4p5",2.96,114,1140,-325,"-1, 1, 3, 4, 5, 7","liquid",266,332,3.12,"1826"],
+    ["[Ar] 3d10 4s2 4p6",null,110,1351,0,"2","gas",116,120,0.00375,"1898"],
+    ["[Kr] 5s1",0.82,211,403,-47,"1","solid",312,961,1.532,"1861"],
+    ["[Kr] 5s2",0.95,192,550,-5,"2","solid",1050,1655,2.63,"1790"],
+    ["[Kr] 4d1 5s2",1.22,162,600,-30,"1, 2, 3","solid",1799,3618,4.472,"1794"],
+    ["[Kr] 4d2 5s2",1.33,148,640,-41,"1, 2, 3, 4","solid",2128,4682,6.511,"1789"],
+    ["[Kr] 4d4 5s1",1.6,137,652,-86,"-1, 2, 3, 4, 5","solid",2750,5017,8.57,"1801"],
+    ["[Kr] 4d5 5s1",2.16,145,684,-72,"-2, -1, 1, 2, 3, 4, 5, 6","solid",2896,4912,10.28,"1778"],
+    ["[Kr] 4d5 5s2",1.9,156,702,-53,"-3, -1, 1, 2, 3, 4, 5, 6, 7","solid",2430,4538,11.5,"1937"],
+    ["[Kr] 4d7 5s1",2.2,126,710,-101,"-2, 1, 2, 3, 4, 5, 6, 7, 8","solid",2607,4423,12.37,"1827"],
+    ["[Kr] 4d8 5s1",2.28,135,720,-110,"-1, 1, 2, 3, 4, 5, 6","solid",2237,3968,12.45,"1803"],
+    ["[Kr] 4d10",2.2,131,804,-54,"2, 4","solid",1828,3236,12.023,"1803"],
+    ["[Kr] 4d10 5s1",1.93,153,731,-126,"1, 2, 3","solid",1235,2435,10.49,"Ancient"],
+    ["[Kr] 4d10 5s2",1.69,148,868,0,"2","solid",594,1040,8.65,"1817"],
+    ["[Kr] 4d10 5s2 5p1",1.78,144,558,-29,"1, 2, 3","solid",430,2345,7.31,"1863"],
+    ["[Kr] 4d10 5s2 5p2",1.96,141,709,-107,"-4, 2, 4","solid",505,2875,7.31,"Ancient"],
+    ["[Kr] 4d10 5s2 5p3",2.05,138,834,-103,"-3, 3, 5","solid",904,1860,6.697,"Ancient"],
+    ["[Kr] 4d10 5s2 5p4",2.1,135,869,-190,"-2, 2, 4, 5, 6","solid",723,1261,6.24,"1782"],
+    ["[Kr] 4d10 5s2 5p5",2.66,133,1008,-295,"-1, 1, 3, 5, 7","solid",387,457,4.94,"1811"],
+    ["[Kr] 4d10 5s2 5p6",null,130,1170,0,"2, 4, 6, 8","gas",161,165,0.0059,"1898"],
+    ["[Xe] 6s1",0.79,225,376,-46,"1","solid",302,944,1.879,"1860"],
+    ["[Xe] 6s2",0.89,198,503,-14,"2","solid",1000,2143,3.51,"1808"],
+    ["[Xe] 5d1 6s2",1.1,169,538,-48,"2, 3","solid",1193,3737,6.146,"1839"],
+    ["[Xe] 4f1 5d1 6s2",1.12,null,534,-50,"2, 3, 4","solid",1071,3633,6.689,"1803"],
+    ["[Xe] 4f3 6s2",1.13,null,527,-50,"2, 3, 4","solid",1204,3563,6.64,"1885"],
+    ["[Xe] 4f4 6s2",1.14,null,533,-50,"2, 3","solid",1294,3373,7.01,"1885"],
+    ["[Xe] 4f5 6s2",1.13,null,540,-50,"3","solid",1373,3273,7.264,"1947"],
+    ["[Xe] 4f6 6s2",1.17,null,545,-50,"2, 3","solid",1345,2076,7.353,"1853"],
+    ["[Xe] 4f7 6s2",1.2,null,547,-50,"2, 3","solid",1095,1800,5.244,"1901"],
+    ["[Xe] 4f7 5d1 6s2",1.2,null,593,-50,"1, 2, 3","solid",1586,3523,7.901,"1880"],
+    ["[Xe] 4f9 6s2",1.2,null,566,-50,"1, 3, 4","solid",1629,3503,8.219,"1843"],
+    ["[Xe] 4f10 6s2",1.22,null,573,-50,"2, 3","solid",1685,2840,8.551,"1886"],
+    ["[Xe] 4f11 6s2",1.23,null,581,-50,"3","solid",1747,2973,8.795,"1878"],
+    ["[Xe] 4f12 6s2",1.24,null,589,-50,"3","solid",1770,3141,9.066,"1842"],
+    ["[Xe] 4f13 6s2",1.25,null,597,-50,"2, 3","solid",1818,2223,9.321,"1879"],
+    ["[Xe] 4f14 6s2",1.1,null,603,-50,"2, 3","solid",1092,1469,6.57,"1878"],
+    ["[Xe] 4f14 5d1 6s2",1.27,160,524,-50,"3","solid",1936,3675,9.841,"1907"],
+    ["[Xe] 4f14 5d2 6s2",1.3,150,659,0,"2, 3, 4","solid",2506,4876,13.31,"1923"],
+    ["[Xe] 4f14 5d3 6s2",1.5,138,761,-31,"-1, 2, 3, 4, 5","solid",3290,5731,16.65,"1802"],
+    ["[Xe] 4f14 5d4 6s2",2.36,146,770,-79,"-2, -1, 1, 2, 3, 4, 5, 6","solid",3695,5828,19.25,"1783"],
+    ["[Xe] 4f14 5d5 6s2",1.9,159,760,-15,"-3, -1, 1, 2, 3, 4, 5, 6, 7","solid",3459,5869,21.02,"1925"],
+    ["[Xe] 4f14 5d6 6s2",2.2,128,840,-106,"-2, -1, 1, 2, 3, 4, 5, 6, 7, 8","solid",3306,5285,22.61,"1803"],
+    ["[Xe] 4f14 5d7 6s2",2.2,137,880,-151,"-3, -1, 1, 2, 3, 4, 5, 6","solid",2739,4701,22.65,"1803"],
+    ["[Xe] 4f14 5d9 6s1",2.28,128,870,-205,"2, 4, 5, 6","solid",2041,4098,21.09,"Ancient"],
+    ["[Xe] 4f14 5d10 6s1",2.54,144,890,-223,"-1, 1, 2, 3, 5","solid",1337,3129,19.3,"Ancient"],
+    ["[Xe] 4f14 5d10 6s2",2,149,1007,0,"1, 2, 4","liquid",234,630,13.534,"Ancient"],
+    ["[Xe] 4f14 5d10 6s2 6p1",2.04,148,589,-19,"1, 3","solid",577,1746,11.85,"1861"],
+    ["[Xe] 4f14 5d10 6s2 6p2",2.33,147,716,-35,"-4, 2, 4","solid",601,2022,11.34,"Ancient"],
+    ["[Xe] 4f14 5d10 6s2 6p3",2.02,146,703,-91,"-3, 3, 5","solid",544,1837,9.78,"Ancient"],
+    ["[Xe] 4f14 5d10 6s2 6p4",2,null,812,-183,"-2, 2, 4, 6","solid",527,1235,9.196,"1898"],
+    ["[Xe] 4f14 5d10 6s2 6p5",2.2,null,920,-270,"-1, 1, 3, 5","solid",575,null,null,"1940"],
+    ["[Xe] 4f14 5d10 6s2 6p6",null,145,1037,null,"2","gas",202,211,0.00973,"1900"],
+    ["[Rn] 7s1",0.7,null,380,null,"1","solid",null,null,null,"1939"],
+    ["[Rn] 7s2",0.9,null,509,null,"2","solid",973,2010,5,"1898"],
+    ["[Rn] 6d1 7s2",1.1,null,499,null,"3","solid",1323,3473,10.07,"1899"],
+    ["[Rn] 6d2 7s2",1.3,null,587,null,"2, 3, 4","solid",2023,5093,11.724,"1828"],
+    ["[Rn] 5f2 6d1 7s2",1.5,null,568,null,"3, 4, 5","solid",1845,4273,15.37,"1913"],
+    ["[Rn] 5f3 6d1 7s2",1.38,null,598,null,"3, 4, 5, 6","solid",1408,4200,19.05,"1789"],
+    ["[Rn] 5f4 6d1 7s2",1.36,null,605,null,"3, 4, 5, 6, 7","solid",917,4273,20.45,"1940"],
+    ["[Rn] 5f6 7s2",1.28,null,585,null,"3, 4, 5, 6, 7","solid",913,3503,19.816,"1940"],
+    ["[Rn] 5f7 7s2",1.3,null,578,null,"2, 3, 4, 5, 6","solid",1449,2284,null,"1944"],
+    ["[Rn] 5f7 6d1 7s2",1.3,null,581,null,"3, 4","solid",1618,3383,13.51,"1944"],
+    ["[Rn] 5f9 7s2",1.3,null,601,null,"3, 4","solid",1323,null,14.78,"1949"],
+    ["[Rn] 5f10 7s2",1.3,null,608,null,"2, 3, 4","solid",1173,null,15.1,"1950"],
+    ["[Rn] 5f11 7s2",1.3,null,619,null,"2, 3","solid",1133,null,null,"1952"],
+    ["[Rn] 5f12 7s2",1.3,null,627,null,"2, 3",null,1800,null,null,"1952"],
+    ["[Rn] 5f13 7s2",1.3,null,635,null,"2, 3",null,1100,null,null,"1955"],
+    ["[Rn] 5f14 7s2",1.3,null,642,null,"2, 3",null,1100,null,null,"1957"],
+    ["[Rn] 5f14 7s2 7p1",1.3,null,null,null,"3",null,1900,null,null,"1961"],
+    ["[Rn] 5f14 6d2 7s2",null,null,null,null,"4",null,null,null,null,"1969"],
+    ["[Rn] 5f14 6d3 7s2",null,null,null,null,null,null,null,null,null,"1967"],
+    ["[Rn] 5f14 6d4 7s2",null,null,null,null,null,null,null,null,null,"1974"],
+    ["[Rn] 5f14 6d5 7s2",null,null,null,null,null,null,null,null,null,"1976"],
+    ["[Rn] 5f14 6d6 7s2",null,null,null,null,null,null,null,null,null,"1984"],
+    ["[Rn] 5f14 6d7 7s2",null,null,null,null,null,null,null,null,null,"1982"],
+    ["[Rn] 5f14 6d9 7s1",null,null,null,null,null,null,null,null,null,"1994"],
+    ["[Rn] 5f14 6d10 7s1",null,null,null,null,null,null,null,null,null,"1994"],
+    ["[Rn] 5f14 6d10 7s2",null,null,null,null,null,null,null,null,null,"1996"],
+    ["[Rn] 5f14 6d10 7s2 7p1",null,null,null,null,null,null,null,null,null,"2003"],
+    ["[Rn] 5f14 6d10 7s2 7p2",null,null,null,null,null,null,null,null,null,"1998"],
+    ["[Rn] 5f14 6d10 7s2 7p3",null,null,null,null,null,null,null,null,null,"2003"],
+    ["[Rn] 5f14 6d10 7s2 7p4",null,null,null,null,null,null,null,null,null,"2000"],
+    ["[Rn] 5f14 6d10 7s2 7p5",null,null,null,null,null,null,null,null,null,"2010"],
+    ["[Rn] 5f14 6d10 7s2 7p6",null,null,null,null,null,null,null,null,null,"2002"],
+  ];
+  /* ===== Periodic Table 2.0 ===== */
+  var PT_VIEWS = [
+    ["fam", "Element families"],
+    ["state", "State at a temperature"],
+    ["en", "Electronegativity", 1, "", false],
+    ["rad", "Atomic radius (pm)", 2, " pm", false],
+    ["ie", "First ionization energy (kJ/mol)", 3, " kJ/mol", false],
+    ["dens", "Density (g/cm\u00b3, log scale)", 9, " g/cm\u00b3", true],
+    ["mp", "Melting point (K)", 7, " K", false],
+    ["bp", "Boiling point (K)", 8, " K", false],
+  ];
+  var PT_STATE_COLORS = { solid: "#8cb4ff", liquid: "#ffb347", gas: "#d6efc8", unknown: "#cfcfcf" };
+  function ptPos(E) {
+    /* [column, row] on screen: rows 1-7 are the main table, 9 = lanthanides, 10 = actinides */
+    if (E[4] === "ln") return [E[5], 9];
+    if (E[4] === "an") return [E[5], 10];
+    var p = E[6] <= 6 ? E[6] : E[6] === 7 ? 6 : 7;
+    return [E[5], p];
+  }
+  function ptPeriod(E) {
+    return E[4] === "ln" ? 6 : E[4] === "an" ? 7 : ptPos(E)[1];
+  }
+  function ptValue(Z, idx) {
+    var r = PTD[Z - 1];
+    return r && r[idx] != null ? r[idx] : null;
+  }
+  /* solid / liquid / gas / unknown at temperature T (kelvin), at normal pressure */
+  function ptState(Z, T) {
+    var mp = ptValue(Z, 7),
+      bp = ptValue(Z, 8);
+    if (mp == null && bp == null) return "unknown";
+    if (mp == null) return T < bp ? (Z === 2 ? "liquid" : "unknown") : "gas"; /* helium stays liquid at normal pressure */
+    if (T < mp) return "solid";
+    if (bp == null) return "unknown";
+    return T < bp ? "liquid" : "gas";
+  }
+  function ptRamp(t) {
+    t = Math.max(0, Math.min(1, t));
+    var a = [111, 168, 255],
+      b = [255, 236, 120],
+      c = [235, 90, 70],
+      x = t < 0.5 ? [a, b, t * 2] : [b, c, (t - 0.5) * 2];
+    return (
+      "rgb(" +
+      [0, 1, 2]
+        .map(function (i) {
+          return Math.round(x[0][i] + (x[1][i] - x[0][i]) * x[2]);
+        })
+        .join(",") +
+      ")"
     );
-    var grid = el("div", { class: "pt-grid" });
-    var byPos = {};
+  }
+  function ptNum(v) {
+    return v == null ? "n/a" : v >= 100 || v === Math.round(v) ? String(Math.round(v * 10) / 10) : v >= 1 ? String(Math.round(v * 100) / 100) : v.toPrecision(2);
+  }
+  /* "[Ar] 3d6 4s2" -> nodes with real superscripts */
+  function ptConfig(cfg) {
+    var box = el("span", null),
+      re = /(\[[A-Z][a-z]?\])|(\d[spdf])(\d+)/g,
+      last = 0,
+      m;
+    cfg = String(cfg || "");
+    while ((m = re.exec(cfg))) {
+      if (m.index > last) box.append(document.createTextNode(cfg.slice(last, m.index)));
+      if (m[1]) box.append(document.createTextNode(m[1]));
+      else box.append(document.createTextNode(m[2]), el("sup", null, m[3]));
+      last = re.lastIndex;
+    }
+    if (last < cfg.length) box.append(document.createTextNode(cfg.slice(last)));
+    return box;
+  }
+  /* ---- molar mass of a formula such as C6H12O6, Ca(OH)2 or CuSO4\u00b75H2O ---- */
+  function parseFormula(text) {
+    var bySym = {};
     ELEMENTS.forEach(function (e) {
-      byPos[e[5] + "-" + e[6]] = e;
+      bySym[e[1]] = e;
     });
-    for (var r = 1; r <= 9; r++) {
+    var parts = String(text || "")
+      .replace(/\s+/g, "")
+      .replace(/[\u00b7\u2022*.]/g, "\u00b7")
+      .split("\u00b7");
+    var total = {};
+    if (!parts.join("")) throw new Error("Type a formula first, like C6H12O6.");
+    parts.forEach(function (part) {
+      var lead = /^(\d+)(.*)$/.exec(part),
+        mult = lead ? +lead[1] : 1,
+        s = lead ? lead[2] : part,
+        i = 0,
+        stack = [{}];
+      function num() {
+        var m = /^\d+/.exec(s.slice(i));
+        if (!m) return 1;
+        i += m[0].length;
+        if (+m[0] > 10000) throw new Error("That number is too big.");
+        return +m[0];
+      }
+      while (i < s.length) {
+        var ch = s.charAt(i);
+        if (ch === "(" || ch === "[") {
+          stack.push({});
+          i++;
+        } else if (ch === ")" || ch === "]") {
+          if (stack.length < 2) throw new Error("There's a closing bracket without an opening one.");
+          i++;
+          var n = num(),
+            top = stack.pop(),
+            into = stack[stack.length - 1];
+          Object.keys(top).forEach(function (k) {
+            into[k] = (into[k] || 0) + top[k] * n;
+          });
+        } else if (/[A-Z]/.test(ch)) {
+          var sym = ch;
+          if (/[a-z]/.test(s.charAt(i + 1))) sym += s.charAt(++i);
+          i++;
+          if (!bySym[sym]) throw new Error("\u201c" + sym + "\u201d isn't an element. Capitalise each symbol, like NaCl.");
+          var c = num(),
+            cur = stack[stack.length - 1];
+          cur[sym] = (cur[sym] || 0) + c;
+        } else throw new Error("I don't understand \u201c" + ch + "\u201d.");
+      }
+      if (stack.length !== 1) throw new Error("A bracket isn't closed.");
+      Object.keys(stack[0]).forEach(function (k) {
+        total[k] = (total[k] || 0) + stack[0][k] * mult;
+      });
+    });
+    var rows = Object.keys(total).map(function (k) {
+        return { sym: k, name: bySym[k][2], count: total[k], mass: bySym[k][3], sub: total[k] * bySym[k][3] };
+      }),
+      sum = rows.reduce(function (a, r) {
+        return a + r.sub;
+      }, 0);
+    rows.forEach(function (r) {
+      r.pct = sum ? (r.sub / sum) * 100 : 0;
+    });
+    return { rows: rows, mass: sum };
+  }
+  function appPeriodic(w) {
+    var view = "fam",
+      T = 298,
+      unit = "K",
+      mode = "detail",
+      sel = null,
+      query = "",
+      cells = {},
+      byZ = {};
+    ELEMENTS.forEach(function (e) {
+      byZ[e[0]] = e;
+    });
+    var panel = el("div", { class: "sunk pt-panel" });
+    var grid = el("div", { class: "pt-grid" });
+    var legend = el("div", { class: "pt-legend" });
+    /* ---- toolbar ---- */
+    var viewSel = el(
+      "select",
+      {
+        class: "in",
+        "aria-label": "What the colours show",
+        onchange: function () {
+          view = this.value;
+          tempRow.hidden = view !== "state";
+          paint();
+        },
+      },
+      PT_VIEWS.map(function (v) {
+        return el("option", { value: v[0] }, v[1]);
+      })
+    );
+    var searchIn = el("input", {
+      class: "in",
+      type: "search",
+      placeholder: "Find an element\u2026",
+      "aria-label": "Find an element",
+      style: "width:130px",
+      oninput: function () {
+        query = this.value.trim().toLowerCase();
+        paint();
+      },
+    });
+    function btn(label, fn, title) {
+      return el("button", { class: "btn sm", title: title || "", onclick: fn }, label);
+    }
+    /* ---- temperature controls ---- */
+    var tLabel = el("b", { style: "min-width:150px;display:inline-block" });
+    function toUnit(k) {
+      return unit === "K" ? k : unit === "C" ? k - 273.15 : ((k - 273.15) * 9) / 5 + 32;
+    }
+    var slider = el("input", {
+      type: "range",
+      min: "0",
+      max: "6000",
+      step: "1",
+      value: String(T),
+      "aria-label": "Temperature in kelvin",
+      style: "flex:1;min-width:160px",
+      oninput: function () {
+        T = +this.value;
+        paint();
+      },
+    });
+    var unitSel = el(
+      "select",
+      {
+        class: "in",
+        "aria-label": "Temperature unit",
+        onchange: function () {
+          unit = this.value;
+          paint();
+        },
+      },
+      [["K", "kelvin"], ["C", "\u00b0C"], ["F", "\u00b0F"]].map(function (u) {
+        return el("option", { value: u[0] }, u[1]);
+      })
+    );
+    function preset(label, k) {
+      return btn(label, function () {
+        T = k;
+        slider.value = String(k);
+        paint();
+      });
+    }
+    var tempRow = el(
+      "div",
+      { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap;padding:2px 6px", hidden: true },
+      slider,
+      tLabel,
+      unitSel,
+      preset("0 K", 0),
+      preset("Freezing", 273),
+      preset("Room", 298),
+      preset("Boiling", 373),
+      preset("Hot", 1500),
+      preset("Very hot", 4000)
+    );
+    /* ---- the table ---- */
+    for (var r = 1; r <= 10; r++) {
       for (var c = 1; c <= 18; c++) {
-        if (r === 6 && c >= 3 && c <= 17) {
-          grid.append(el("div", { style: "visibility:hidden" }));
+        if (r === 8) {
+          grid.append(el("div", { class: "pt-gap" }));
           continue;
         }
-        if (r === 7 && c >= 3 && c <= 17 && c !== 4) {
-          grid.append(el("div", { style: "visibility:hidden" }));
+        if ((r === 6 || r === 7) && c === 3) {
+          grid.append(el("div", { class: "pt-ph" }, r === 6 ? "57\u201371" : "89\u2013103"));
           continue;
         }
-        if (r === 8 && c >= 3) {
-          grid.append(el("div", { style: "visibility:hidden" }));
-          continue;
-        }
-        if (r === 9 && (c === 1 || c === 2 || c === 3 || c >= 18)) {
-          grid.append(el("div", { style: "visibility:hidden" }));
-          continue;
-        }
-        var elem = byPos[c + "-" + r];
-        if (!elem) {
-          grid.append(el("div"));
+        var E = null;
+        ELEMENTS.some(function (e) {
+          var p = ptPos(e);
+          if (p[0] === c && p[1] === r) {
+            E = e;
+            return true;
+          }
+          return false;
+        });
+        if (!E) {
+          grid.append(el("div", { class: "pt-gap" }));
           continue;
         }
         (function (E) {
           var cell = el(
             "div",
-            {
-              class: "pt-el",
-              style: "background:" + (CAT_COLORS[E[4]] || "#ddd"),
-            },
-            el("small", null, E[0]),
+            { class: "pt-el", tabindex: "0", role: "button", "aria-label": E[2] },
+            el("small", null, String(E[0])),
             el("b", null, E[1]),
-            el("small", null, E[2]),
-            el("small", null, E[3])
+            el("small", { class: "pt-nm" }, E[2]),
+            el("small", { class: "pt-sub" }, String(E[3]))
           );
-          cell.addEventListener("click", function () {
-            info.textContent = "";
-            info.append(
-              el(
-                "div",
-                { style: "font-size:18px;font-weight:bold" },
-                E[2] + " (" + E[1] + ")"
-              ),
-              el("div", null, "Atomic number: " + E[0]),
-              el("div", null, "Atomic mass: " + E[3] + " u"),
-              el("div", null, "Category: " + (CAT_NAMES[E[4]] || E[4])),
-              el("div", null, "Group: " + E[5] + "    Period: " + E[6])
-            );
+          function pick() {
+            sel = E[0];
+            mode = "detail";
+            showPanel();
+            paint();
+          }
+          cell.addEventListener("click", pick);
+          cell.addEventListener("keydown", function (ev) {
+            if (ev.key === "Enter" || ev.key === " ") {
+              ev.preventDefault();
+              pick();
+            }
           });
+          cells[E[0]] = cell;
           grid.append(cell);
-        })(elem);
+        })(E);
       }
+    }
+    function matches(E) {
+      if (!query) return true;
+      return E[1].toLowerCase() === query || E[2].toLowerCase().indexOf(query) === 0 || String(E[0]) === query;
+    }
+    function paint() {
+      var def = PT_VIEWS.filter(function (v) {
+          return v[0] === view;
+        })[0],
+        lo = Infinity,
+        hi = -Infinity,
+        f = function (v) {
+          return def[4] ? Math.log10(v) : v;
+        };
+      if (def[2] != null)
+        ELEMENTS.forEach(function (E) {
+          var v = ptValue(E[0], def[2]);
+          if (v != null && !(def[4] && v <= 0)) {
+            lo = Math.min(lo, f(v));
+            hi = Math.max(hi, f(v));
+          }
+        });
+      ELEMENTS.forEach(function (E) {
+        var cell = cells[E[0]];
+        if (!cell) return;
+        var bg,
+          sub = String(E[3]);
+        if (view === "fam") bg = CAT_COLORS[E[4]] || "#ddd";
+        else if (view === "state") {
+          var s = ptState(E[0], T);
+          bg = PT_STATE_COLORS[s];
+          sub = s === "unknown" ? "?" : s;
+        } else {
+          var v = ptValue(E[0], def[2]);
+          if (v == null || (def[4] && v <= 0)) {
+            bg = PT_STATE_COLORS.unknown;
+            sub = "n/a";
+          } else {
+            bg = ptRamp(hi > lo ? (f(v) - lo) / (hi - lo) : 0.5);
+            sub = ptNum(v);
+          }
+        }
+        cell.style.background = bg;
+        cell.querySelector(".pt-sub").textContent = sub;
+        cell.style.opacity = matches(E) ? "1" : "0.25";
+        cell.classList.toggle("sel", sel === E[0]);
+        cell.title = E[2] + (sub !== String(E[3]) ? ": " + sub : "");
+      });
+      /* legend */
+      legend.textContent = "";
+      if (view === "fam")
+        Object.keys(CAT_NAMES).forEach(function (k) {
+          legend.append(el("span", { class: "pt-key" }, el("i", { style: "background:" + CAT_COLORS[k] }), CAT_NAMES[k]));
+        });
+      else if (view === "state") {
+        ["solid", "liquid", "gas", "unknown"].forEach(function (k) {
+          legend.append(el("span", { class: "pt-key" }, el("i", { style: "background:" + PT_STATE_COLORS[k] }), k === "unknown" ? "not known" : k));
+        });
+        var k0 = Math.round(T),
+          shown = unit === "K" ? k0 + " K" : unit === "C" ? Math.round(toUnit(T)) + " \u00b0C" : Math.round(toUnit(T)) + " \u00b0F";
+        tLabel.textContent = shown + (unit === "K" ? " (" + Math.round(T - 273.15) + " \u00b0C)" : "");
+      } else {
+        var shownLo = def[4] ? Math.pow(10, lo) : lo,
+          shownHi = def[4] ? Math.pow(10, hi) : hi;
+        legend.append(
+          el("span", { class: "pt-key" }, ptNum(shownLo) + def[3]),
+          el("i", { class: "pt-ramp" }),
+          el("span", { class: "pt-key" }, ptNum(shownHi) + def[3]),
+          el("span", { class: "pt-key" }, el("i", { style: "background:" + PT_STATE_COLORS.unknown }), "no data")
+        );
+      }
+      w.status(sel ? byZ[sel][2] + " selected" : "Click an element for its details");
+    }
+    /* ---- the panel above the table ---- */
+    function showPanel() {
+      panel.textContent = "";
+      if (mode === "mass") return massPanel();
+      if (mode === "quiz") return quizPanel();
+      if (!sel) {
+        panel.append(
+          el("div", null, "Click an element to see its details. Try the colour views above, drag the temperature slider, or open the molar mass calculator and the quiz."),
+          el(
+            "div",
+            { class: "row", style: "gap:6px;margin-top:6px;flex-wrap:wrap" },
+            btn("Molar mass calculator", function () {
+              mode = "mass";
+              showPanel();
+            }),
+            btn("Quiz me", function () {
+              mode = "quiz";
+              showPanel();
+            }),
+            btn("Make flash cards\u2026", flashDialog)
+          )
+        );
+        return;
+      }
+      var E = byZ[sel],
+        P = PTD[sel - 1] || [];
+      function item(label, v) {
+        return el("div", { class: "pt-kv" }, el("span", null, label), el("b", null, v == null ? "n/a" : v));
+      }
+      panel.append(
+        el(
+          "div",
+          { class: "pt-card" },
+          el(
+            "div",
+            { class: "pt-big", style: "background:" + (CAT_COLORS[E[4]] || "#ddd") },
+            el("small", null, String(E[0])),
+            el("b", null, E[1]),
+            el("small", null, String(E[3]) + " u")
+          ),
+          el(
+            "div",
+            { class: "pt-facts" },
+            el("div", { style: "font-size:17px;font-weight:bold;margin-bottom:2px" }, E[2]),
+            item("Family", CAT_NAMES[E[4]] || E[4]),
+            item("Group / period", (E[4] === "ln" || E[4] === "an" ? "f-block" : E[5]) + " / " + ptPeriod(E)),
+            el("div", { class: "pt-kv" }, el("span", null, "Electron configuration"), el("b", null, ptConfig(P[0]))),
+            item("State (room temp.)", P[6]),
+            item("Melting point", P[7] != null ? P[7] + " K (" + Math.round(P[7] - 273.15) + " \u00b0C)" : null),
+            item("Boiling point", P[8] != null ? P[8] + " K (" + Math.round(P[8] - 273.15) + " \u00b0C)" : null),
+            item("Density", P[9] != null ? P[9] + " g/cm\u00b3" : null),
+            item("Electronegativity", P[1]),
+            item("Atomic radius", P[2] != null ? P[2] + " pm" : null),
+            item("First ionization energy", P[3] != null ? P[3] + " kJ/mol" : null),
+            item("Known oxidation states", P[5]),
+            item("Discovered", P[10])
+          )
+        ),
+        el(
+          "div",
+          { class: "row", style: "gap:6px;margin-top:6px;flex-wrap:wrap" },
+          btn("Add flash cards for " + E[2], function () {
+            makeCards("Periodic Table", [E], { sym2name: true, name2sym: true, num2el: true, el2num: false, fam: true, cfg: true }, true);
+          }),
+          btn("Molar mass calculator", function () {
+            mode = "mass";
+            showPanel();
+          }),
+          btn("Quiz me", function () {
+            mode = "quiz";
+            showPanel();
+          }),
+          btn("Make flash cards\u2026", flashDialog)
+        ),
+        el("div", { class: "dim", style: "padding:4px 0 0" }, "Values are for the element at normal pressure. \u201cn/a\u201d means no reliable value is known.")
+      );
+    }
+    /* ---- molar mass ---- */
+    function massPanel() {
+      var inp = el("input", { class: "in", placeholder: "Formula, e.g. C6H12O6, Ca(OH)2, CuSO4\u00b75H2O", style: "flex:1;min-width:200px", "aria-label": "Chemical formula" });
+      var out = el("div", { style: "margin-top:6px" });
+      var grams = el("input", { class: "in", type: "number", step: "any", min: "0", placeholder: "grams", style: "width:90px" });
+      var moles = el("input", { class: "in", type: "number", step: "any", min: "0", placeholder: "moles", style: "width:90px" });
+      var last = null;
+      function run() {
+        out.textContent = "";
+        last = null;
+        try {
+          var res = parseFormula(inp.value);
+          last = res;
+          var tb = el("table", { class: "pt-table" }, el("tr", null, el("th", null, "Element"), el("th", null, "Atoms"), el("th", null, "Mass each (u)"), el("th", null, "Subtotal"), el("th", null, "%")));
+          res.rows.forEach(function (r) {
+            tb.append(el("tr", null, el("td", null, r.sym + " (" + r.name + ")"), el("td", null, String(r.count)), el("td", null, String(r.mass)), el("td", null, r.sub.toFixed(3)), el("td", null, r.pct.toFixed(1))));
+          });
+          out.append(el("div", { style: "font-size:15px" }, "Molar mass: ", el("b", null, res.mass.toFixed(3) + " g/mol")), tb);
+        } catch (e) {
+          out.append(el("div", { class: "pt-err" }, e.message));
+        }
+      }
+      grams.addEventListener("input", function () {
+        if (last && grams.value !== "") moles.value = String(Math.round((+grams.value / last.mass) * 1e6) / 1e6);
+      });
+      moles.addEventListener("input", function () {
+        if (last && moles.value !== "") grams.value = String(Math.round(+moles.value * last.mass * 1e4) / 1e4);
+      });
+      onEnter(inp, run);
+      function ex(f) {
+        return btn(f, function () {
+          inp.value = f;
+          run();
+        });
+      }
+      panel.append(
+        el("div", { style: "font-weight:bold;margin-bottom:4px" }, "Molar mass calculator"),
+        el("div", { class: "row", style: "gap:6px;flex-wrap:wrap" }, inp, btn("Calculate", run)),
+        el("div", { class: "row", style: "gap:4px;flex-wrap:wrap;margin-top:4px" }, ex("H2O"), ex("C6H12O6"), ex("Ca(OH)2"), ex("Al2(SO4)3"), ex("CuSO4\u00b75H2O")),
+        out,
+        el("div", { class: "row", style: "gap:6px;align-items:center;margin-top:6px" }, "Convert:", grams, "g \u21c4", moles, "mol", el("span", { class: "dim", style: "padding:0" }, "(calculate a formula first)")),
+        el("div", { class: "row", style: "margin-top:6px" }, btn("Back to the table", function () { mode = "detail"; showPanel(); }))
+      );
+      inp.focus();
+    }
+    /* ---- flash cards from the elements ---- */
+    function cardsFor(E, opt) {
+      var P = PTD[E[0] - 1] || [],
+        list = [];
+      if (opt.sym2name) list.push(["What element has the symbol " + E[1] + "?", E[2]]);
+      if (opt.name2sym) list.push(["What is the symbol for " + E[2] + "?", E[1]]);
+      if (opt.num2el) list.push(["Which element has atomic number " + E[0] + "?", E[2] + " (" + E[1] + ")"]);
+      if (opt.el2num) list.push(["What is the atomic number of " + E[2] + "?", String(E[0])]);
+      if (opt.fam) list.push(["Which family is " + E[2] + " in?", CAT_NAMES[E[4]] || E[4]]);
+      if (opt.cfg && P[0]) list.push(["What is the electron configuration of " + E[2] + "?", P[0]]);
+      return list;
+    }
+    function makeCards(deck, elems, opt, quiet) {
+      var have = {};
+      S.cards.forEach(function (c) {
+        if (c.deck === deck) have[c.q] = 1;
+      });
+      var n = 0,
+        skipped = 0;
+      elems.forEach(function (E) {
+        cardsFor(E, opt).forEach(function (qa) {
+          if (have[qa[0]]) {
+            skipped++;
+            return;
+          }
+          if (S.cards.length >= 5000) return;
+          S.cards.push(newCardBase(deck, qa[0], { a: clip(qa[1], 1000) }));
+          have[qa[0]] = 1;
+          n++;
+        });
+      });
+      if (n) {
+        save();
+        refreshAll();
+      }
+      msgBox({
+        title: "Flash Cards",
+        icon: "info",
+        text: n + " card(s) added to the \u201c" + deck + "\u201d deck." + (skipped ? "\n" + skipped + " already there, skipped." : ""),
+      });
+    }
+    function flashDialog() {
+      var scope = el(
+        "select",
+        { class: "in" },
+        [["20", "First 20 elements"], ["36", "First 36"], ["54", "First 54"], ["118", "All 118"]].map(function (o) {
+          return el("option", { value: o[0] }, o[1]);
+        })
+      );
+      var deck = el("input", { class: "in", value: "Periodic Table", style: "width:100%" });
+      var opts = [
+        ["sym2name", "Symbol \u2192 name", true],
+        ["name2sym", "Name \u2192 symbol", true],
+        ["num2el", "Atomic number \u2192 element", false],
+        ["el2num", "Element \u2192 atomic number", false],
+        ["fam", "Element \u2192 family", false],
+        ["cfg", "Element \u2192 electron configuration", false],
+      ];
+      var boxes = {};
+      var wrap = el("div", { style: "text-align:left" }, el("div", null, "Deck name:"), deck, el("div", { style: "margin-top:6px" }, "Which elements:"), scope, el("div", { style: "margin-top:6px" }, "Card types:"));
+      opts.forEach(function (o) {
+        boxes[o[0]] = el("input", { type: "checkbox", checked: o[2] });
+        wrap.append(el("label", { class: "row", style: "gap:6px;align-items:center" }, boxes[o[0]], o[1]));
+      });
+      msgBox({
+        title: "Flash Cards from the Elements",
+        icon: "q",
+        width: 380,
+        text: "Add cards for the elements to your flash cards. Cards you already have are skipped.",
+        extra: wrap,
+        buttons: [
+          {
+            label: "Create",
+            fn: function () {
+              var o = {};
+              opts.forEach(function (x) {
+                o[x[0]] = boxes[x[0]].checked;
+              });
+              if (!Object.keys(o).some(function (k) { return o[k]; })) return false;
+              makeCards(clip(deck.value.trim() || "Periodic Table", 40), ELEMENTS.filter(function (e) { return e[0] <= +scope.value; }), o);
+            },
+          },
+          { label: "Cancel" },
+        ],
+      });
+    }
+    /* ---- quiz ---- */
+    function quizPanel() {
+      var scope = el("select", { class: "in" }, [["20", "First 20 elements"], ["36", "First 36"], ["54", "First 54"], ["118", "All 118"]].map(function (o) { return el("option", { value: o[0] }, o[1]); }));
+      panel.append(
+        el("div", { style: "font-weight:bold;margin-bottom:4px" }, "Quiz"),
+        el("div", { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" }, "10 questions from", scope, btn("Start", function () { runQuiz(+scope.value); }), btn("Back to the table", function () { mode = "detail"; showPanel(); }))
+      );
+    }
+    function runQuiz(max) {
+      var pool = ELEMENTS.filter(function (e) {
+          return e[0] <= max;
+        }),
+        qn = 0,
+        score = 0,
+        missed = [];
+      function pickN(n, not) {
+        var out = [];
+        while (out.length < n) {
+          var e = pool[Math.floor(Math.random() * pool.length)];
+          if (e !== not && out.indexOf(e) < 0) out.push(e);
+        }
+        return out;
+      }
+      function shuffle(a) {
+        return a
+          .map(function (x) {
+            return [Math.random(), x];
+          })
+          .sort(function (p, q) {
+            return p[0] - q[0];
+          })
+          .map(function (x) {
+            return x[1];
+          });
+      }
+      function question() {
+        var E = pool[Math.floor(Math.random() * pool.length)],
+          kind = Math.floor(Math.random() * 6),
+          wrong,
+          q,
+          right,
+          opts;
+        if (kind === 0) {
+          q = "Which element has the symbol " + E[1] + "?";
+          right = E[2];
+          opts = pickN(3, E).map(function (x) { return x[2]; });
+        } else if (kind === 1) {
+          q = "What is the symbol for " + E[2] + "?";
+          right = E[1];
+          opts = pickN(3, E).map(function (x) { return x[1]; });
+        } else if (kind === 2) {
+          q = "Which element has atomic number " + E[0] + "?";
+          right = E[2];
+          opts = pickN(3, E).map(function (x) { return x[2]; });
+        } else if (kind === 3) {
+          q = "What is the atomic number of " + E[2] + "?";
+          right = String(E[0]);
+          opts = pickN(3, E).map(function (x) { return String(x[0]); });
+        } else if (kind === 4) {
+          q = "Which family is " + E[2] + " in?";
+          right = CAT_NAMES[E[4]];
+          var fams = Object.keys(CAT_NAMES).filter(function (k) { return k !== E[4]; });
+          opts = shuffle(fams).slice(0, 3).map(function (k) { return CAT_NAMES[k]; });
+        } else {
+          var withEn = pool.filter(function (e) { return ptValue(e[0], 1) != null; });
+          if (withEn.length < 2) return question();
+          var a = withEn[Math.floor(Math.random() * withEn.length)],
+            b;
+          do {
+            b = withEn[Math.floor(Math.random() * withEn.length)];
+          } while (b === a || ptValue(a[0], 1) === ptValue(b[0], 1));
+          q = "Which has the higher electronegativity?";
+          right = ptValue(a[0], 1) > ptValue(b[0], 1) ? a[2] : b[2];
+          opts = [ptValue(a[0], 1) > ptValue(b[0], 1) ? b[2] : a[2]];
+          E = a;
+        }
+        return { q: q, right: right, opts: shuffle(opts.concat([right])), E: E };
+      }
+      function show() {
+        panel.textContent = "";
+        if (qn >= 10) {
+          panel.append(
+            el("div", { style: "font-size:16px;font-weight:bold" }, "You got " + score + " of 10."),
+            el("div", { class: "dim", style: "padding:2px 0 6px" }, score >= 9 ? "Excellent!" : score >= 6 ? "Nice work. A little more practice and you've got it." : "Keep going, it gets easier."),
+            el(
+              "div",
+              { class: "row", style: "gap:6px;flex-wrap:wrap" },
+              btn("Again", function () { runQuiz(max); }),
+              missed.length
+                ? btn("Make flash cards from the ones I missed", function () {
+                    makeCards("Periodic Table", missed, { sym2name: true, name2sym: true, num2el: true, el2num: false, fam: true, cfg: false });
+                  })
+                : null,
+              btn("Back to the table", function () { mode = "detail"; showPanel(); })
+            )
+          );
+          return;
+        }
+        var Q = question();
+        panel.append(el("div", { class: "dim", style: "padding:0" }, "Question " + (qn + 1) + " of 10   \u2022   score " + score), el("div", { style: "font-size:15px;font-weight:bold;margin:4px 0 6px" }, Q.q));
+        var row = el("div", { class: "row", style: "gap:6px;flex-wrap:wrap" }),
+          done = false;
+        Q.opts.forEach(function (o) {
+          var b = el(
+            "button",
+            {
+              class: "btn",
+              onclick: function () {
+                if (done) return;
+                done = true;
+                var ok = o === Q.right;
+                if (ok) score++;
+                else if (missed.indexOf(Q.E) < 0) missed.push(Q.E);
+                Array.prototype.forEach.call(row.children, function (x) {
+                  if (x.textContent === Q.right) x.style.outline = "3px solid #008000";
+                  else if (x === b) x.style.outline = "3px solid #c00000";
+                });
+                panel.append(el("div", { style: "margin-top:6px;font-weight:bold;color:" + (ok ? "#006000" : "#c00000") }, ok ? "Correct!" : "Not quite. The answer is " + Q.right + "."), el("div", { style: "margin-top:4px" }, btn(qn >= 9 ? "See my score" : "Next question", function () { qn++; show(); })));
+              },
+            },
+            o
+          );
+          row.append(b);
+        });
+        panel.append(row);
+      }
+      show();
     }
     w.body.append(
       el(
         "div",
-        {
-          class: "col",
-          style: "flex:1;min-height:0;overflow:auto;padding:6px;gap:6px",
-        },
-        info,
+        { class: "col pt-wrap", style: "flex:1;min-height:0;overflow:auto;padding:6px;gap:6px" },
+        el("div", { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" }, "Show:", viewSel, searchIn, btn("Molar mass", function () { mode = "mass"; showPanel(); }, "Work out the mass of a formula"), btn("Quiz", function () { mode = "quiz"; showPanel(); }), btn("Flash cards\u2026", flashDialog)),
+        tempRow,
+        panel,
         el("div", { style: "overflow:auto" }, grid),
-        el(
-          "div",
-          { class: "dim", style: "padding:0" },
-          "Click an element for details. Colours show element families."
-        )
+        legend
       )
     );
     w.refresh = null;
+    showPanel();
+    paint();
   }
 
   /* ================= APP: FORMULA SHEET ================= */
@@ -28471,8 +29501,8 @@ window.addEventListener("error", function (e) {
       id: "periodic",
       title: "Periodic Table",
       icon: "periodic",
-      w: 720,
-      h: 480,
+      w: 880,
+      h: 660,
       build: appPeriodic,
     },
     formula: {
@@ -29289,8 +30319,32 @@ window.addEventListener("error", function (e) {
   function showClockFlyout() {
     var cur = new Date();
     var vy = cur.getFullYear(),
-      vm = cur.getMonth();
-    var wrap = el("div", { class: "col", style: "gap:4px;min-width:230px" });
+      vm = cur.getMonth(),
+      selDay = ymd(cur);
+    var wrap = el("div", { class: "col cf-wrap", style: "gap:4px;width:250px" });
+    /* what's on a given day. Classes are listed separately and never get a dot. */
+    function thingsOn(ds) {
+      var evs = S.events.filter(function (e) {
+        return eventOnDate(e, ds);
+      });
+      return {
+        classes: evs.filter(function (e) {
+          return e.kind === "class";
+        }),
+        events: evs.filter(function (e) {
+          return e.kind !== "class";
+        }),
+        tasks: S.tasks.filter(function (t) {
+          return !t.done && t.due && ymd(new Date(t.due)) === ds;
+        }),
+        assigns: S.assign.filter(function (a) {
+          return !a.done && a.due && ymd(new Date(a.due)) === ds;
+        }),
+        reminders: S.reminders.filter(function (r) {
+          return !r.done && ymd(new Date(r.at)) === ds;
+        }),
+      };
+    }
     var head = el(
       "div",
       { class: "row", style: "gap:4px;align-items:center" },
@@ -29333,62 +30387,126 @@ window.addEventListener("error", function (e) {
       style:
         "display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:11px",
     });
-    wrap.append(head, grid);
+    var list = el("div", { class: "cf-list" });
+    var timers = el("div", { class: "cf-sec" });
+    wrap.append(head, grid, list, timers);
+    var place = function () {};
     function draw() {
       titleEl.textContent = MONTHS[vm] + " " + vy;
       grid.textContent = "";
       ["S", "M", "T", "W", "T", "F", "S"].forEach(function (d) {
-        grid.append(
-          el(
-            "div",
-            { style: "font-weight:bold;color:#404040;padding:2px 0" },
-            d
-          )
-        );
+        grid.append(el("div", { style: "font-weight:bold;color:#404040;padding:2px 0" }, d));
       });
       var first = new Date(vy, vm, 1),
         start = new Date(vy, vm, 1 - first.getDay()),
         todayS = ymd(new Date());
       for (var i = 0; i < 42; i++) {
-        var d = new Date(
-            start.getFullYear(),
-            start.getMonth(),
-            start.getDate() + i
-          ),
-          s = ymd(d);
-        grid.append(
-          el(
-            "div",
-            {
-              style:
-                "padding:4px 0;cursor:default;" +
-                (d.getMonth() !== vm ? "color:#a0a0a0;" : "") +
-                (s === todayS
-                  ? "background:#000080;color:#fff;font-weight:bold;"
-                  : ""),
-            },
-            d.getDate()
-          )
-        );
+        (function (d) {
+          var s = ymd(d),
+            t = thingsOn(s),
+            busy = t.events.length + t.tasks.length + t.assigns.length + t.reminders.length > 0;
+          grid.append(
+            el(
+              "div",
+              {
+                class: "cf-day" + (s === selDay ? " cf-sel" : ""),
+                title: busy ? t.events.length + t.tasks.length + t.assigns.length + t.reminders.length + " thing(s) to do" : "",
+                style:
+                  (d.getMonth() !== vm ? "color:#a0a0a0;" : "") +
+                  (s === todayS ? "background:#000080;color:#fff;font-weight:bold;" : ""),
+                onclick: function () {
+                  selDay = s;
+                  if (d.getMonth() !== vm) {
+                    vm = d.getMonth();
+                    vy = d.getFullYear();
+                  }
+                  draw();
+                },
+              },
+              String(d.getDate()),
+              busy ? el("i", { class: "cf-dot" }) : null
+            )
+          );
+        })(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
       }
+      paintList();
+      paintTimers();
+      place();
+    }
+    function paintList() {
+      list.textContent = "";
+      var t = thingsOn(selDay),
+        d = new Date(selDay + "T00:00"),
+        lines = [];
+      t.events.forEach(function (e) {
+        lines.push([e.time ? e.time : "All day", e.title]);
+      });
+      t.assigns.forEach(function (a) {
+        lines.push([a.allDay ? "Due" : "Due " + fmt12(new Date(a.due)), a.title + (a.course ? " (" + a.course + ")" : "")]);
+      });
+      t.tasks.forEach(function (x) {
+        lines.push(["Task", x.text]);
+      });
+      t.reminders.forEach(function (r) {
+        lines.push([fmt12(new Date(r.at)), r.text]);
+      });
+      list.append(el("div", { style: "font-weight:bold;padding-top:2px" }, DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate()));
+      if (!lines.length) list.append(el("div", { class: "dim", style: "padding:0" }, "Nothing to do" + (t.classes.length ? " apart from classes." : ".")));
+      lines.slice(0, 6).forEach(function (l) {
+        list.append(el("div", { class: "cf-row" }, el("span", null, l[0]), el("b", null, clip(l[1], 60))));
+      });
+      if (lines.length > 6) list.append(el("div", { class: "dim", style: "padding:0" }, "+" + (lines.length - 6) + " more in Calendar"));
+      if (t.classes.length)
+        list.append(el("div", { class: "dim", style: "padding:0" }, "Classes: " + t.classes.slice(0, 4).map(function (c) { return (c.time ? c.time + " " : "") + clip(c.title, 24); }).join(", ") + (t.classes.length > 4 ? "\u2026" : "")));
+    }
+    /* timers: the focus timer, and the countdowns that are coming up */
+    function paintTimers() {
+      timers.textContent = "";
+      var td = ymd(new Date()),
+        cds = S.countdowns
+          .map(function (c) {
+            return { c: c, n: Math.round((new Date(c.date + "T00:00") - new Date(td + "T00:00")) / 86400000) };
+          })
+          .filter(function (x) {
+            return x.n >= 0;
+          })
+          .sort(function (a, b) {
+            return a.n - b.n;
+          })
+          .slice(0, 3),
+        idle = !T.running && T.left >= T.total;
+      timers.append(
+        el("div", { style: "font-weight:bold" }, "Timers"),
+        el(
+          "div",
+          { class: "row", style: "gap:6px;align-items:center" },
+          el("span", { style: "flex:1" }, (T.mode === "focus" ? "Focus" : "Break") + " " + mmss(T.left) + (T.running ? "  running" : idle ? "  ready" : "  paused")),
+          el("button", { class: "btn xs", onclick: function () { startPause(); paintTimers(); place(); } }, T.running ? "Pause" : idle ? "Start" : "Resume"),
+          el("button", { class: "btn xs", onclick: function () { resetT(); paintTimers(); place(); } }, "Reset")
+        )
+      );
+      cds.forEach(function (x) {
+        timers.append(el("div", { class: "cf-row" }, el("span", null, x.n === 0 ? "Today" : x.n === 1 ? "Tomorrow" : x.n + " days"), el("b", null, clip(x.c.name || x.c.title || "Countdown", 40))));
+      });
     }
     draw();
     var r = $("#clock").getBoundingClientRect();
-    popMenu(
-      r.right - 240,
-      r.top - 260,
-      [{ label: "", dis: true, fn: function () {} }],
-      0
-    );
+    popMenu(r.right - 260, r.top - 380, [{ label: "", dis: true, fn: function () {} }], 0);
     var pop = pops[pops.length - 1];
     if (pop) {
       pop.textContent = "";
       pop.append(wrap);
-      var pr = pop.getBoundingClientRect();
-      pop.style.left =
-        Math.max(2, Math.min(r.right - pr.width, innerWidth - pr.width - 2)) +
-        "px";
-      pop.style.top = Math.max(2, r.top - pr.height - 6) + "px";
+      place = function () {
+        var pr = pop.getBoundingClientRect();
+        pop.style.left = Math.max(2, Math.min(r.right - pr.width, innerWidth - pr.width - 2)) + "px";
+        pop.style.top = Math.max(2, r.top - pr.height - 6) + "px";
+      };
+      place();
+      /* keep the timer line live while the flyout is open */
+      var iv = setInterval(function () {
+        if (!pop.isConnected) return clearInterval(iv);
+        paintTimers();
+      }, 1000);
     }
   }
   $("#clock").addEventListener("click", function (e) {

@@ -1,7 +1,7 @@
 {
   "name": "focusdesk-96",
   "productName": "FocusDesk 96",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "FocusDesk 96 — a Windows 95-style study and productivity desktop, as a native app for macOS, Windows and Linux.",
   "main": "main.js",
   "author": {
@@ -25,7 +25,7 @@
     "start": "electron .",
     "prebuild": "node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build": "electron-builder",
-    "prebuild:mac": "node scripts/build-icon.js && node scripts/vendor-katex.js",
+    "prebuild:mac": "node scripts/build-icon.js && node scripts/vendor-katex.js && node scripts/build-mac-helper.js",
     "build:mac": "electron-builder --mac dmg",
     "prebuild:win": "node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build:win": "electron-builder --win nsis",
@@ -54,6 +54,7 @@
       "aux-preload.js",
       "nowplaying.html",
       "nowplaying.js",
+      "apple.js",
       "assets/**",
       "capture-preload.js",
       "capture.html",
@@ -79,8 +80,18 @@
       "icon": "build/icon.png",
       "artifactName": "FocusDesk-96-${version}-${arch}.${ext}",
       "extendInfo": {
-        "NSAppleEventsUsageDescription": "FocusDesk 96 reads the current song and sends play, pause and skip to Spotify or Music for its Now Playing pill."
-      }
+        "NSAppleEventsUsageDescription": "FocusDesk 96 reads the current song and sends play, pause and skip to Spotify or Music for its Now Playing pill.",
+        "NSCalendarsUsageDescription": "FocusDesk 96 reads your Apple Calendar events so they can appear in its own calendar. It never changes them.",
+        "NSCalendarsFullAccessUsageDescription": "FocusDesk 96 reads your Apple Calendar events so they can appear in its own calendar. It never changes them.",
+        "NSRemindersUsageDescription": "FocusDesk 96 reads your Apple Reminders so they can appear in its Tasks. It never changes them.",
+        "NSRemindersFullAccessUsageDescription": "FocusDesk 96 reads your Apple Reminders so they can appear in its Tasks. It never changes them."
+      },
+      "extraResources": [
+        {
+          "from": "helper/macos/focusdesk-mac",
+          "to": "focusdesk-mac"
+        }
+      ]
     },
     "dmg": {
       "title": "FocusDesk 96 ${version}"

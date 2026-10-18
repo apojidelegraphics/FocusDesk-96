@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-FocusDesk 96 is released under the MIT License (see `LICENSE`). The FocusDesk 96 code has no runtime dependencies: the browser version is plain HTML, CSS, and JavaScript with no libraries from other projects. The Desktop Edition adds KaTeX for math (listed below).
+FocusDesk 96 is released under the MIT License (see `LICENSE`). The FocusDesk 96 code has no runtime dependencies: the browser version is plain HTML, CSS, and JavaScript with no libraries from other projects. The Desktop Edition adds KaTeX for math, and both editions include element data for the Periodic Table (both listed below).
 
 The Desktop Edition is packaged with the following third-party software.
 
@@ -17,6 +17,14 @@ Copyright (c) 2013-2020 Khan Academy and other contributors.
 https://github.com/KaTeX/KaTeX
 
 The Desktop Edition renders math with KaTeX. A copy of its license is included with the app in `vendor/katex/LICENSE`. The Browser Edition uses FocusDesk's own built-in math renderer and does not include KaTeX.
+
+**periodic-table** (ISC License), the data behind the Periodic Table app
+Copyright (c) 2015, Chris Andrejewski.
+https://www.npmjs.com/package/periodic-table
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies. THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+A trimmed copy of this element data (properties of the 118 elements) is built into both the Browser and Desktop editions. It was generated with `scripts/gen-elements.js`.
 
 ## Used only to build the installers (not shipped)
 

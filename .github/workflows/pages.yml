@@ -1,0 +1,57 @@
+name: Website (GitHub Pages)
+
+# Publishes the browser version as a website that can be installed as an app.
+# One-time setup: Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - focusdesk.js
+      - focusdesk.css
+      - apojilogo.js
+      - pwa/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the site
+        shell: bash
+        run: |
+          mkdir site
+          cp focusdesk.js focusdesk.css apojilogo.js site/
+          cp pwa/* site/
+          # the same page as the browser zip (no desktop-only script), plus the install manifest and offline helper
+          grep -v 'focusdesk-desk.js\|Desktop edition only' index.html \
+            | sed 's#</head>#<link rel="manifest" href="manifest.webmanifest" />\n    <link rel="apple-touch-icon" href="icon-192.png" />\n  </head>#' \
+            | sed 's#</body>#<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }</script>\n  </body>#' \
+            > site/index.html
+          touch site/.nojekyll
+          grep -c 'manifest.webmanifest' site/index.html
+          grep -c 'serviceWorker' site/index.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

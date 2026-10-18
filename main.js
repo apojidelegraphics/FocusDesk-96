@@ -20,6 +20,10 @@ const path = require("path");
 const fs = require("fs");
 const fsp = fs.promises;
 const { fileURLToPath } = require("url");
+// Mac helper for Apple Calendar and Reminders (read-only). Packaged builds carry it in Resources.
+const apple = require("./apple")({
+  helper: app.isPackaged ? path.join(process.resourcesPath, "focusdesk-mac") : path.join(__dirname, "helper", "macos", "focusdesk-mac"),
+});
 
 // Windows only shows toast notifications for apps with a stable identity; this matches the installer's appId.
 if (process.platform === "win32") app.setAppUserModelId("com.apojistudios.focusdesk96");
@@ -887,7 +891,7 @@ function openNowPlaying() {
     pos = JSON.parse(fs.readFileSync(NP_FILE, "utf8"));
   } catch (_) {}
   const w = 420,
-    h = 80;
+    h = 106;
   const onScreen =
     pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) && screen.getAllDisplays().some((d) => {
       const a = d.workArea;
@@ -1049,19 +1053,31 @@ function registerDesktopIpc() {
     win.setBounds({ x: x, y: y, width: b.width, height: b.height }); // keep the size fixed while moving
   });
 
+  /* Apple Calendar and Reminders (Mac only, read-only). */
+  ipcMain.handle("focusdesk:apple", (e, p) => {
+    assertTrusted(e);
+    return apple.call(String((p && p.action) || ""), (p && p.args) || {});
+  });
+
   ipcMain.handle("focusdesk:nowPlaying", (e, p) => {
     assertTrusted(e);
     if (p && p.close) closeNowPlaying();
     else openNowPlaying();
     return { ok: true };
   });
-  ipcMain.on("np:cmd", async (e, cmd) => {
+  ipcMain.on("np:cmd", async (e, msg) => {
     if (!npWin || npWin.isDestroyed() || e.sender !== npWin.webContents) return;
+    const cmd = msg && typeof msg === "object" ? msg.cmd : msg;
     if (cmd === "close") return closeNowPlaying();
     if (cmd === "open") return showMainWindow();
     if (cmd === "toggle" || cmd === "next" || cmd === "prev") {
       await nowPlaying.control(cmd, npLast && npLast.source);
       setTimeout(npPoll, 350); // show the new state right away
+    } else if (cmd === "seek") {
+      const sec = Number(msg && msg.sec);
+      if (!Number.isFinite(sec)) return;
+      await nowPlaying.control("seek", npLast && npLast.source, sec);
+      setTimeout(npPoll, 350);
     }
   });
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>studio.apoji.focusdesk96.mac-helper</string>
+  <key>CFBundleName</key>
+  <string>FocusDesk 96 Mac Helper</string>
+  <key>CFBundleVersion</key>
+  <string>1.2.3</string>
+  <key>NSCalendarsUsageDescription</key>
+  <string>FocusDesk 96 reads your Apple Calendar events so they can appear in its own calendar. It never changes them.</string>
+  <key>NSCalendarsFullAccessUsageDescription</key>
+  <string>FocusDesk 96 reads your Apple Calendar events so they can appear in its own calendar. It never changes them.</string>
+  <key>NSRemindersUsageDescription</key>
+  <string>FocusDesk 96 reads your Apple Reminders so they can appear in its Tasks. It never changes them.</string>
+  <key>NSRemindersFullAccessUsageDescription</key>
+  <string>FocusDesk 96 reads your Apple Reminders so they can appear in its Tasks. It never changes them.</string>
+</dict>
+</plist>
