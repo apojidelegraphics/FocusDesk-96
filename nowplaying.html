@@ -8,17 +8,24 @@
       html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; }
       body { background: #c0c0c0; font: 12px Tahoma, "Segoe UI", Arial, sans-serif; }
       #pill {
-        height: 100%; display: flex; align-items: center; gap: 6px; padding: 0 8px;
-        border: 2px solid; border-color: #fff #404040 #404040 #fff; outline: 1px solid #000;
-        -webkit-app-region: drag;
+        height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 8px;
+        border: 2px solid; border-color: #fff #404040 #404040 #fff; outline: 1px solid #000; cursor: grab;
       }
-      #note { font-size: 18px; color: #000080; }
-      #info { flex: 1; min-width: 0; line-height: 1.25; }
-      #title { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #pill.dragging { cursor: grabbing; }
+      #grip { color: #808080; font-size: 15px; letter-spacing: -2px; line-height: 1; width: 12px; flex: none; overflow: hidden; white-space: nowrap; }
+      #art {
+        width: 58px; height: 58px; flex: none; display: flex; align-items: center; justify-content: center;
+        background: #000080; color: #fff; font-size: 26px; overflow: hidden;
+        border: 2px solid; border-color: #404040 #fff #fff #404040;
+      }
+      #art img { width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: auto; }
+      #info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+      #title { font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #artist { color: #404040; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
       #info.idle #title { color: #606060; font-weight: normal; }
+      #btns { display: flex; gap: 5px; flex: none; }
       button {
-        -webkit-app-region: no-drag; font: bold 12px Tahoma, Arial, sans-serif; width: 26px; height: 24px; padding: 0;
+        font: bold 12px Tahoma, Arial, sans-serif; width: 28px; height: 28px; padding: 0;
         background: #c0c0c0; border: 2px solid; border-color: #fff #404040 #404040 #fff; cursor: default;
       }
       button:active { border-color: #404040 #fff #fff #404040; }
@@ -26,33 +33,66 @@
     </style>
   </head>
   <body>
-    <div id="pill" title="Double-click to open FocusDesk">
-      <div id="note">&#9835;</div>
+    <div id="pill" title="Drag to move. Double-click to open FocusDesk.">
+      <div id="grip">&#8942;&#8942;</div>
+      <div id="art">&#9835;</div>
       <div id="info" class="idle"><div id="title">Looking for music&hellip;</div><div id="artist"></div></div>
-      <button id="prev" title="Previous">&#9198;</button>
-      <button id="go" title="Play / pause">&#9654;</button>
-      <button id="next" title="Next">&#9197;</button>
-      <button id="x" title="Close">&#10005;</button>
+      <div id="btns">
+        <button id="prev" title="Previous">&#9198;</button>
+        <button id="go" title="Play / pause">&#9654;</button>
+        <button id="next" title="Next">&#9197;</button>
+        <button id="x" title="Close">&#10005;</button>
+      </div>
     </div>
     <script>
-      var info = document.getElementById("info"), title = document.getElementById("title"), artist = document.getElementById("artist"), go = document.getElementById("go");
-      var ctl = [document.getElementById("prev"), go, document.getElementById("next")];
+      var pill = document.getElementById("pill"), info = document.getElementById("info"), title = document.getElementById("title"), artist = document.getElementById("artist"), go = document.getElementById("go"), art = document.getElementById("art");
+      var ctl = [document.getElementById("prev"), go, document.getElementById("next")], lastArt = "";
+      function setArt(src) {
+        if (src === lastArt) return;
+        lastArt = src;
+        art.textContent = "";
+        if (src) { var im = document.createElement("img"); im.alt = ""; im.src = src; art.appendChild(im); }
+        else art.textContent = "\u266b";
+      }
       function paint(s) {
         if (!s) return;
         var live = s.available && !s.idle && s.title;
         info.className = live ? "" : "idle";
         title.textContent = live ? s.title : s.available ? "Nothing playing" : s.hint || "Not available";
         artist.textContent = live ? s.artist || "" : "";
-        document.getElementById("pill").title = live ? s.title + (s.artist ? " \u2014 " + s.artist : "") : "Double-click to open FocusDesk";
+        pill.title = (live ? s.title + (s.artist ? " \u2014 " + s.artist : "") + ". " : "") + "Drag to move. Double-click to open FocusDesk.";
         go.innerHTML = live && s.playing ? "&#10074;&#10074;" : "&#9654;";
         ctl.forEach(function (b) { b.disabled = !live; });
+        setArt(live ? s.art || "" : "");
       }
       window.auxApi.on("np:status", paint);
       document.getElementById("prev").onclick = function () { window.auxApi.send("np:cmd", "prev"); };
       go.onclick = function () { window.auxApi.send("np:cmd", "toggle"); };
       document.getElementById("next").onclick = function () { window.auxApi.send("np:cmd", "next"); };
       document.getElementById("x").onclick = function () { window.auxApi.send("np:cmd", "close"); };
-      document.getElementById("pill").ondblclick = function () { window.auxApi.send("np:cmd", "open"); };
+      pill.ondblclick = function (e) { if (!e.target.closest("button")) window.auxApi.send("np:cmd", "open"); };
+      /* Dragging is done here (not with the CSS drag region) so it works the same on every system. */
+      (function () {
+        var drag = null;
+        pill.addEventListener("pointerdown", function (e) {
+          if (e.button !== 0 || e.target.closest("button")) return;
+          drag = { sx: e.screenX, sy: e.screenY, wx: window.screenX, wy: window.screenY };
+          try { pill.setPointerCapture(e.pointerId); } catch (x) {}
+          pill.classList.add("dragging");
+          e.preventDefault();
+        });
+        pill.addEventListener("pointermove", function (e) {
+          if (drag) window.auxApi.send("win:move", { x: drag.wx + e.screenX - drag.sx, y: drag.wy + e.screenY - drag.sy });
+        });
+        function end(e) {
+          if (!drag) return;
+          drag = null;
+          pill.classList.remove("dragging");
+          try { pill.releasePointerCapture(e.pointerId); } catch (x) {}
+        }
+        pill.addEventListener("pointerup", end);
+        pill.addEventListener("pointercancel", end);
+      })();
     </script>
   </body>
 </html>

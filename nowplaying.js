@@ -7,10 +7,12 @@
  * Every call is a fixed command; nothing here uses text from the user or from a track name as part of a command.
  */
 const cp = require("child_process");
+const os = require("os");
+const path = require("path");
 
 function run(cmd, args, ms) {
   return new Promise((resolve) => {
-    cp.execFile(cmd, args, { timeout: ms || 5000, windowsHide: true, maxBuffer: 1 << 20 }, (err, out) => {
+    cp.execFile(cmd, args, { timeout: ms || 5000, windowsHide: true, maxBuffer: 8 << 20 }, (err, out) => {
       if (err) resolve({ ok: false, code: err.code, out: "" });
       else resolve({ ok: true, out: String(out) });
     });
@@ -19,12 +21,14 @@ function run(cmd, args, ms) {
 
 const clean = (s) => String(s == null ? "" : s).replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 120);
 
-/** "Title<TAB>Artist<TAB>State" -> { title, artist, playing } (state words differ per player) */
-function parseTriple(line, source) {
+/** "Title<TAB>Artist<TAB>State[<TAB>ArtworkURL]" -> { title, artist, playing, artUrl? } (state words differ per player) */
+function parseFields(line, source) {
   const parts = String(line || "").replace(/\r?\n$/, "").split("\t");
   if (parts.length < 3 || !parts[0].trim()) return null;
-  const state = parts[parts.length - 1].trim().toLowerCase();
-  return { title: clean(parts[0]), artist: clean(parts.slice(1, -1).join(" ")), playing: state === "playing", source: source };
+  const out = { title: clean(parts[0]), artist: clean(parts[1]), playing: parts[2].trim().toLowerCase() === "playing", source: source };
+  const art = (parts[3] || "").trim();
+  if (art && /^(https:|file:)/i.test(art) && art.length < 2000) out.artUrl = art;
+  return out;
 }
 
 /* ---------- macOS ---------- */
@@ -36,9 +40,10 @@ async function macStatus() {
     if (!r.ok || r.out.trim() !== "true") continue;
     const t = await run("osascript", [
       "-e",
-      'tell application "' + app + '" to return (name of current track) & (ASCII character 9) & (artist of current track) & (ASCII character 9) & (player state as string)',
+      'tell application "' + app + '" to return (name of current track) & (ASCII character 9) & (artist of current track) & (ASCII character 9) & (player state as string)' +
+        (app === "Spotify" ? ' & (ASCII character 9) & (artwork url of current track)' : ""),
     ]);
-    const s = t.ok ? parseTriple(t.out, app) : null;
+    const s = t.ok ? parseFields(t.out, app) : null;
     if (s && (!found || s.playing)) found = s;
     if (found && found.playing) break;
   }
@@ -53,9 +58,9 @@ async function macControl(cmd, source) {
 
 /* ---------- Linux (playerctl) ---------- */
 async function linuxStatus() {
-  const r = await run("playerctl", ["metadata", "--format", "{{title}}\t{{artist}}\t{{status}}"]);
+  const r = await run("playerctl", ["metadata", "--format", "{{title}}\t{{artist}}\t{{status}}\t{{mpris:artUrl}}"]);
   if (!r.ok && r.code === "ENOENT") return { available: false, hint: "Install the playerctl package to see what's playing on Linux." };
-  const s = r.ok ? parseTriple(r.out, "playerctl") : null;
+  const s = r.ok ? parseFields(r.out, "playerctl") : null;
   return s ? Object.assign({ available: true }, s) : { available: true, idle: true };
 }
 async function linuxControl(cmd) {
@@ -88,12 +93,61 @@ async function winStatus() {
   const r = await winRun(WIN_STATUS);
   if (!r.ok) return { available: false, hint: "Couldn't read the Windows media controls." };
   if (/^NONE/.test(r.out.trim())) return { available: true, idle: true };
-  const s = parseTriple(r.out.trim(), "windows");
+  const s = parseFields(r.out.trim(), "windows");
   return s ? Object.assign({ available: true }, s) : { available: true, idle: true };
 }
 async function winControlCmd(cmd) {
   const m = { toggle: "TryTogglePlayPauseAsync", next: "TrySkipNextAsync", prev: "TrySkipPreviousAsync" }[cmd];
   if (m) await winRun(winControl(m));
+}
+
+/* ---------- album art on demand (only when the song changes) ---------- */
+const MUSIC_ART = [
+  "on run argv",
+  "set outPath to item 1 of argv",
+  'tell application "Music"',
+  "if (count of artworks of current track) is 0 then return \"NONE\"",
+  "set d to raw data of artwork 1 of current track",
+  "end tell",
+  "set f to open for access (POSIX file outPath) with write permission",
+  "try",
+  "set eof f to 0",
+  "write d to f",
+  "end try",
+  "close access f",
+  'return "OK"',
+  "end run",
+];
+const WIN_ART =
+  WIN_PRELUDE +
+  "\n" +
+  "$p = Await ($s.TryGetMediaPropertiesAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])\n" +
+  "if ($p.Thumbnail -eq $null) { Write-Output 'NONE'; exit }\n" +
+  "[Windows.Storage.Streams.IRandomAccessStreamWithContentType,Windows.Storage.Streams,ContentType=WindowsRuntime] | Out-Null\n" +
+  "$rs = Await ($p.Thumbnail.OpenReadAsync()) ([Windows.Storage.Streams.IRandomAccessStreamWithContentType])\n" +
+  "$in = [System.IO.WindowsRuntimeStreamExtensions]::AsStreamForRead($rs)\n" +
+  "$ms = New-Object System.IO.MemoryStream\n" +
+  "$in.CopyTo($ms)\n" +
+  "if ($ms.Length -gt 3000000) { Write-Output 'NONE'; exit }\n" +
+  "Write-Output ([Convert]::ToBase64String($ms.ToArray()))";
+/** Returns { b64 } or { file } for the cover of what's playing now, or null. */
+async function art(source) {
+  try {
+    if (process.platform === "win32") {
+      const r = await winRun(WIN_ART);
+      const b64 = r.ok ? r.out.trim() : "";
+      return b64 && b64 !== "NONE" && /^[A-Za-z0-9+/=\s]+$/.test(b64) ? { b64: b64.replace(/\s+/g, "") } : null;
+    }
+    if (process.platform === "darwin" && source === "Music") {
+      const file = path.join(os.tmpdir(), "focusdesk-art-" + process.pid + ".bin");
+      const args = [];
+      MUSIC_ART.forEach((l) => args.push("-e", l));
+      args.push(file);
+      const r = await run("osascript", args, 8000);
+      return r.ok && r.out.trim() === "OK" ? { file: file } : null;
+    }
+  } catch (e) {}
+  return null;
 }
 
 /* ---------- public ---------- */
@@ -113,4 +167,4 @@ async function control(cmd, source) {
   } catch (e) {}
 }
 
-module.exports = { status, control, parseTriple, WIN_STATUS, encode };
+module.exports = { status, control, art, parseFields, parseTriple: parseFields, WIN_STATUS, WIN_ART, MUSIC_ART, encode };

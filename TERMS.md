@@ -61,6 +61,7 @@ The Products contain no advertising and no analytics or tracking code. They can 
 * c. **AI assistant.** If You configure an assistant, the text You send (including questions typed into the Ask tab of quick capture or the Clipy window, and the study context FocusDesk adds to them, such as what is due) is transmitted to the provider You chose (such as OpenRouter, OpenAI, Google, DeepSeek, or Anthropic) under that provider's terms, or to a local model running on Your own computer (such as Ollama or LM Studio).
 * d. **Calendar feed (Desktop Edition).** If You save a calendar link in Calendar Link, FocusDesk downloads that link when You press Sync and, unless You turn it off, when it starts. Only `https://` and `webcal://` links are used.
 * e. **Feedback.** The buttons in Control Panel open a pre-filled page on GitHub in Your web browser. FocusDesk sends nothing itself; nothing is submitted unless You press Submit on GitHub.
+* f. **Album covers (Desktop Edition).** When the Now Playing pill shows a cover, FocusDesk may download that one image from the music service's own image server (for example Spotify's) once per song. Covers your player has already saved on Your computer are read directly. FocusDesk only accepts real image files from a short list of known image servers.
 
 You can use the Products without any of these connections.
 
@@ -94,7 +95,7 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * d. **Open at login,** and the option to start hidden.
 * e. **The mini timer** and **Ask Clipy** windows, which stay on top of other windows until You close them.
 * f. **Due counts** for cards, tasks and assignments (including a list of assignment titles and times, and, if You leave it on, overdue items), shown in the tray or menu bar menu and, on Windows, as a badge on the taskbar icon. They are calculated on Your device and are not sent anywhere.
-* g. **Now Playing.** The Now Playing pill reads the title and artist of the song playing on Your computer (through Your system's media controls, through AppleScript for Spotify and Music on macOS, where the system asks for Your permission first, or through the `playerctl` tool on Linux) and can send play, pause, next and previous. This stays on Your device and is not sent anywhere.
+* g. **Now Playing.** The Now Playing pill reads the title, artist and cover of the song playing on Your computer (through Your system's media controls, through AppleScript for Spotify and Music on macOS, where the system asks for Your permission first, or through the `playerctl` tool on Linux) and can send play, pause, next and previous. This stays on Your device and is not sent anywhere.
 
 **4.4. Data Location**
 

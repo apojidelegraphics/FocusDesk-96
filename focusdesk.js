@@ -55,7 +55,8 @@ window.addEventListener("error", function (e) {
       title: "Desktop 1.2.2: Now Playing, calendar sync, Clipy in the corner",
       apps: [],
       notes: [
-        "Now Playing: a small always-on-top pill showing the current song with play/pause, next and previous. Works with Spotify and Apple Music on Mac, any media player on Linux (needs playerctl), and the system media controls on Windows. Open it from the Timer menu, the tray, or Control Panel.",
+        "Now Playing: a small always-on-top pill showing the current song and its album cover, with play/pause, next and previous. Works with Spotify and Apple Music on Mac, any media player on Linux (needs playerctl), and the system media controls on Windows. Open it from the Timer menu, the tray, or Control Panel.",
+        "The mini timer and the Now Playing pill have roomier layouts, and you can drag either one anywhere by grabbing it (look for the \u22ee\u22ee handle). They remember where you left them.",
         "Calendar Link can now keep itself updated: paste your calendar feed link once and FocusDesk syncs it when it starts, adding new assignments and events and updating changed due dates.",
         "Ask Clipy now opens in the bottom-right corner of your screen, like Clipy's spot in the app.",
         "Includes browser version 2.7.3: Clipy retries broken answers and has Regenerate buttons, plus a Feedback section.",

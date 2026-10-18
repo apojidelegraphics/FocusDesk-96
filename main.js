@@ -745,8 +745,8 @@ function openMiniTimer() {
   try {
     pos = JSON.parse(fs.readFileSync(MINI_FILE, "utf8"));
   } catch (_) {}
-  const w = 236,
-    h = 52;
+  const w = 330,
+    h = 68;
   let x, y;
   const onScreen =
     pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) && screen.getAllDisplays().some((d) => {
@@ -812,11 +812,70 @@ const NP_FILE = path.join(DATA_DIR, "now-playing.json");
 let npWin = null;
 let npTimer = null;
 let npLast = null;
+/* ---- album art: read once per song, turned into a small data: image the pill can show safely ---- */
+const ART_HOSTS = [/(^|\.)scdn\.co$/i, /(^|\.)mzstatic\.com$/i, /(^|\.)ytimg\.com$/i, /(^|\.)googleusercontent\.com$/i, /(^|\.)sndcdn\.com$/i];
+function sniffImage(b) {
+  if (b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "image/png";
+  if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b.length > 6 && b.slice(0, 4).toString("latin1") === "GIF8") return "image/gif";
+  if (b.length > 12 && b.slice(0, 4).toString("latin1") === "RIFF" && b.slice(8, 12).toString("latin1") === "WEBP") return "image/webp";
+  return null;
+}
+function toDataUrl(buf) {
+  if (!buf || buf.length < 32 || buf.length > 2.5 * 1024 * 1024) return null;
+  const mime = sniffImage(buf);
+  return mime ? "data:" + mime + ";base64," + buf.toString("base64") : null;
+}
+async function resolveArt(s) {
+  try {
+    if (s.artUrl) {
+      if (/^file:/i.test(s.artUrl)) {
+        const p = fileURLToPath(s.artUrl);
+        if (fs.statSync(p).size > 2.5 * 1024 * 1024) return null;
+        return toDataUrl(fs.readFileSync(p)); // must really be an image, or it is ignored
+      }
+      const u = new URL(s.artUrl);
+      if (u.protocol !== "https:" || !ART_HOSTS.some((re) => re.test(u.hostname))) return null;
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 8000);
+      try {
+        const res = await net.fetch(u.toString(), { signal: ctl.signal, redirect: "follow" });
+        if (!res.ok) return null;
+        return toDataUrl(Buffer.from(await res.arrayBuffer()));
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    const a = await nowPlaying.art(s.source);
+    if (a && a.b64) return toDataUrl(Buffer.from(a.b64, "base64"));
+    if (a && a.file) {
+      try {
+        return toDataUrl(fs.readFileSync(a.file));
+      } finally {
+        fs.unlink(a.file, () => {});
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+let npKey = "";
+let npArt = "";
 async function npPoll() {
   if (!npWin || npWin.isDestroyed()) return;
   const s = await nowPlaying.status();
   npLast = s;
-  if (npWin && !npWin.isDestroyed()) npWin.webContents.send("np:status", s);
+  const key = s && s.title ? [s.source, s.title, s.artist].join("|") : "";
+  if (key !== npKey) {
+    npKey = key;
+    npArt = "";
+    if (key)
+      resolveArt(s).then((a) => {
+        if (npKey !== key) return; // the song changed again while the cover was loading
+        npArt = a || "";
+        if (npWin && !npWin.isDestroyed()) npWin.webContents.send("np:status", Object.assign({}, npLast, { art: npArt }));
+      });
+  }
+  if (npWin && !npWin.isDestroyed()) npWin.webContents.send("np:status", Object.assign({}, s, { art: npArt }));
 }
 function openNowPlaying() {
   if (npWin && !npWin.isDestroyed()) {
@@ -827,8 +886,8 @@ function openNowPlaying() {
   try {
     pos = JSON.parse(fs.readFileSync(NP_FILE, "utf8"));
   } catch (_) {}
-  const w = 340,
-    h = 54;
+  const w = 420,
+    h = 80;
   const onScreen =
     pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) && screen.getAllDisplays().some((d) => {
       const a = d.workArea;
@@ -875,6 +934,8 @@ function openNowPlaying() {
     }, 400);
   });
   win.on("closed", () => {
+    npKey = "";
+    npArt = "";
     clearInterval(npTimer);
     npTimer = null;
     if (npWin === win) npWin = null;
@@ -972,6 +1033,20 @@ function registerDesktopIpc() {
     const k = p && p.kind;
     openCapture(["task", "note", "reminder", "event", "ask"].indexOf(k) >= 0 ? k : "task");
     return { ok: true };
+  });
+
+  /* The mini timer and the Now Playing pill are dragged by the page (works the same on every system). */
+  ipcMain.on("win:move", (e, p) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (!win || win.isDestroyed() || (win !== miniWin && win !== npWin)) return;
+    let x = Math.round(Number(p && p.x)),
+      y = Math.round(Number(p && p.y));
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const b = win.getBounds();
+    const d = screen.getDisplayNearestPoint({ x: x + Math.round(b.width / 2), y: y + 10 }).workArea;
+    x = Math.max(d.x - b.width + 80, Math.min(x, d.x + d.width - 80)); // always leave part of it on a screen
+    y = Math.max(d.y, Math.min(y, d.y + d.height - 40));
+    win.setBounds({ x: x, y: y, width: b.width, height: b.height }); // keep the size fixed while moving
   });
 
   ipcMain.handle("focusdesk:nowPlaying", (e, p) => {
