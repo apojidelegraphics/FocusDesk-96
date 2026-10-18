@@ -70,13 +70,36 @@ Grab the installer for your platform from the
 
 ## First launch
 
-These builds are unsigned. That's normal for indie software and doesn't mean
-anything is wrong.
+These builds are unsigned. That's normal for indie software and doesn't mean anything is wrong. Your computer just can't check who made the app.
 
-- **macOS** — right-click the app → Open → Open. Do this once. Subsequent launches work normally.
-  On macOS 15 and later, if that doesn't offer an Open button: open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to FocusDesk 96.
-- **Windows** — if SmartScreen appears, click "More info" → "Run anyway".
-- **Linux** — mark the AppImage executable: `chmod +x FocusDesk-96-1.0.0.AppImage`.
+**macOS**
+
+1. Open the `.dmg` and drag FocusDesk 96 into **Applications**.
+2. Open **Terminal** and run these two commands:
+
+```sh
+   codesign --force --deep --sign - "/Applications/FocusDesk 96.app"
+   xattr -cr "/Applications/FocusDesk 96.app"
+```
+
+3. Open FocusDesk 96 normally.
+
+You need to do this again after installing each update. If your Mac says the app is "damaged and can't be opened", this is the fix. The app isn't actually damaged, and macOS just shows that wording for unsigned downloads. Choose the Apple Silicon (`arm64`) file for an M1 or newer Mac, and the `x64` file for an Intel Mac.
+
+**Windows**
+
+If SmartScreen appears, click **More info**, then **Run anyway**.
+
+**Linux**
+
+Make the AppImage executable, then run it:
+
+```sh
+chmod +x FocusDesk-96-*.AppImage
+./FocusDesk-96-*.AppImage
+```
+
+If it doesn't start, run it from a terminal once to see the message. On newer Ubuntu releases it may ask you to install `libfuse2`.
 
 ## Your data
 
