@@ -20,8 +20,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.7.2";
-  var VERSION_DESKTOP = "1.2.1";
+  var VERSION_BROWSER = "2.7.3";
+  var VERSION_DESKTOP = "1.2.2";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -36,6 +36,29 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.7.3",
+      date: "October 2026",
+      title: "Retry and Regenerate for Clipy, Feedback",
+      apps: [],
+      notes: [
+        "If an assistant answers with a safety label instead of a real answer (like \u201cUser safety: safe\u201d), Clipy now tries again by himself, up to twice, and says so. There's a switch for it in Control Panel \u2192 Assistant.",
+        "Every Clipy answer has a Regenerate button, and failed answers have Try again.",
+        "New Feedback section in Control Panel: report a problem or suggest an idea as a pre-filled GitHub page, with optional basic details you can read first.",
+      ],
+    },
+    {
+      v: "1.2.2",
+      date: "October 2026",
+      title: "Desktop 1.2.2: Now Playing, calendar sync, Clipy in the corner",
+      apps: [],
+      notes: [
+        "Now Playing: a small always-on-top pill showing the current song with play/pause, next and previous. Works with Spotify and Apple Music on Mac, any media player on Linux (needs playerctl), and the system media controls on Windows. Open it from the Timer menu, the tray, or Control Panel.",
+        "Calendar Link can now keep itself updated: paste your calendar feed link once and FocusDesk syncs it when it starts, adding new assignments and events and updating changed due dates.",
+        "Ask Clipy now opens in the bottom-right corner of your screen, like Clipy's spot in the app.",
+        "Includes browser version 2.7.3: Clipy retries broken answers and has Regenerate buttons, plus a Feedback section.",
       ],
     },
     {
@@ -731,6 +754,10 @@ window.addEventListener("error", function (e) {
         todayOrder: [],
         restoreSession: true,
         updAuto: !!window.__focusdeskIsDesktop,
+        aiRetry: true,
+        calAuto: true,
+        calLast: 0,
+        calMsg: "",
         dur: { focus: 25, short: 5, long: 15 },
       },
     };
@@ -1357,6 +1384,10 @@ window.addEventListener("error", function (e) {
         return isStr(x) && x.length <= 24;
       });
     o.prefs.restoreSession = pp.restoreSession !== false;
+    o.prefs.aiRetry = pp.aiRetry !== false;
+    o.prefs.calAuto = pp.calAuto !== false;
+    o.prefs.calLast = isNum(pp.calLast) ? pp.calLast : 0;
+    o.prefs.calMsg = isStr(pp.calMsg) ? clip(pp.calMsg, 160) : "";
     o.prefs.updAuto = typeof pp.updAuto === "boolean" ? pp.updAuto : pp.updCheck === false ? false : !!window.__focusdeskIsDesktop;
     o.prefs.updLast = isNum(pp.updLast) ? pp.updLast : 0;
     o.prefs.updSeen = isStr(pp.updSeen) ? clip(pp.updSeen, 20) : "";
@@ -3193,6 +3224,19 @@ window.addEventListener("error", function (e) {
       });
   }
   var capSample = null;
+  /* Some free models answer with their safety verdict ("User safety: safe") instead of an answer. */
+  function looksBroken(t) {
+    t = String(t == null ? "" : t).trim();
+    if (!t) return true;
+    var n = t.toLowerCase().replace(/[*_`#>"']/g, "").replace(/\s+/g, " ").trim();
+    if (n.length > 80) return false;
+    var verdict = "(safe|unsafe|ok|okay|allowed|blocked|flagged|true|false|pass|fail|none)";
+    if (new RegExp("^(user |content |prompt |input |message |response |assistant )?(safety|moderation|classification)( rating| label| check| result| status| verdict)?\\s*[:=-]\\s*" + verdict + "\\b[\\s\\S]{0,14}$").test(n)) return true;
+    if (new RegExp("^" + verdict + "(\\s*[.,;]?\\s*(s\\d{1,2}(,\\s*s\\d{1,2})*)?)?$").test(n) && /^(safe|unsafe|allowed|blocked|flagged)/.test(n)) return true;
+    if (/^\{?\s*(safety|safe|moderation|label|verdict)\s*:\s*\w+\s*\}?$/.test(n)) return true;
+    return false;
+  }
+
   /* ---- is the assistant reachable? cloud ones need a connection; the local model only fails if it can't be reached ---- */
   var aiFail = {},
     aiNetListeners = {};
@@ -8278,6 +8322,95 @@ window.addEventListener("error", function (e) {
   }
 
   /* ================= APP: CALENDAR LINK ================= */
+  /* Merge a calendar feed: adds new assignments/events and updates changed due dates. Returns counts. */
+  function icsMerge(txt) {
+    var evs = parseICS(txt),
+      na = 0,
+      ne = 0,
+      up = 0,
+      dup = 0;
+    evs.forEach(function (e) {
+      var d = icsDate(e.DTSTART || e.DUE);
+      if (!d) return;
+      var sum = unesc(e.SUMMARY),
+        m = sum.match(/\[([^\]]+)\]\s*$/),
+        course = m ? m[1] : "",
+        title = m ? sum.slice(0, m.index).trim() : sum,
+        id = e.UID || sum + e.DTSTART;
+      if (/assignment/i.test(id)) {
+        var ex = S.assign.filter(function (a) {
+          return a.uid === id;
+        })[0];
+        if (ex) {
+          if (!ex.done && ex.src === "canvas" && ex.due !== d.ms) {
+            ex.due = d.ms;
+            ex.allDay = d.allDay;
+            up++;
+          } else dup++;
+          return;
+        }
+        S.assign.push({
+          id: uid(),
+          uid: id,
+          title: title || "(untitled)",
+          course: course,
+          due: d.ms,
+          allDay: d.allDay,
+          done: false,
+          src: "canvas",
+          url: /^https?:\/\//i.test(e.URL || "") ? clip(e.URL, 600) : "",
+        });
+        na++;
+      } else {
+        var dd = new Date(d.ms),
+          dt = ymd(dd),
+          tm = d.allDay ? "" : hm(dd),
+          exE = S.events.filter(function (x) {
+            return x.uid === id;
+          })[0];
+        if (exE) {
+          if (exE.src === "canvas" && (exE.date !== dt || exE.time !== tm)) {
+            exE.date = dt;
+            exE.time = tm;
+            up++;
+          } else dup++;
+          return;
+        }
+        S.events.push({ id: uid(), uid: id, title: (course ? course + ": " : "") + title, date: dt, time: tm, kind: "class", src: "canvas", repeat: "none" });
+        ne++;
+      }
+    });
+    return { na: na, ne: ne, up: up, dup: dup, total: evs.length };
+  }
+  function calFeedUrl() {
+    try {
+      return localStorage.getItem("focusdesk96.calfeed") || "";
+    } catch (e) {
+      return "";
+    }
+  }
+  /* Desktop only: the main process downloads the feed (browsers can't), then it's merged here. */
+  function calendarSyncNow() {
+    var url = calFeedUrl();
+    if (!url || !window.focusdesk || !window.focusdesk.fetchIcs) return Promise.resolve({ ok: false, msg: "" });
+    function done(ok, msg) {
+      S.prefs.calLast = Date.now();
+      S.prefs.calMsg = clip(msg, 160);
+      save();
+      return { ok: ok, msg: msg };
+    }
+    return window.focusdesk.fetchIcs(url).then(
+      function (r) {
+        if (!r || !r.ok) return done(false, "Couldn't sync: " + ((r && r.error) || "unknown problem") + ".");
+        var c = icsMerge(r.text);
+        if (c.na || c.ne || c.up) refreshAll();
+        return done(true, c.na + " new assignment(s), " + c.ne + " new event(s), " + c.up + " updated.");
+      },
+      function () {
+        return done(false, "Couldn't sync: the calendar couldn't be reached.");
+      }
+    );
+  }
   function appCanvas(w) {
     var fileIn = el("input", {
       type: "file",
@@ -8614,7 +8747,96 @@ window.addEventListener("error", function (e) {
       class: "sunk list",
       style: "min-height:140px;flex:1 0 140px",
     });
-    w.body.append(how, manual, filt, list);
+    var syncBox = window.__focusdeskIsDesktop
+      ? (function () {
+          var urlIn = el("input", {
+            class: "in",
+            type: "password",
+            placeholder: "Paste your calendar feed link (https:// or webcal://)",
+            value: calFeedUrl(),
+            style: "flex:1 1 220px",
+          });
+          var status = el("div", { class: "dim", style: "padding:4px 0 0" });
+          function paint() {
+            status.textContent = calFeedUrl()
+              ? S.prefs.calLast
+                ? "Last synced " + new Date(S.prefs.calLast).toLocaleString() + ". " + (S.prefs.calMsg || "")
+                : "Saved. Not synced yet."
+              : "No link saved yet.";
+          }
+          function go() {
+            status.textContent = "Syncing\u2026";
+            calendarSyncNow().then(paint);
+          }
+          paint();
+          return el(
+            "details",
+            { class: "pad", open: !!calFeedUrl() },
+            el("summary", { style: "cursor:default;font-weight:bold" }, "Keep it updated automatically (desktop app)"),
+            el(
+              "div",
+              { class: "dim", style: "padding:4px 0" },
+              "Paste your Canvas (or Google, Apple, school) calendar feed link once. FocusDesk fetches it for you when it starts, adds new assignments and events, and updates changed due dates. The link works like a password, so it's kept on this computer in keys.json and never goes into backups."
+            ),
+            el(
+              "div",
+              { class: "row", style: "gap:6px;flex-wrap:wrap;align-items:center" },
+              urlIn,
+              el(
+                "button",
+                {
+                  class: "btn sm",
+                  onclick: function () {
+                    var v = urlIn.value.trim();
+                    if (!/^(https|webcal):\/\//i.test(v)) {
+                      status.textContent = "The link has to start with https:// or webcal://.";
+                      return;
+                    }
+                    try {
+                      localStorage.setItem("focusdesk96.calfeed", v);
+                    } catch (e) {}
+                    go();
+                  },
+                },
+                "Save & sync now"
+              ),
+              el("button", { class: "btn sm", onclick: go }, "Sync now"),
+              el(
+                "button",
+                {
+                  class: "btn sm",
+                  onclick: function () {
+                    try {
+                      localStorage.removeItem("focusdesk96.calfeed");
+                    } catch (e) {}
+                    urlIn.value = "";
+                    S.prefs.calLast = 0;
+                    S.prefs.calMsg = "";
+                    save();
+                    paint();
+                  },
+                },
+                "Remove link"
+              )
+            ),
+            el(
+              "label",
+              { class: "row", style: "gap:6px;align-items:center;margin-top:4px" },
+              el("input", {
+                type: "checkbox",
+                checked: S.prefs.calAuto !== false,
+                onchange: function () {
+                  S.prefs.calAuto = this.checked;
+                  save();
+                },
+              }),
+              "Sync automatically when FocusDesk starts"
+            ),
+            status
+          );
+        })()
+      : el("div", { class: "pad dim" }, "Tip: the desktop app can keep this calendar updated automatically. Browsers aren't allowed to fetch a calendar link, so here you load the .ics file yourself.");
+    w.body.append(how, syncBox, manual, filt, list);
     function draw() {
       var courses = {};
       S.assign.forEach(function (a) {
@@ -13203,10 +13425,100 @@ window.addEventListener("error", function (e) {
           : PROVIDERS[m].name + " is unavailable (" + st.why + ")." + (m !== "ollama" && st.why === "offline" ? " A local model (M.X.E.S.) still works offline." : "");
       aiStatus.style.color = m !== "off" && !st.ok ? "#c00000" : "";
     }
+    var retryRow = el(
+      "label",
+      { class: "row", style: "gap:6px;align-items:center;padding:0 0 4px" },
+      el("input", {
+        type: "checkbox",
+        checked: S.prefs.aiRetry !== false,
+        onchange: function () {
+          S.prefs.aiRetry = this.checked;
+          save();
+        },
+      }),
+      "If Clipy's answer comes back broken (like \u201cUser safety: safe\u201d), try again automatically"
+    );
     aiNetListeners.cp = paintAiStatus;
     paintAiStatus();
     drawAI();
-    var aiBox = el("fieldset", null, el("legend", null, "Assistant"), aiStatus, aiC);
+    var aiBox = el("fieldset", null, el("legend", null, "Assistant"), aiStatus, retryRow, aiC);
+    var fbBox = (function () {
+      var REPO_URL = "https://github.com/apojidelegraphics/FocusDesk-96";
+      function diag() {
+        var m = clipyAssistant(),
+          st = assistantState(m),
+          lines = [
+            "FocusDesk 96 " + (window.__focusdeskIsDesktop ? "Desktop " : "Browser ") + VERSION,
+            "System: " + (window.__focusdeskIsDesktop ? ({ darwin: "macOS", win32: "Windows", linux: "Linux" }[window.__focusdeskPlatform] || "desktop") : String(navigator.userAgent).slice(0, 140)),
+            "Opened from: " + (window.__focusdeskIsDesktop ? "desktop app" : location.protocol === "file:" ? "saved copy" : "website"),
+            "Assistant: " + (m === "off" ? "none" : PROVIDERS[m].name + (st.ok ? " (reachable)" : " (unavailable: " + st.why + ")")),
+            "Theme: " + S.prefs.theme + " / icons " + S.prefs.iconTheme,
+            "Data: " + S.notes.length + " notes, " + S.tasks.length + " tasks, " + S.cards.length + " cards, " + S.events.length + " events",
+          ];
+        if (window.__focusdeskIsDesktop) {
+          var ds = window.__focusdeskDStatus || {};
+          lines.push("Desktop: hotkey " + (ds.hotkeyOk ? "ok" : "off") + ", tray " + (ds.trayOk ? "ok" : "off"));
+        }
+        return lines.join("\n");
+      }
+      var what = el("textarea", {
+        class: "in",
+        rows: 4,
+        placeholder: "What happened, or what would make FocusDesk better?",
+        style: "width:100%;resize:vertical",
+      });
+      var withDiag = el("input", { type: "checkbox", checked: true });
+      var out = el("div", { class: "dim", style: "padding:0" });
+      function body() {
+        var t = what.value.trim();
+        return (t ? t + "\n\n" : "") + (withDiag.checked ? "---\n" + diag() : "");
+      }
+      function open(kind) {
+        var title = (kind === "bug" ? "Problem: " : "Idea: ") + clip(what.value.trim().split("\n")[0] || "", 70);
+        openUrl(REPO_URL + "/issues/new?title=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(clip(body(), 5000)));
+        out.textContent = "Opened GitHub in your browser. Nothing is sent until you press Submit there.";
+      }
+      return el(
+        "fieldset",
+        null,
+        el("legend", null, "Feedback"),
+        el("div", { class: "dim", style: "padding:0 0 4px" }, "Found a bug or have an idea? Write it here and it opens as a pre-filled GitHub page. A free GitHub account is needed to post. Nothing is sent from FocusDesk itself."),
+        what,
+        el("label", { class: "row", style: "gap:6px;align-items:center;margin:4px 0" }, withDiag, "Include basic details (version, system, assistant status, counts, no personal content)"),
+        el(
+          "details",
+          { style: "margin-bottom:4px" },
+          el("summary", null, "See exactly what's included"),
+          el("pre", { style: "white-space:pre-wrap;font:11px \"Courier New\",monospace;margin:4px 0" }, diag())
+        ),
+        el(
+          "div",
+          { class: "row", style: "gap:6px;flex-wrap:wrap" },
+          el("button", { class: "btn sm", onclick: function () { open("bug"); } }, "Report a problem"),
+          el("button", { class: "btn sm", onclick: function () { open("idea"); } }, "Suggest an idea"),
+          el(
+            "button",
+            {
+              class: "btn sm",
+              onclick: function () {
+                var t = body();
+                (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(
+                  function () {
+                    out.textContent = "Copied to your clipboard.";
+                  },
+                  function () {
+                    out.textContent = "Couldn't copy automatically. Select the text under \u201cSee exactly what's included\u201d.";
+                  }
+                );
+              },
+            },
+            "Copy details"
+          ),
+          el("button", { class: "btn sm", onclick: function () { openUrl(REPO_URL + "/issues"); } }, "See all feedback")
+        ),
+        out
+      );
+    })();
     var aboutInfo = el("div", {
         class: "stats",
         style: "grid-template-columns:auto 1fr",
@@ -13380,6 +13692,9 @@ window.addEventListener("error", function (e) {
                 }),
                 btn("Mini timer", function () {
                   fdk.openMiniTimer(false);
+                }),
+                btn("Now playing", function () {
+                  fdk.openNowPlaying(false);
                 })
               ),
               el("div", { style: "font-weight:bold;margin-top:6px" }, "Daily backups"),
@@ -14066,6 +14381,7 @@ window.addEventListener("error", function (e) {
         iconsBox,
         updBox,
         deskBox,
+        fbBox,
         aboutBox,
         el(
           "fieldset",
@@ -19989,6 +20305,10 @@ window.addEventListener("error", function (e) {
         badge: window.__focusdeskPlatform === "win32" && total > 0 ? makeBadge(total) : null,
       });
     };
+    setTimeout(function () {
+      if (S.prefs.calAuto !== false && calFeedUrl())
+        calendarSyncNow().catch(function () {});
+    }, 7000);
     window.addEventListener("focusdesk-katex", function () {
       try {
         refreshAll();
@@ -26803,8 +27123,17 @@ window.addEventListener("error", function (e) {
       return m;
     }
     function bubble(m) {
+      var isLast = S.clipy.msgs[S.clipy.msgs.length - 1] === m,
+        afterUser = S.clipy.msgs.length > 1 && S.clipy.msgs[S.clipy.msgs.length - 2].role === "user";
+      var again = function (label) {
+        return el(
+          "div",
+          { class: "cm-actions" },
+          el("button", { class: "btn xs", title: "Ask again and get a fresh answer", onclick: regenerate }, label)
+        );
+      };
       if (m.role === "user") return el("div", { class: "cm user" }, m.text);
-      if (m.role === "sys") return el("div", { class: "cm sys" }, m.text);
+      if (m.role === "sys") return el("div", { class: "cm sys" }, m.text, isLast && afterUser ? again("Try again") : null);
       if (m.role === "plan") {
         var card = el(
           "div",
@@ -26874,7 +27203,8 @@ window.addEventListener("error", function (e) {
         "div",
         { class: "cm assistant" },
         el("span", { class: "who2" }, "Clipy"),
-        m.text
+        m.text,
+        isLast && afterUser ? again("\u21bb Regenerate") : null
       );
     }
     function wotdCard() {
@@ -26977,11 +27307,16 @@ window.addEventListener("error", function (e) {
       if (typing) msgs.append(typing);
       msgs.scrollTop = msgs.scrollHeight;
     }
+    var RETRY_MSG = "Something came up while Clipy was answering. Never fear, he's trying again right now!";
     function send(text, contextPrefix) {
       var v = String(text || "").trim();
       if (!v || busy) return;
       inp.value = "";
       pushMsg("user", v);
+      answer(v, contextPrefix);
+    }
+    /* Ask the assistant for an answer to the last user message; quietly retries if the reply is a safety label. */
+    function answer(v, contextPrefix) {
       var m = clipyAssistant();
       if (m === "off") {
         pushMsg(
@@ -26996,50 +27331,73 @@ window.addEventListener("error", function (e) {
       }
       busy = true;
       sendBtn.disabled = true;
-      typing = el(
-        "div",
-        { class: "cm assistant typing" },
-        el("span", { class: "who2" }, "Clipy"),
-        "typing\u2026"
-      );
+      var tries = 0,
+        maxTries = S.prefs.aiRetry === false ? 0 : 2;
+      function attempt() {
+        typing = el(
+          "div",
+          { class: "cm assistant typing" + (tries ? " retry" : "") },
+          el("span", { class: "who2" }, "Clipy"),
+          tries ? RETRY_MSG : "typing\u2026"
+        );
+        paintMsgs();
+        var hist = S.clipy.msgs
+          .slice(-10, -1)
+          .map(function (mm) {
+            return (mm.role === "user" ? "User: " : "Clipy: ") + mm.text;
+          })
+          .join("\n");
+        var prompt =
+          "You are Clipy, a warm, concise study companion built into FocusDesk 96. " +
+          "Answer in plain text (no markdown headers, no asterisks). Be practical and specific. " +
+          "If you don't know something about the user, say so instead of guessing.\n\n" +
+          "What you know about the user right now:\n" +
+          clipyContext() +
+          (contextPrefix
+            ? "\n\nEarlier, in the Research window:\n---\n" +
+              clipTextForPrompt(contextPrefix) +
+              "\n---"
+            : "") +
+          "\n\n" +
+          (hist ? "Conversation so far:\n" + hist + "\n\n" : "") +
+          "User: " +
+          v +
+          "\n\nClipy:";
+        aiChat(m, prompt, { maxTokens: 1500 }).then(
+          function (r) {
+            var t = ((r && r.text) || "").trim();
+            if (looksBroken(t) && tries < maxTries) {
+              tries++;
+              attempt();
+              return;
+            }
+            typing = null;
+            busy = false;
+            sendBtn.disabled = false;
+            if (looksBroken(t))
+              pushMsg("sys", "Clipy's answer didn't come through properly. Press Try again, or ask a different way.");
+            else pushMsg("assistant", t);
+          },
+          function (e) {
+            typing = null;
+            busy = false;
+            sendBtn.disabled = false;
+            pushMsg("sys", copyFor(e));
+          }
+        );
+      }
+      attempt();
+    }
+    /* Throw away Clipy's last reply and ask again. */
+    function regenerate() {
+      if (busy) return;
+      var arr = S.clipy.msgs;
+      if (!arr.length || (arr[arr.length - 1].role !== "assistant" && arr[arr.length - 1].role !== "sys")) return;
+      while (arr.length && (arr[arr.length - 1].role === "assistant" || arr[arr.length - 1].role === "sys")) arr.pop();
+      var lastUser = arr[arr.length - 1];
+      save();
       paintMsgs();
-      var hist = S.clipy.msgs
-        .slice(-10, -1)
-        .map(function (mm) {
-          return (mm.role === "user" ? "User: " : "Clipy: ") + mm.text;
-        })
-        .join("\n");
-      var prompt =
-        "You are Clipy, a warm, concise study companion built into FocusDesk 96. " +
-        "Answer in plain text (no markdown headers, no asterisks). Be practical and specific. " +
-        "If you don't know something about the user, say so instead of guessing.\n\n" +
-        "What you know about the user right now:\n" +
-        clipyContext() +
-        (contextPrefix
-          ? "\n\nEarlier, in the Research window:\n---\n" +
-            clipTextForPrompt(contextPrefix) +
-            "\n---"
-          : "") +
-        "\n\n" +
-        (hist ? "Conversation so far:\n" + hist + "\n\n" : "") +
-        "User: " +
-        v +
-        "\n\nClipy:";
-      aiChat(m, prompt, { maxTokens: 1500 }).then(
-        function (r) {
-          typing = null;
-          busy = false;
-          sendBtn.disabled = false;
-          var t = ((r && r.text) || "").trim() || "(no reply)";
-          pushMsg("assistant", t);
-        },
-        function (e) {
-          typing = null;
-          busy = false;
-          sendBtn.disabled = false;
-          pushMsg("sys", copyFor(e));
-        }
-      );
+      if (lastUser && lastUser.role === "user") answer(lastUser.text);
     }
     clipyController = {
       ask: function (t) {

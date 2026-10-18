@@ -4,7 +4,7 @@
 **Publisher:** Apoji Delegraphics
 **Designed by:** Apoji Studios
 
-This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.1), the Browser Edition (Version 2.7.2), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
+This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.2), the Browser Edition (Version 2.7.3), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
 
 ---
 
@@ -16,8 +16,8 @@ This document governs the use, development, and distribution of Apoji Delegraphi
 
 These General Terms and Conditions ("T&C") apply to all users accessing or utilizing the following products (collectively, the "Products"):
 
-* a. **FocusDesk 96 Desktop Edition, Version 1.2.1**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
-* b. **FocusDesk 96 Browser Edition, Version 2.7.2**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
+* a. **FocusDesk 96 Desktop Edition, Version 1.2.2**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
+* b. **FocusDesk 96 Browser Edition, Version 2.7.3**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
 * c. **The FocusDesk 96 feature set**, consisting of: Habit Breaker, Achievements, the focus session log, LaTeX and image support in notes and flash cards, cloze and image-occlusion flash cards, the grade what-if projection, and the other apps in the Start menu.
 
 **1.2. Acceptance**
@@ -50,7 +50,7 @@ Because Your data lives only on Your device, no copy exists anywhere else unless
 
 **3.3. API Keys**
 
-If You add an API key for an AI assistant provider, it is stored on Your device. In the Desktop Edition it is stored **unencrypted** in `keys.json` in the data folder, separate from `data.json` so You can share Your data without sharing Your keys. You are responsible for keeping that file private.
+If You add an API key for an AI assistant provider, it is stored on Your device. In the Desktop Edition it is stored **unencrypted** in `keys.json` in the data folder, separate from `data.json` so You can share Your data without sharing Your keys. You are responsible for keeping that file private. A calendar feed link You save in the Desktop Edition is kept in the same file, because such links work like passwords.
 
 **3.4. Network Connections**
 
@@ -59,6 +59,8 @@ The Products contain no advertising and no analytics or tracking code. They can 
 * a. **Update checks.** The Desktop Edition asks `api.github.com` for the latest release when it starts (at most once every twelve hours) unless You turn this off in Control Panel. The Browser Edition does this only when You click the button, or when You turn on automatic checks (off by default) in a copy saved to Your computer.
 * b. **Lookups You request.** The dictionary and thesaurus (Datamuse, Wiktionary), the Research app (Wikipedia, Open Library, DuckDuckGo), and links that open in Your browser (such as search engines and study sites) contact those services when You use them.
 * c. **AI assistant.** If You configure an assistant, the text You send (including questions typed into the Ask tab of quick capture or the Clipy window, and the study context FocusDesk adds to them, such as what is due) is transmitted to the provider You chose (such as OpenRouter, OpenAI, Google, DeepSeek, or Anthropic) under that provider's terms, or to a local model running on Your own computer (such as Ollama or LM Studio).
+* d. **Calendar feed (Desktop Edition).** If You save a calendar link in Calendar Link, FocusDesk downloads that link when You press Sync and, unless You turn it off, when it starts. Only `https://` and `webcal://` links are used.
+* e. **Feedback.** The buttons in Control Panel open a pre-filled page on GitHub in Your web browser. FocusDesk sends nothing itself; nothing is submitted unless You press Submit on GitHub.
 
 You can use the Products without any of these connections.
 
@@ -70,7 +72,7 @@ The grade calculator, GPA projection, and study statistics are planning aids. Th
 
 ## PART II: DESKTOP EDITION AGREEMENT
 
-This Part applies to the Desktop Edition (Version 1.2.1).
+This Part applies to the Desktop Edition (Version 1.2.2).
 
 ### 4. Installation, Builds, and Data Location
 
@@ -92,6 +94,7 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * d. **Open at login,** and the option to start hidden.
 * e. **The mini timer** and **Ask Clipy** windows, which stay on top of other windows until You close them.
 * f. **Due counts** for cards, tasks and assignments (including a list of assignment titles and times, and, if You leave it on, overdue items), shown in the tray or menu bar menu and, on Windows, as a badge on the taskbar icon. They are calculated on Your device and are not sent anywhere.
+* g. **Now Playing.** The Now Playing pill reads the title and artist of the song playing on Your computer (through Your system's media controls, through AppleScript for Spotify and Music on macOS, where the system asks for Your permission first, or through the `playerctl` tool on Linux) and can send play, pause, next and previous. This stays on Your device and is not sent anywhere.
 
 **4.4. Data Location**
 
@@ -119,7 +122,7 @@ Unless You state otherwise in writing, anything You contribute to the project (c
 
 ## PART III: BROWSER EDITION AND DEVELOPER TERMS
 
-This Part applies to the Browser Edition (Version 2.7.2), the Browser zip, and anyone building from the source code.
+This Part applies to the Browser Edition (Version 2.7.3), the Browser zip, and anyone building from the source code.
 
 ### 6. Browser Edition and Browser zip
 

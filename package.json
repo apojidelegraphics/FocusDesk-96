@@ -1,7 +1,7 @@
 {
   "name": "focusdesk-96",
   "productName": "FocusDesk 96",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "FocusDesk 96 — a Windows 95-style study and productivity desktop, as a native app for macOS, Windows and Linux.",
   "main": "main.js",
   "author": {
@@ -52,6 +52,8 @@
       "preload.js",
       "timer-mini.html",
       "aux-preload.js",
+      "nowplaying.html",
+      "nowplaying.js",
       "assets/**",
       "capture-preload.js",
       "capture.html",
@@ -75,7 +77,10 @@
         }
       ],
       "icon": "build/icon.png",
-      "artifactName": "FocusDesk-96-${version}-${arch}.${ext}"
+      "artifactName": "FocusDesk-96-${version}-${arch}.${ext}",
+      "extendInfo": {
+        "NSAppleEventsUsageDescription": "FocusDesk 96 reads the current song and sends play, pause and skip to Spotify or Music for its Now Playing pill."
+      }
     },
     "dmg": {
       "title": "FocusDesk 96 ${version}"

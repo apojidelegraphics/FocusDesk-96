@@ -23,7 +23,7 @@
   var init = fd.initial || {};
   var KEY = "focusdesk96.v1";
   var WALLKEY = KEY + ".wall";
-  var KEYS_FILE_KEYS = { "focusdesk96.keys": 1, "focusdesk96.orkey": 1 };
+  var KEYS_FILE_KEYS = { "focusdesk96.keys": 1, "focusdesk96.orkey": 1, "focusdesk96.calfeed": 1 };
   var MIN_GAP = 500; // at most one disk write per 500 ms
 
   /* ---------- 1. boot data for focusdesk.js ---------- */

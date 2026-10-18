@@ -14,7 +14,8 @@
  *  - Every file write is atomic: write a temp file, fsync it, rename over the target.
  */
 
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen, globalShortcut, Tray, nativeImage, Notification } = require("electron");
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen, globalShortcut, Tray, nativeImage, Notification, net } = require("electron");
+const nowPlaying = require("./nowplaying");
 const path = require("path");
 const fs = require("fs");
 const fsp = fs.promises;
@@ -686,6 +687,7 @@ function buildTrayMenu() {
     { type: "separator" },
     { label: "Start focus session", click: () => sendCmd("focus") },
     { label: "Mini timer", click: openMiniTimer },
+    { label: "Now playing", click: openNowPlaying },
     { label: "Add quick task\u2026", click: () => openCapture("task") },
     { label: "Ask Clipy\u2026", click: () => openClipyChat("") },
     { type: "separator" },
@@ -805,6 +807,83 @@ function closeMiniTimer() {
   if (miniWin && !miniWin.isDestroyed()) miniWin.close();
 }
 
+/* ---- now playing: a small always-on-top pill with play/pause/next/previous ---- */
+const NP_FILE = path.join(DATA_DIR, "now-playing.json");
+let npWin = null;
+let npTimer = null;
+let npLast = null;
+async function npPoll() {
+  if (!npWin || npWin.isDestroyed()) return;
+  const s = await nowPlaying.status();
+  npLast = s;
+  if (npWin && !npWin.isDestroyed()) npWin.webContents.send("np:status", s);
+}
+function openNowPlaying() {
+  if (npWin && !npWin.isDestroyed()) {
+    npWin.show();
+    return;
+  }
+  let pos = null;
+  try {
+    pos = JSON.parse(fs.readFileSync(NP_FILE, "utf8"));
+  } catch (_) {}
+  const w = 340,
+    h = 54;
+  const onScreen =
+    pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) && screen.getAllDisplays().some((d) => {
+      const a = d.workArea;
+      return pos.x >= a.x - 20 && pos.x + 80 < a.x + a.width && pos.y >= a.y - 20 && pos.y + 20 < a.y + a.height;
+    });
+  const wa = screen.getPrimaryDisplay().workArea;
+  const win = new BrowserWindow({
+    width: w,
+    height: h,
+    x: onScreen ? Math.round(pos.x) : wa.x + 24,
+    y: onScreen ? Math.round(pos.y) : wa.y + wa.height - h - 24,
+    frame: false,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    backgroundColor: "#c0c0c0",
+    title: "Now Playing",
+    webPreferences: { preload: path.join(__dirname, "aux-preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  npWin = win;
+  win.setAlwaysOnTop(true, "floating");
+  if (process.platform === "darwin") win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  win.setMenuBarVisibility(false);
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (ev) => ev.preventDefault());
+  win.loadFile(path.join(__dirname, "nowplaying.html"));
+  win.webContents.once("did-finish-load", () => {
+    win.show();
+    npPoll();
+  });
+  npTimer = setInterval(npPoll, 3500); // only while the pill is open
+  let saveT = null;
+  win.on("move", () => {
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      try {
+        const b = win.getBounds();
+        atomicWrite(NP_FILE, JSON.stringify({ x: b.x, y: b.y })).catch(() => {});
+      } catch (_) {}
+    }, 400);
+  });
+  win.on("closed", () => {
+    clearInterval(npTimer);
+    npTimer = null;
+    if (npWin === win) npWin = null;
+  });
+}
+function closeNowPlaying() {
+  if (npWin && !npWin.isDestroyed()) npWin.close();
+}
+
 /* ---- Ask Clipy: the real Clipy panel, in its own always-on-top window (built by the app itself) ---- */
 function openClipyChat(question) {
   return sendCmd(question ? "clipy:" + String(question).slice(0, 2000) : "clipy");
@@ -893,6 +972,62 @@ function registerDesktopIpc() {
     const k = p && p.kind;
     openCapture(["task", "note", "reminder", "event", "ask"].indexOf(k) >= 0 ? k : "task");
     return { ok: true };
+  });
+
+  ipcMain.handle("focusdesk:nowPlaying", (e, p) => {
+    assertTrusted(e);
+    if (p && p.close) closeNowPlaying();
+    else openNowPlaying();
+    return { ok: true };
+  });
+  ipcMain.on("np:cmd", async (e, cmd) => {
+    if (!npWin || npWin.isDestroyed() || e.sender !== npWin.webContents) return;
+    if (cmd === "close") return closeNowPlaying();
+    if (cmd === "open") return showMainWindow();
+    if (cmd === "toggle" || cmd === "next" || cmd === "prev") {
+      await nowPlaying.control(cmd, npLast && npLast.source);
+      setTimeout(npPoll, 350); // show the new state right away
+    }
+  });
+
+  /* Download a calendar (.ics) feed for the Calendar Link app. https only, size and time limited. */
+  ipcMain.handle("focusdesk:fetchIcs", async (e, p) => {
+    assertTrusted(e);
+    let raw = String((p && p.url) || "").trim().replace(/^webcal:\/\//i, "https://");
+    let u;
+    try {
+      u = new URL(raw);
+    } catch (_) {
+      return { ok: false, error: "That isn't a valid link." };
+    }
+    if (u.protocol !== "https:") return { ok: false, error: "The link has to start with https:// or webcal://." };
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    try {
+      const res = await net.fetch(u.toString(), { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "FocusDesk96", Accept: "text/calendar,*/*" } });
+      if (!res.ok) return { ok: false, error: "The calendar server answered " + res.status + "." };
+      if (res.url && !/^https:/i.test(res.url)) return { ok: false, error: "The link redirected to an unsecured page, so it was blocked." };
+      const reader = res.body.getReader();
+      const chunks = [];
+      let size = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.length;
+        if (size > 5 * 1024 * 1024) {
+          ctl.abort();
+          return { ok: false, error: "That calendar file is too big." };
+        }
+        chunks.push(Buffer.from(value));
+      }
+      const text = Buffer.concat(chunks).toString("utf8");
+      if (!/BEGIN:VCALENDAR/i.test(text)) return { ok: false, error: "That link didn't return a calendar (.ics) file." };
+      return { ok: true, text: text };
+    } catch (err) {
+      return { ok: false, error: err && err.name === "AbortError" ? "The calendar didn't answer in time." : "Couldn't reach that link." };
+    } finally {
+      clearTimeout(timer);
+    }
   });
 
   ipcMain.handle("focusdesk:miniTimer", (e, p) => {
@@ -1106,12 +1241,18 @@ function createWindow(hidden) {
 
   // Links open in the real browser; the app window itself never navigates away.
   win.webContents.setWindowOpenHandler(({ url, frameName }) => {
-    if (frameName === "focusdesk-clipy")
+    if (frameName === "focusdesk-clipy") {
+      // Bottom-right of the screen FocusDesk is on, like Clipy's spot in the app itself.
+      const wa = screen.getDisplayMatching(win.isDestroyed() ? screen.getPrimaryDisplay().bounds : win.getBounds()).workArea;
+      const cw = 400,
+        ch = Math.min(580, wa.height - 32);
       return {
         action: "allow",
         overrideBrowserWindowOptions: {
-          width: 400,
-          height: 580,
+          x: wa.x + wa.width - cw - 16,
+          y: wa.y + wa.height - ch - 16,
+          width: cw,
+          height: ch,
           minWidth: 320,
           minHeight: 380,
           alwaysOnTop: true,
@@ -1122,6 +1263,7 @@ function createWindow(hidden) {
           fullscreenable: false,
         },
       };
+    }
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: "deny" };
   });
@@ -1260,6 +1402,7 @@ function buildMenu() {
       { label: "Reset", click: () => sendCmd("timer-reset") },
       { type: "separator" },
       { label: "Mini Timer", click: openMiniTimer },
+      { label: "Now Playing", click: openNowPlaying },
     ],
   });
   template.push({

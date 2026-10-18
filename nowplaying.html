@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Now Playing</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; }
+      body { background: #c0c0c0; font: 12px Tahoma, "Segoe UI", Arial, sans-serif; }
+      #pill {
+        height: 100%; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+        border: 2px solid; border-color: #fff #404040 #404040 #fff; outline: 1px solid #000;
+        -webkit-app-region: drag;
+      }
+      #note { font-size: 18px; color: #000080; }
+      #info { flex: 1; min-width: 0; line-height: 1.25; }
+      #title { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #artist { color: #404040; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+      #info.idle #title { color: #606060; font-weight: normal; }
+      button {
+        -webkit-app-region: no-drag; font: bold 12px Tahoma, Arial, sans-serif; width: 26px; height: 24px; padding: 0;
+        background: #c0c0c0; border: 2px solid; border-color: #fff #404040 #404040 #fff; cursor: default;
+      }
+      button:active { border-color: #404040 #fff #fff #404040; }
+      button:disabled { color: #808080; }
+    </style>
+  </head>
+  <body>
+    <div id="pill" title="Double-click to open FocusDesk">
+      <div id="note">&#9835;</div>
+      <div id="info" class="idle"><div id="title">Looking for music&hellip;</div><div id="artist"></div></div>
+      <button id="prev" title="Previous">&#9198;</button>
+      <button id="go" title="Play / pause">&#9654;</button>
+      <button id="next" title="Next">&#9197;</button>
+      <button id="x" title="Close">&#10005;</button>
+    </div>
+    <script>
+      var info = document.getElementById("info"), title = document.getElementById("title"), artist = document.getElementById("artist"), go = document.getElementById("go");
+      var ctl = [document.getElementById("prev"), go, document.getElementById("next")];
+      function paint(s) {
+        if (!s) return;
+        var live = s.available && !s.idle && s.title;
+        info.className = live ? "" : "idle";
+        title.textContent = live ? s.title : s.available ? "Nothing playing" : s.hint || "Not available";
+        artist.textContent = live ? s.artist || "" : "";
+        document.getElementById("pill").title = live ? s.title + (s.artist ? " \u2014 " + s.artist : "") : "Double-click to open FocusDesk";
+        go.innerHTML = live && s.playing ? "&#10074;&#10074;" : "&#9654;";
+        ctl.forEach(function (b) { b.disabled = !live; });
+      }
+      window.auxApi.on("np:status", paint);
+      document.getElementById("prev").onclick = function () { window.auxApi.send("np:cmd", "prev"); };
+      go.onclick = function () { window.auxApi.send("np:cmd", "toggle"); };
+      document.getElementById("next").onclick = function () { window.auxApi.send("np:cmd", "next"); };
+      document.getElementById("x").onclick = function () { window.auxApi.send("np:cmd", "close"); };
+      document.getElementById("pill").ondblclick = function () { window.auxApi.send("np:cmd", "open"); };
+    </script>
+  </body>
+</html>

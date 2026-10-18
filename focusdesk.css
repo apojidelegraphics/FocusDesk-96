@@ -3873,3 +3873,7 @@ html.dt-tb.dt-tb-off #desktop { top: 0; }
 .kx-block { display: block; text-align: center; margin: 8px 0; overflow-x: auto; overflow-y: hidden; }
 .kx-block .katex-display { margin: 0; }
 .kx .katex { font-size: 1.08em; }
+
+/* ===== 1.2.2 / 2.7.3: regenerate, retry notice ===== */
+.cm-actions { margin-top: 6px; text-align: right; }
+.cm.typing.retry { color: #606060; font-style: italic; }
