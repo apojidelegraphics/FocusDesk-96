@@ -1,0 +1,79 @@
+name: Report a problem
+description: Something isn't working the way it should
+title: "Problem: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make FocusDesk 96 better. Your data stays on your computer, so please don't paste anything private here. **Never include passwords or API keys.**
+
+        Quick tip: in the app, **Control Panel → Feedback** can fill in the details below for you.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What went wrong?
+      description: Tell us what you saw, in your own words.
+      placeholder: "When I click ... it shows ... instead of ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we make it happen again?
+      description: The steps you took, if you remember them.
+      placeholder: |
+        1. Open Calendar Link
+        2. ...
+    validations:
+      required: false
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where are you using FocusDesk 96?
+      options:
+        - Desktop app on a Mac (Apple Silicon, M1 or newer)
+        - Desktop app on a Mac (Intel)
+        - Desktop app on Windows
+        - Desktop app on Linux
+        - The website (in Chrome, Edge, Firefox or Safari)
+        - The downloaded browser zip
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Control Panel → About shows it, or look at the number in the file you downloaded.
+      placeholder: "Desktop 1.2.4 or Browser 2.7.5"
+    validations:
+      required: false
+  - type: textarea
+    id: details
+    attributes:
+      label: Details from FocusDesk (optional)
+      description: If you used Control Panel → Feedback, paste what it copied here.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots (optional)
+      description: Drag pictures into this box. A screenshot of any error message is very helpful.
+    validations:
+      required: false
+  - type: checkboxes
+    id: safe
+    attributes:
+      label: Before you send
+      options:
+        - label: I haven't included any passwords, API keys or private information.
+          required: true

@@ -1,0 +1,58 @@
+name: Suggest an idea
+description: Something you'd like FocusDesk 96 to do
+title: "Idea: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas from students are how FocusDesk 96 gets better. Tell us what you're trying to do and we'll think about the best way to make it happen.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like it to do?
+      placeholder: "I'd like to be able to ..."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What would it help you do?
+      description: The problem you're running into or what you're studying for makes the idea easier to get right.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part is this about?
+      options:
+        - Calendar or Calendar Link
+        - Notepad
+        - Flash Cards
+        - Timer or Stats
+        - Grades or Assignments
+        - Clipy or the AI assistant
+        - Citation Maker
+        - Sketch Pad
+        - Periodic Table
+        - Desktop app features (hotkeys, tray, Now Playing)
+        - Something else
+    validations:
+      required: false
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Which version would it be for?
+      options:
+        - Both
+        - The desktop app only
+        - The browser version only
+    validations:
+      required: false
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else? (optional)
+      description: Sketches, links to apps that do this well, or screenshots all help.
+    validations:
+      required: false

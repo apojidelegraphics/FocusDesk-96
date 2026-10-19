@@ -118,6 +118,8 @@ Grab the installer for your platform from the
 
 These builds are unsigned. That's normal for indie software and doesn't mean anything is wrong. Your computer just can't check who made the app.
 
+Stuck, or have a question like "where is my data?" or "how do I move to a new computer?" See the **[FAQ](FAQ.md)**.
+
 **macOS**
 
 1. Open the `.dmg` and drag FocusDesk 96 into **Applications**.
@@ -314,6 +316,8 @@ MIT © 2026 Apoji Delegraphics and Apoji Studios. See [LICENSE](LICENSE).
 See [TERMS.md](TERMS.md) for the full terms of use, privacy notes, and brand rules.
 
 Third-party software is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Found a bug or have an idea? Use **Control Panel → Feedback** in the app, or [open an issue](https://github.com/apojidelegraphics/FocusDesk-96/issues/new/choose). Common questions are answered in the [FAQ](FAQ.md).
 
 ## Credits
 
