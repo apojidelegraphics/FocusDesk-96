@@ -84,11 +84,23 @@ No. FocusDesk has no servers and no accounts. It only goes online for things you
 ### My reminder or timer notifications don't show up
 Check your system's notification settings for FocusDesk 96 (and that Do Not Disturb or Focus mode isn't on). In the desktop app, Control Panel → Desktop has a button that sends a test notification and tells you what it found.
 
-### The hotkey doesn't work
-Another app is probably using the same keys. Control Panel → Desktop tells you when that happens. The quick capture hotkey is `Cmd/Ctrl+Shift+Space`, and the flash card hotkey is `Cmd/Ctrl+Shift+Y`. You can switch either off there.
+### The hotkey doesn't work, or I want different keys
+Another app is probably using the same keys. Control Panel → Desktop lists every shortcut with its keys, and tells you when another app has them. Press **Change…** and then the keys you want (they need Ctrl, Alt or Cmd/Win with a letter, number or F key), or **Reset** to go back. The defaults are `Cmd/Ctrl+Shift+Space` for quick capture and `Cmd/Ctrl+Shift+Y` for a flash card from what you copied. Two more can be switched on: starting or pausing the focus timer, and bringing FocusDesk to the front.
 
 ### How do I get my school calendar in?
 Open **Calendar Link** and load the `.ics` file from Canvas, Infinite Campus or Apple Calendar. In the desktop app you can paste your calendar's feed link once, and FocusDesk updates itself each time it starts.
+
+### How do I find something quickly?
+Press **Ctrl+K** (Cmd+K on a Mac). It searches your notes, tasks, flash cards, assignments, events, reminders, courses and folders at once, and opens any app or action. Type `#biology` to see everything with that tag, `@BIO` for everything in a course, or `>` to see only actions.
+
+### How do tags and courses work?
+Tags are just words with a hash in front, like `#biology`, typed in a note, a task or a flash card. They work the same everywhere. A **course** is a name like "BIO 101". Give a note a course with the Course box in Notepad, and give flash cards one with the Course box in Flash Cards (or **Set deck's course** for a whole deck). Every course gets its own folder automatically, called a course hub, that collects its assignments, notes, cards and current grade.
+
+### How do I share my notes with a study group?
+In **Folders**, pick a folder (or a course hub) and press **Share file**. It saves one file with the notes, their pictures and the flash cards, and nothing about your grades. Your friends open it with **Import shared…** in their Folders. **Export zip** makes a zip of plain Markdown notes instead, for any other app.
+
+### The update check says GitHub is limiting checks
+GitHub only lets each network ask a limited number of times per hour, and a shared network (like school Wi-Fi) can use them all up. Try again later. The desktop app has a second source it tries first, so this is rare there. Control Panel → Updates shows when it last checked and what it found.
 
 ### How do I set up the AI assistant?
 Open **Control Panel → Assistant**, pick a provider and paste your key. Keys stay on your computer. To keep everything on your own machine, choose the local option (M.X.E.S.) and run Ollama or LM Studio. Clipy still works without an assistant: he'll give tips and fun facts.

@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld("focusdesk", {
   nowPlayingCmd: (msg) => ipcRenderer.invoke("focusdesk:npCmd", msg),
   onNowPlaying: (cb) => ipcRenderer.on("focusdesk:np", (e, p) => cb(p)),
   openNowPlaying: (close) => ipcRenderer.invoke("focusdesk:nowPlaying", { close: !!close }),
+  latestRelease: () => ipcRenderer.invoke("focusdesk:latestRelease"),
   fetchPage: (url) => ipcRenderer.invoke("focusdesk:fetchPage", { url }),
   fetchIcs: (url) => ipcRenderer.invoke("focusdesk:fetchIcs", { url }),
   openMiniTimer: (close) => ipcRenderer.invoke("focusdesk:miniTimer", { close: !!close }),

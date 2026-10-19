@@ -70,7 +70,7 @@
   /* ---------- desktop 1.1 bridges ---------- */
   window.__focusdeskPlatform = init.platform || "";
   window.__focusdeskDPrefs = init.dprefs || {};
-  window.__focusdeskDStatus = { hotkeyOk: !!init.hotkeyOk, cardHotkeyOk: !!init.cardHotkeyOk, trayOk: !!init.trayOk };
+  window.__focusdeskDStatus = { hotkeyOk: !!init.hotkeyOk, cardHotkeyOk: !!init.cardHotkeyOk, hotkeys: init.hotkeys || {}, trayOk: !!init.trayOk };
   window.__focusdeskNotify = function (title, body) {
     try {
       fd.notify(String(title || "FocusDesk 96"), String(body || ""));
@@ -81,7 +81,7 @@
       if (r && r.prefs) {
         window.__focusdeskDPrefs = r.prefs;
         if (p && p.dueOverdue !== undefined && typeof window.__focusdeskDue === "function") window.__focusdeskDue();
-        window.__focusdeskDStatus = { hotkeyOk: !!r.hotkeyOk, cardHotkeyOk: !!r.cardHotkeyOk, trayOk: !!r.trayOk, login: r.login };
+        window.__focusdeskDStatus = { hotkeyOk: !!r.hotkeyOk, cardHotkeyOk: !!r.cardHotkeyOk, hotkeys: r.hotkeys || {}, trayOk: !!r.trayOk, login: r.login };
       }
       return r;
     });

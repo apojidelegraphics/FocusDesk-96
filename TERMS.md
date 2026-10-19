@@ -4,7 +4,7 @@
 **Publisher:** Apoji Delegraphics
 **Designed by:** Apoji Studios
 
-This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.4), the Browser Edition (Version 2.7.5), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
+This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.5), the Browser Edition (Version 2.8), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
 
 ---
 
@@ -16,8 +16,8 @@ This document governs the use, development, and distribution of Apoji Delegraphi
 
 These General Terms and Conditions ("T&C") apply to all users accessing or utilizing the following products (collectively, the "Products"):
 
-* a. **FocusDesk 96 Desktop Edition, Version 1.2.4**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
-* b. **FocusDesk 96 Browser Edition, Version 2.7.5**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
+* a. **FocusDesk 96 Desktop Edition, Version 1.2.5**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
+* b. **FocusDesk 96 Browser Edition, Version 2.8**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
 * c. **The FocusDesk 96 feature set**, consisting of: Habit Breaker, Achievements, the focus session log, LaTeX and image support in notes and flash cards, cloze and image-occlusion flash cards, the grade what-if projection, and the other apps in the Start menu.
 
 **1.2. Acceptance**
@@ -73,7 +73,7 @@ The grade calculator, GPA projection, and study statistics are planning aids. Th
 
 ## PART II: DESKTOP EDITION AGREEMENT
 
-This Part applies to the Desktop Edition (Version 1.2.4).
+This Part applies to the Desktop Edition (Version 1.2.5).
 
 ### 4. Installation, Builds, and Data Location
 
@@ -100,6 +100,8 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * i. **Citation lookups.** If You paste a DOI or an ISBN into the Citation Maker and press Fill in, FocusDesk asks Crossref (for a DOI) or Open Library (for an ISBN) for that one record. In the Desktop Edition, pasting a web link makes FocusDesk download that one page so it can read its title, author and date. Nothing is looked up until You press the button.
 * j. **Flash card hotkey (Desktop Edition).** When You press the flash card hotkey, FocusDesk reads the text on Your clipboard once, to put it on the front of a new card. It does not watch the clipboard at other times, and nothing is sent anywhere.
 * k. **Now Playing in the taskbar (Desktop Edition).** While the clock flyout is open, or if You turn on the taskbar indicator, FocusDesk checks what is playing on Your computer every few seconds. This stays on Your device.
+* l. **Update checks.** When You check for updates (or leave automatic checks on), the Desktop Edition asks GitHub for the newest release number, first through GitHub's programming interface and then through its public release feed. Browsers ask GitHub's interface and, if it is busy, read a small file on the FocusDesk website. Only the version number is looked at. Nothing about You is sent beyond what any web request includes, such as Your network address.
+* m. **Shared folder files.** A shared folder file contains only the notes and flash cards You chose to put in it, plus the pictures those notes use. It does not contain Your grades, assignments' progress or settings. FocusDesk creates the file on Your device and does not send it anywhere; whoever You give it to can open it with Import shared.
 
 **4.4. Data Location**
 
@@ -127,7 +129,7 @@ Unless You state otherwise in writing, anything You contribute to the project (c
 
 ## PART III: BROWSER EDITION AND DEVELOPER TERMS
 
-This Part applies to the Browser Edition (Version 2.7.5), the Browser zip, and anyone building from the source code.
+This Part applies to the Browser Edition (Version 2.8), the Browser zip, and anyone building from the source code.
 
 ### 6. Browser Edition and Browser zip
 

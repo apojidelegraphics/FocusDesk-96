@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.7.5";
-  var VERSION_DESKTOP = "1.2.4";
+  var VERSION_BROWSER = "2.8";
+  var VERSION_DESKTOP = "1.2.5";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -43,6 +43,30 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.8",
+      date: "October 2026",
+      title: "Command palette, tags and courses, folder hubs, update checker fix",
+      apps: [],
+      notes: [
+        "Press Ctrl/Cmd+K to search everything at once (notes, tasks, flash cards, assignments, events, reminders, courses, folders and tags) and to open any app or run common actions. Type #tag to see everything with that tag, @course for everything in a course, or > for actions only.",
+        "Tags now work the same way everywhere: type #biology in a note, a task or a flash card.",
+        "Notes and flash cards can belong to a course. Use the Course box in Notepad, and Flash Cards' Course box (or Set deck's course for a whole deck).",
+        "Folders can be course hubs: every course gets one automatically, gathering its assignments, notes, flash cards and current grade. You can also make smart folders (a tag, a course and a due date), nest folders inside each other, give them icons and colours, pin them to the Today page, archive a whole semester with final grades, export a folder as a zip of Markdown notes and pictures, and share a folder's notes and cards with a study group as one file.",
+        "Update checking is fixed. It now shows when it last checked and what it found, explains when GitHub is limiting checks, and has a backup source so one busy address doesn't stop it.",
+      ],
+    },
+    {
+      v: "1.2.5",
+      date: "October 2026",
+      title: "Desktop 1.2.5: shortcuts you can change, update checker fix",
+      apps: [],
+      notes: [
+        "Shortcuts you can change: Control Panel > Desktop lists each global shortcut with Change and Reset buttons. There are two new ones to switch on: start or pause the focus timer, and bring FocusDesk to the front.",
+        "Update checking now asks GitHub from the desktop app itself, with a second source if the first is busy.",
+        "Includes browser version 2.8: command palette, tags and courses, folder hubs.",
       ],
     },
     {
@@ -393,6 +417,7 @@ window.addEventListener("error", function (e) {
       "**Keyboard shortcuts:**",
       "- `Alt+1` through `Alt+9` \u2014 jump to the Nth open window",
       "- `Alt+Enter` \u2014 full screen",
+      "- `Ctrl+K` (Cmd+K on a Mac) \u2014 the command palette",
       "- `Escape` \u2014 close any open menu",
       "",
       "---",
@@ -421,7 +446,11 @@ window.addEventListener("error", function (e) {
       "- **Add to Folder** to file it into a Folder",
       "",
       "### Folders",
-      "Group assignments and notes into named folders you can colour however you like.",
+      "Group things into folders you can colour and give icons.",
+      "- **Course hubs**: every course gets one automatically, gathering its assignments, notes, flash cards and current grade. Give a note or a deck a course in Notepad or Flash Cards",
+      "- **Smart folders** fill themselves with whatever matches a tag, a course or a due date",
+      "- **Nest** folders inside each other, **pin** one to the Today page, and **archive** the semester with final grades",
+      "- **Export zip** gives you Markdown notes and their pictures, and **Share file** gives a study group the notes and flash cards in one file",
       "- **Search bar** filters items live",
       "- **Class dropdown** filters by course code (populated from your Calendar Link imports)",
       "- **Section headers** separate Assignments from Notes",
@@ -465,10 +494,16 @@ window.addEventListener("error", function (e) {
       "A summary of any week: focus time, tasks completed, assignments done, reminders, habits and more. Use the Older/Newer buttons to look back.",
       "",
       "### Citation Maker",
-      "Build citations in APA 7, MLA 9 or Chicago. Copy to clipboard, add to your bibliography, or save the whole list to Notepad.",
+      "Build citations for websites, books, journal articles, videos, podcasts, lectures, datasets and AI-generated text, in APA 7, MLA 9, Chicago, Harvard, IEEE or Turabian. The in-text citation is shown next to each one.",
+      "- **Fill in** from a DOI or an ISBN (and from a web link in the desktop app)",
+      "- Import and export **BibTeX** and **RIS** files, copy with italics and hanging indents, and change the whole bibliography to another style in one click",
+      "- In a note, type `[@key]` for an in-text citation and `{{works-cited}}` for the list of what that note cites. Tap **[@]** on a source to copy its marker",
       "",
       "### Find",
       "Search everything at once \u2014 notes, tasks, assignments, events, reminders, classes, cards, courses, habits, countdowns, citations, folders.",
+      "",
+      "### Command palette",
+      "Press **Ctrl+K** (Cmd+K on a Mac) anywhere to search everything and open any app or action. Type `#tag` for everything with that tag, `@course` for everything in a course, or `>` for actions only. Tags work everywhere: type `#biology` in a note, a task or a flash card.",
       "",
       "### Habit Tracker",
       "Daily habits with 7, 14, 30 or 90-day views. **Right-click any day cell** to attach a note. Shows current and best streaks.",
@@ -495,7 +530,14 @@ window.addEventListener("error", function (e) {
       "Desmos-style. Type any expression: `sin(x)`, `a x^2 + b`, `1/x`, `sqrt(x)`. **Free letters become sliders** you can drag. Scroll to zoom, drag to pan.",
       "",
       "### Periodic Table",
-      "Click any element for details. Colours show element families.",
+      "All 118 elements. Click one for its electron configuration, melting and boiling points, density, oxidation states and more.",
+      "- Switch the colours to electronegativity, radius, ionization energy, density, melting or boiling point",
+      "- Drag the **temperature slider** to watch elements melt and boil",
+      "- The **molar mass** calculator handles formulas like `Ca(OH)2` and `CuSO4.5H2O`",
+      "- **Quiz** yourself, or make flash cards from the elements",
+      "",
+      "### Sketch Pad",
+      "Draw with a pencil, brush, shapes, arrows and text. Pick colours with the eyedropper, **Select** and move part of a drawing, zoom and pan, and draw on blank, graph, lined or Cornell paper. **Insert into note** adds a sketch to a note, and **Make flash cards** turns a diagram into image-occlusion cards. Ctrl/Cmd+Z undoes.",
       "",
       "### Formula Sheet",
       "Algebra, geometry, trigonometry, calculus, physics, chemistry and statistics.",
@@ -817,6 +859,7 @@ window.addEventListener("error", function (e) {
         appleAuto: false,
         appleRemAuto: false,
         npTaskbar: false,
+        updMsg: "",
         appleLast: 0,
         appleMsg: "",
         calLast: 0,
@@ -869,12 +912,14 @@ window.addEventListener("error", function (e) {
         return isStr(n.text);
       })
       .map(function (n) {
-        return {
+        var r = {
           id: isStr(n.id) ? n.id : uid(),
           text: clip(n.text, 300000),
           updated: isNum(n.updated) ? n.updated : Date.now(),
           locked: !!n.locked,
         };
+        if (isStr(n.course) && n.course.trim()) r.course = clip(n.course.trim(), 60);
+        return r;
       });
     o.reminders = arr("reminders")
       .filter(function (r) {
@@ -926,6 +971,7 @@ window.addEventListener("error", function (e) {
           reps: isNum(c.reps) ? Math.max(0, Math.floor(c.reps)) : 0,
           lapses: isNum(c.lapses) ? Math.max(0, Math.floor(c.lapses)) : 0,
         };
+        if (isStr(c.course) && c.course.trim()) r.course = clip(c.course.trim(), 60);
         if (isNum(c.cloze) && c.cloze > 0) r.cloze = Math.min(99, Math.floor(c.cloze));
         if (isObj(c.occ) && isStr(c.occ.img) && Array.isArray(c.occ.boxes)) {
           var f01 = function (v) {
@@ -1468,6 +1514,7 @@ window.addEventListener("error", function (e) {
     o.prefs.appleAuto = pp.appleAuto === true;
     o.prefs.appleRemAuto = pp.appleRemAuto === true;
     o.prefs.npTaskbar = pp.npTaskbar === true;
+    o.prefs.updMsg = isStr(pp.updMsg) ? clip(pp.updMsg, 160) : "";
     o.prefs.appleLast = isNum(pp.appleLast) ? pp.appleLast : 0;
     o.prefs.appleMsg = isStr(pp.appleMsg) ? clip(pp.appleMsg, 160) : "";
     o.prefs.calLast = isNum(pp.calLast) ? pp.calLast : 0;
@@ -1539,9 +1586,36 @@ window.addEventListener("error", function (e) {
                   .slice(0, 500)
               : [],
             created: isNum(f.created) ? f.created : Date.now(),
+            parent: isStr(f.parent) ? clip(f.parent, 40) : "",
+            icon: isNum(f.icon) ? Math.max(0, Math.min(FOLDER_ICONS.length - 1, Math.floor(f.icon))) : 0,
+            kind: f.kind === "course" || f.kind === "smart" ? f.kind : "manual",
+            course: f.kind === "course" && isStr(f.course) ? clip(f.course.trim(), 60) : "",
+            rule: f.kind === "smart" ? cleanRule(f.rule) : null,
+            pin: !!f.pin,
+            archived: !!f.archived,
+            archivedAt: isNum(f.archivedAt) ? f.archivedAt : 0,
+            final: isObj(f.final) && isNum(f.final.pct) ? { pct: Math.round(f.final.pct * 10) / 10, letter: clip(String(f.final.letter || ""), 4) } : null,
           };
         })
-        .slice(0, 100);
+        .slice(0, 200);
+      /* a folder's parent has to exist and can't loop back on itself */
+      var byId = {};
+      o.folders.forEach(function (f) {
+        byId[f.id] = f;
+      });
+      o.folders.forEach(function (f) {
+        var seen = {},
+          cur = f;
+        seen[f.id] = 1;
+        while (cur && cur.parent) {
+          if (!byId[cur.parent] || seen[cur.parent]) {
+            f.parent = "";
+            break;
+          }
+          seen[cur.parent] = 1;
+          cur = byId[cur.parent];
+        }
+      });
     }
 
     /* ---- Per-assignment notes ---- */
@@ -7041,7 +7115,7 @@ window.addEventListener("error", function (e) {
         });
       }
     }
-    function drawTags() {
+    function drawTags0() {
       var all = {};
       S.notes.forEach(function (n) {
         tagsOf(n).forEach(function (t) {
@@ -7081,6 +7155,39 @@ window.addEventListener("error", function (e) {
           )
         );
     }
+    function drawCourse() {
+      var nn = noteById(cur);
+      if (!nn) return;
+      var ci = el("input", {
+        class: "in",
+        list: "fd-courses-np",
+        placeholder: "none",
+        value: nn.course || "",
+        style: "width:110px",
+        "aria-label": "Course this note belongs to",
+        onchange: function () {
+          var v = this.value.trim();
+          if (v) nn.course = clip(v, 60);
+          else delete nn.course;
+          save();
+        },
+      });
+      tagbar.append(
+        el("span", { style: "display:inline-flex;gap:4px;align-items:center;margin-left:4px" }, "Course:", ci),
+        el("datalist", { id: "fd-courses-np" }, allCourses().map(function (c) { return el("option", { value: c }); }))
+      );
+    }
+    function drawTags() {
+      drawTags0();
+      drawCourse();
+    }
+    HOOKS.notepad = function (id) {
+      if (noteById(id)) {
+        cur = id;
+        load();
+        drawList();
+      }
+    };
     function drawList() {
       list.textContent = "";
       var needle = q.value.trim().toLowerCase();
@@ -9684,6 +9791,22 @@ window.addEventListener("error", function (e) {
         placeholder: "Back (answer)",
         style: "flex:1 1 120px",
       });
+      var cIn = el("input", { class: "in", placeholder: "Course", list: "fd-courses-cards", style: "width:90px", title: "The course these cards belong to (optional)" });
+      var cdl = el("datalist", { id: "fd-courses-cards" }, allCourses().map(function (c) { return el("option", { value: c }); }));
+      function setDeckCourse() {
+        var d = dIn.value.trim() || deck,
+          v = cIn.value.trim(),
+          n = 0;
+        S.cards.forEach(function (c) {
+          if (c.deck !== d) return;
+          if (v) c.course = clip(v, 60);
+          else delete c.course;
+          n++;
+        });
+        save();
+        refreshAll();
+        msgBox({ title: "Flash Cards", icon: "info", text: n + " card(s) in \u201c" + d + "\u201d " + (v ? "now belong to " + v + "." : "no longer belong to a course.") });
+      }
       function addCard() {
         var qq = q.value.trim(),
           aa = a.value.trim();
@@ -9702,6 +9825,7 @@ window.addEventListener("error", function (e) {
           ease: 2.5,
           reps: 0,
           lapses: 0,
+          course: cIn.value.trim() ? clip(cIn.value.trim(), 60) : undefined,
         });
         save();
         curCard = null;
@@ -9783,9 +9907,12 @@ window.addEventListener("error", function (e) {
           { class: "row", style: "gap:4px;flex-wrap:wrap" },
           dIn,
           dl,
+          cIn,
+          cdl,
           q,
           a,
           el("button", { class: "btn sm", onclick: addCard }, "Add"),
+          el("button", { class: "btn sm", title: "Give every card in this deck the course in the Course box", onclick: setDeckCourse }, "Set deck's course"),
           el(
             "button",
             {
@@ -11076,6 +11203,345 @@ window.addEventListener("error", function (e) {
   }
 
   /* ================= APP: FOLDERS ================= */
+  /* ===== tags (typed as #tag in notes, tasks and cards) and courses ===== */
+  var FOLDER_ICONS = ["", "\u2605", "\u2665", "\u266b", "\u270e", "\u2699", "\u260e", "\u2602", "\u2708", "\u26a1"];
+  var HOOKS = {};
+  function tagsOfText(text) {
+    var m = String(text || "").match(/(?:^|\s)#([\w\-]+)/g) || [],
+      out = [];
+    m.forEach(function (t) {
+      var k = t.trim().slice(1).toLowerCase();
+      if (out.indexOf(k) < 0) out.push(k);
+    });
+    return out;
+  }
+  function cKey(s) {
+    return String(s || "").trim().toLowerCase();
+  }
+  function allCourses() {
+    var seen = {},
+      out = [];
+    function add(n) {
+      n = String(n || "").trim();
+      var k = cKey(n);
+      if (!k || seen[k]) return;
+      seen[k] = 1;
+      out.push(n);
+    }
+    S.grades.forEach(function (g) { add(g.name); });
+    S.classes.forEach(function (c) { add(c.name || c.title); });
+    S.assign.forEach(function (a) { add(a.course); });
+    S.notes.forEach(function (n) { add(n.course); });
+    S.cards.forEach(function (c) { add(c.course); });
+    return out.sort(function (a, b) {
+      return a.toLowerCase() < b.toLowerCase() ? -1 : 1;
+    });
+  }
+  function courseHub(name) {
+    var k = cKey(name),
+      g = S.grades.filter(function (x) {
+        return cKey(x.name) === k;
+      })[0] || null;
+    return {
+      assign: S.assign.filter(function (a) { return cKey(a.course) === k; }),
+      notes: S.notes.filter(function (n) { return cKey(n.course) === k; }),
+      cards: S.cards.filter(function (c) { return cKey(c.course) === k; }),
+      gradeCourse: g,
+      grade: g ? gradeOf(g) : null,
+    };
+  }
+  function gradeText(r) {
+    if (!r || r.current == null) return "";
+    var lt = letterOf(r.current);
+    lt = lt && lt.l ? lt.l : "";
+    return (typeof lt === "string" ? lt + " " : "") + "(" + (Math.round(r.current * 10) / 10) + "%)";
+  }
+  function dayStart() {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+  function inDueWindow(due, ms) {
+    var sod = dayStart();
+    if (due === "today") return ms >= sod && ms < sod + 86400000;
+    if (due === "week") return ms >= sod && ms < sod + 7 * 86400000;
+    if (due === "overdue") return ms < sod;
+    return true;
+  }
+  /* what a smart folder shows: items that match its tag, course and due-date rule */
+  function smartItems(rule) {
+    rule = rule || {};
+    var tag = cKey(rule.tag).replace(/^#/, ""),
+      course = cKey(rule.course),
+      due = rule.due || "",
+      kinds = rule.kinds && rule.kinds.length ? rule.kinds : ["notes", "tasks", "assign", "cards"],
+      has = function (k) {
+        return kinds.indexOf(k) >= 0;
+      },
+      tagOk = function (text) {
+        return !tag || tagsOfText(text).indexOf(tag) >= 0;
+      },
+      out = { notes: [], tasks: [], assign: [], cards: [] };
+    if (has("notes") && !due)
+      out.notes = S.notes.filter(function (n) {
+        return tagOk(n.text) && (!course || cKey(n.course) === course);
+      });
+    if (has("tasks") && !course)
+      out.tasks = S.tasks.filter(function (t) {
+        return !t.done && tagOk(t.text) && (!due || (t.due && inDueWindow(due, t.due)));
+      });
+    if (has("assign"))
+      out.assign = S.assign.filter(function (a) {
+        return !a.done && tagOk(a.title) && (!course || cKey(a.course) === course) && (!due || (a.due && inDueWindow(due, a.due)));
+      });
+    if (has("cards"))
+      out.cards = S.cards.filter(function (c) {
+        return tagOk(c.q + " " + c.a) && (!course || cKey(c.course) === course) && (!due || inDueWindow(due, c.dueAt || 0));
+      });
+    return out;
+  }
+  function ruleText(r) {
+    r = r || {};
+    var bits = [];
+    if (r.tag) bits.push("#" + String(r.tag).replace(/^#/, ""));
+    if (r.course) bits.push("course " + r.course);
+    if (r.due) bits.push({ today: "due today", week: "due this week", overdue: "overdue" }[r.due] || "");
+    return bits.filter(Boolean).join(", ") || "everything";
+  }
+  function cleanRule(r) {
+    r = isObj(r) ? r : {};
+    return {
+      tag: isStr(r.tag) ? clip(r.tag.replace(/^#/, "").trim().toLowerCase(), 30) : "",
+      course: isStr(r.course) ? clip(r.course.trim(), 60) : "",
+      due: ["today", "week", "overdue"].indexOf(r.due) >= 0 ? r.due : "",
+      kinds: (Array.isArray(r.kinds) ? r.kinds : []).filter(function (k) {
+        return ["notes", "tasks", "assign", "cards"].indexOf(k) >= 0;
+      }),
+    };
+  }
+  function folderChildren(id) {
+    return S.folders.filter(function (f) {
+      return (f.parent || "") === id;
+    });
+  }
+  function syncCourseFolders() {
+    var made = 0;
+    allCourses().forEach(function (name) {
+      var k = cKey(name);
+      if (
+        S.folders.some(function (f) {
+          return f.kind === "course" && cKey(f.course) === k;
+        })
+      )
+        return;
+      if (S.folders.length >= 200) return;
+      S.folders.push({ id: uid(), name: clip(name, 60), color: S.folders.length % 8, icon: 0, kind: "course", course: clip(name, 60), rule: null, pin: false, archived: false, parent: "", assign: [], note: [], created: Date.now() });
+      made++;
+    });
+    if (made) save();
+    return made;
+  }
+  function openNote(id) {
+    openApp("notepad");
+    if (HOOKS.notepad) HOOKS.notepad(id);
+  }
+  function openFolder(id) {
+    openApp("folders");
+    if (HOOKS.folders) HOOKS.folders(id);
+  }
+  /* ===== command palette (Ctrl/Cmd+K) ===== */
+  var palEl = null;
+  function closePalette() {
+    if (palEl) palEl.remove();
+    palEl = null;
+  }
+  function paletteActions() {
+    var list = [
+      ["New note", function () { S.notes.unshift({ id: uid(), text: "# New note\n\n", updated: Date.now() }); save(); refreshAll(); openNote(S.notes[0].id); }],
+      ["Open Tasks and add a task", function () { openApp("tasks"); }],
+      ["Start or pause the focus timer", function () { openApp("timer"); startPause(); }],
+      ["Save a backup now", function () { quickBackup(); }],
+      ["Open Control Panel", function () { openApp("control"); }],
+      ["Check for updates", function () { checkUpdate(true); }],
+      ["Show the taskbar calendar", function () { showClockFlyout(); }],
+      ["Ask Clipy", function () { if (typeof openClipyPanel === "function") openClipyPanel(); }],
+    ];
+    if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.openCapture)
+      list.push(["Quick capture", function () { window.focusdesk.openCapture("task"); }], ["New flash card from the clipboard", function () { window.focusdesk.openCapture("card"); }]);
+    return list.map(function (a) {
+      return { kind: "Action", title: a[0], run: a[1] };
+    });
+  }
+  function paletteIndex() {
+    var out = paletteActions();
+    Object.keys(APPS).forEach(function (id) {
+      var a = APPS[id];
+      out.push({ kind: "App", title: a.title, run: function () { openApp(id); } });
+    });
+    S.notes.forEach(function (n) {
+      var t = String(n.text || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "(untitled)";
+      out.push({ kind: "Note", title: clip(t, 80), hay: String(n.text || "").slice(0, 4000) + " " + (n.course || ""), tags: tagsOfText(n.text), course: n.course || "", run: function () { openNote(n.id); } });
+    });
+    S.tasks.forEach(function (t) {
+      out.push({ kind: "Task", title: clip(t.text, 80), hay: t.text, tags: tagsOfText(t.text), done: t.done, run: function () { openApp("tasks"); } });
+    });
+    S.cards.forEach(function (c) {
+      out.push({ kind: "Card", title: clip(String(c.q).replace(/\{\{c\d+::|\}\}/g, ""), 80), hay: c.q + " " + c.a + " " + c.deck + " " + (c.course || ""), tags: tagsOfText(c.q + " " + c.a), course: c.course || "", run: function () { openApp("cards"); } });
+    });
+    S.assign.forEach(function (a) {
+      out.push({ kind: "Assignment", title: clip(a.title, 80) + (a.course ? " (" + a.course + ")" : ""), hay: a.title + " " + (a.course || ""), tags: tagsOfText(a.title), course: a.course || "", done: a.done, run: function () { openApp("planner"); } });
+    });
+    S.events.forEach(function (e) {
+      out.push({ kind: "Event", title: clip(e.title, 80) + "  " + e.date, hay: e.title, tags: tagsOfText(e.title), run: function () { openApp("calendar"); } });
+    });
+    S.reminders.forEach(function (r) {
+      out.push({ kind: "Reminder", title: clip(r.text, 80), hay: r.text, tags: tagsOfText(r.text), run: function () { openApp("reminders"); } });
+    });
+    S.folders.forEach(function (f) {
+      out.push({ kind: f.kind === "course" ? "Course" : f.kind === "smart" ? "Smart folder" : "Folder", title: f.name, hay: f.name + " " + (f.course || ""), course: f.course || "", run: function () { openFolder(f.id); } });
+    });
+    var tags = {};
+    S.notes.forEach(function (n) { tagsOfText(n.text).forEach(function (t) { tags[t] = (tags[t] || 0) + 1; }); });
+    S.tasks.forEach(function (n) { tagsOfText(n.text).forEach(function (t) { tags[t] = (tags[t] || 0) + 1; }); });
+    S.cards.forEach(function (n) { tagsOfText(n.q + " " + n.a).forEach(function (t) { tags[t] = (tags[t] || 0) + 1; }); });
+    Object.keys(tags).forEach(function (t) {
+      out.push({ kind: "Tag", title: "#" + t + "  (" + tags[t] + ")", hay: "#" + t, fill: "#" + t });
+    });
+    return out;
+  }
+  function paletteSearch(index, q) {
+    q = q.trim().toLowerCase();
+    var KIND_ORDER = { Action: 0, App: 1, Course: 2, "Smart folder": 3, Folder: 3, Note: 4, Task: 5, Assignment: 5, Card: 6, Event: 7, Reminder: 7, Tag: 8 };
+    if (!q) return index.filter(function (x) { return x.kind === "Action" || x.kind === "App"; }).slice(0, 14);
+    var only = null,
+      tag = "",
+      course = "";
+    if (q.charAt(0) === ">") {
+      only = "Action";
+      q = q.slice(1).trim();
+    } else if (q.charAt(0) === "#" && q.length > 1 && q.indexOf(" ") < 0) tag = q.slice(1);
+    else if (q.charAt(0) === "@") {
+      course = q.slice(1).trim();
+      q = "";
+    }
+    var tokens = q.split(/\s+/).filter(Boolean);
+    var res = [];
+    index.forEach(function (x) {
+      if (only && x.kind !== only) return;
+      if (tag) {
+        if (x.kind === "Tag" ? x.title.toLowerCase().indexOf("#" + tag) !== 0 : (x.tags || []).indexOf(tag) < 0) return;
+        res.push({ x: x, s: x.kind === "Tag" ? 0 : 5 });
+        return;
+      }
+      if (course) {
+        if (!x.course || x.course.toLowerCase().indexOf(course) < 0) return;
+        res.push({ x: x, s: 1 });
+        return;
+      }
+      var title = x.title.toLowerCase(),
+        hay = title + " " + String(x.hay || "").toLowerCase(),
+        score = 0;
+      for (var i = 0; i < tokens.length; i++) {
+        var t = tokens[i];
+        if (hay.indexOf(t) < 0) return;
+        score += title.indexOf(t) === 0 ? 4 : title.indexOf(" " + t) >= 0 ? 3 : title.indexOf(t) >= 0 ? 2 : 1;
+      }
+      if (x.kind === "Action" || x.kind === "App") score += 1;
+      if (x.done) score -= 1;
+      res.push({ x: x, s: score });
+    });
+    res.sort(function (a, b) {
+      return b.s - a.s || (KIND_ORDER[a.x.kind] || 9) - (KIND_ORDER[b.x.kind] || 9);
+    });
+    return res.map(function (r) { return r.x; }).slice(0, 40);
+  }
+  function openPalette() {
+    if (palEl) return closePalette();
+    var index = paletteIndex(),
+      results = [],
+      sel = 0;
+    var input = el("input", { class: "in pal-in", placeholder: "Type to search or run an action...  (#tag, @course, > for actions)", "aria-label": "Command palette", autocomplete: "off", spellcheck: "false" });
+    var list = el("div", { class: "pal-list", role: "listbox" });
+    var hint = el("div", { class: "pal-hint dim" }, "Up and Down to choose, Enter to open, Esc to close");
+    palEl = el("div", { class: "pal-back", onmousedown: function (e) { if (e.target === palEl) closePalette(); } }, el("div", { class: "pal-box" }, input, list, hint));
+    document.body.append(palEl);
+    function paint() {
+      list.textContent = "";
+      if (!results.length) list.append(el("div", { class: "dim", style: "padding:10px" }, input.value.trim() ? "No matches." : "Nothing here yet."));
+      results.forEach(function (x, i) {
+        list.append(
+          el(
+            "div",
+            {
+              class: "pal-row" + (i === sel ? " sel" : ""),
+              role: "option",
+              onmousemove: function () {
+                if (sel !== i) {
+                  sel = i;
+                  Array.prototype.forEach.call(list.children, function (c, j) { c.classList.toggle("sel", j === i); });
+                }
+              },
+              onclick: function () { choose(i); },
+            },
+            el("span", { class: "pal-k" }, x.kind),
+            el("span", { class: "pal-t" }, x.title)
+          )
+        );
+      });
+      var cur = list.children[sel];
+      if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
+    }
+    function choose(i) {
+      var x = results[i];
+      if (!x) return;
+      if (x.fill) {
+        input.value = x.fill;
+        run();
+        input.focus();
+        return;
+      }
+      closePalette();
+      try {
+        x.run();
+      } catch (e) {}
+    }
+    function run() {
+      results = paletteSearch(index, input.value);
+      sel = 0;
+      paint();
+    }
+    input.addEventListener("input", run);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        sel = Math.min(results.length - 1, sel + 1);
+        paint();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        sel = Math.max(0, sel - 1);
+        paint();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        choose(sel);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closePalette();
+      }
+    });
+    run();
+    input.focus();
+  }
+  document.addEventListener(
+    "keydown",
+    function (e) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && String(e.key).toLowerCase() === "k") {
+        e.preventDefault();
+        openPalette();
+      } else if (e.key === "Escape" && palEl) closePalette();
+    },
+    true
+  );
+
   var FOLDER_COLORS = [
     "#e8a34a",
     "#5a9b5a",
@@ -11478,6 +11944,222 @@ window.addEventListener("error", function (e) {
     });
   }
 
+  /* ===== zip export and shared folders ===== */
+  var CRC_T = null;
+  function crc32(bytes) {
+    if (!CRC_T) {
+      CRC_T = [];
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+        CRC_T[n] = c >>> 0;
+      }
+    }
+    var crc = 0xffffffff;
+    for (var i = 0; i < bytes.length; i++) crc = CRC_T[(crc ^ bytes[i]) & 255] ^ (crc >>> 8);
+    return (crc ^ 0xffffffff) >>> 0;
+  }
+  /* a plain (uncompressed) zip file: [{ name, data: Uint8Array }] -> Blob */
+  function makeZip(files) {
+    var enc = new TextEncoder(),
+      parts = [],
+      central = [],
+      offset = 0,
+      d = new Date(),
+      time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+      date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    files.forEach(function (f) {
+      var name = enc.encode(f.name),
+        crc = crc32(f.data),
+        sz = f.data.length,
+        lh = new DataView(new ArrayBuffer(30)),
+        ch = new DataView(new ArrayBuffer(46));
+      lh.setUint32(0, 0x04034b50, true);
+      lh.setUint16(4, 20, true);
+      lh.setUint16(6, 0x0800, true);
+      lh.setUint16(10, time, true);
+      lh.setUint16(12, date, true);
+      lh.setUint32(14, crc, true);
+      lh.setUint32(18, sz, true);
+      lh.setUint32(22, sz, true);
+      lh.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(lh.buffer), name, f.data);
+      ch.setUint32(0, 0x02014b50, true);
+      ch.setUint16(4, 20, true);
+      ch.setUint16(6, 20, true);
+      ch.setUint16(8, 0x0800, true);
+      ch.setUint16(12, time, true);
+      ch.setUint16(14, date, true);
+      ch.setUint32(16, crc, true);
+      ch.setUint32(20, sz, true);
+      ch.setUint32(24, sz, true);
+      ch.setUint16(28, name.length, true);
+      ch.setUint32(42, offset, true);
+      central.push(new Uint8Array(ch.buffer), name);
+      offset += 30 + name.length + sz;
+    });
+    var csize = central.reduce(function (a, p) {
+        return a + p.length;
+      }, 0),
+      end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true);
+    end.setUint16(8, files.length, true);
+    end.setUint16(10, files.length, true);
+    end.setUint32(12, csize, true);
+    end.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]), { type: "application/zip" });
+  }
+  function dataUrlBytes(u) {
+    var m = /^data:([^;,]+)(;base64)?,(.*)$/.exec(u || "");
+    if (!m) return null;
+    var bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]),
+      b = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+    return { mime: m[1], bytes: b };
+  }
+  function slugOf(s, n) {
+    return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, n || 40) || "note";
+  }
+  var MIME_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp" };
+  function byIds(list, ids) {
+    return (ids || [])
+      .map(function (id) {
+        return list.filter(function (x) {
+          return x.id === id;
+        })[0];
+      })
+      .filter(Boolean);
+  }
+  /* everything a folder holds, whatever kind it is */
+  function folderContents(f) {
+    var man = { notes: byIds(S.notes, f.note), assign: byIds(S.assign, f.assign), cards: [], tasks: [] };
+    if (f.kind === "course") {
+      var H = courseHub(f.course);
+      H.notes.forEach(function (n) {
+        if (man.notes.indexOf(n) < 0) man.notes.push(n);
+      });
+      H.assign.forEach(function (a) {
+        if (man.assign.indexOf(a) < 0) man.assign.push(a);
+      });
+      man.cards = H.cards;
+      man.grade = H.grade;
+      man.gradeCourse = H.gradeCourse;
+    } else if (f.kind === "smart") return smartItems(f.rule);
+    return man;
+  }
+  /* a folder as a zip: Markdown notes, the pictures they use, and the flash cards as a CSV file */
+  function folderToZip(f) {
+    var it = folderContents(f),
+      enc = new TextEncoder(),
+      files = [],
+      used = {},
+      imgs = {},
+      index = ["# " + f.name, "", "Exported from FocusDesk 96 on " + ymd(new Date()) + ".", ""];
+    function add(name, text) {
+      files.push({ name: name, data: enc.encode(text) });
+    }
+    it.notes.forEach(function (n) {
+      var title = String(n.text || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "Untitled",
+        base = slugOf(title),
+        name = base,
+        i = 2;
+      while (used[name]) name = base + "-" + i++;
+      used[name] = 1;
+      var body = String(n.text || "").replace(/\(img:([A-Za-z0-9_\-]+)\)/g, function (all, id) {
+        var d = dataUrlBytes(S.images[id]);
+        if (!d) return all;
+        var ext = MIME_EXT[d.mime] || "png";
+        imgs[id] = { ext: ext, bytes: d.bytes };
+        return "(../images/" + id + "." + ext + ")";
+      });
+      add("notes/" + name + ".md", body.replace(/\s+$/, "") + "\n");
+      index.push("- [" + title.replace(/[\[\]]/g, "") + "](notes/" + name + ".md)" + (n.course ? " (" + n.course + ")" : ""));
+    });
+    Object.keys(imgs).forEach(function (id) {
+      files.push({ name: "images/" + id + "." + imgs[id].ext, data: imgs[id].bytes });
+    });
+    if (it.cards && it.cards.length) {
+      var csv = ["deck,front,back"].concat(
+        it.cards.map(function (c) {
+          return [c.deck, c.q, c.a]
+            .map(function (v) {
+              return '"' + String(v).replace(/"/g, '""') + '"';
+            })
+            .join(",");
+        })
+      );
+      add("flashcards.csv", csv.join("\n") + "\n");
+      index.push("", "Flash cards: flashcards.csv (" + it.cards.length + " cards)");
+    }
+    if (it.assign && it.assign.length) {
+      index.push("", "## Assignments", "");
+      it.assign.forEach(function (a) {
+        index.push("- " + a.title + (a.due ? " (due " + ymd(new Date(a.due)) + ")" : "") + (a.done ? " [done]" : ""));
+      });
+    }
+    files.unshift({ name: "README.md", data: enc.encode(index.join("\n") + "\n") });
+    return makeZip(files);
+  }
+  /* one file to hand to a study group: the folder's notes and flash cards (not your grades or progress) */
+  function folderShareJson(f) {
+    var it = folderContents(f),
+      images = {};
+    var notes = it.notes.map(function (n) {
+      String(n.text || "").replace(/\(img:([A-Za-z0-9_\-]+)\)/g, function (all, id) {
+        if (S.images[id]) images[id] = S.images[id];
+        return all;
+      });
+      return { text: n.text, course: n.course || "" };
+    });
+    var cards = (it.cards || []).map(function (c) {
+      var o = { deck: c.deck, q: c.q, a: c.a, course: c.course || "" };
+      if (c.cloze) o.cloze = c.cloze;
+      return o;
+    });
+    return JSON.stringify({ app: "FocusDesk 96", kind: "shared-folder", version: 1, name: f.name, course: f.course || "", notes: notes, cards: cards, images: images });
+  }
+  function importSharedFolder(txt) {
+    var j;
+    try {
+      j = JSON.parse(txt);
+    } catch (e) {
+      return { ok: false, msg: "That file isn't a FocusDesk shared folder." };
+    }
+    if (!isObj(j) || j.kind !== "shared-folder" || !Array.isArray(j.notes)) return { ok: false, msg: "That file isn't a FocusDesk shared folder." };
+    var idMap = {},
+      nn = 0,
+      nc = 0,
+      ids = [];
+    Object.keys(isObj(j.images) ? j.images : {})
+      .slice(0, 40)
+      .forEach(function (id) {
+        if (!/^[A-Za-z0-9_\-]{1,40}$/.test(id) || !isStr(j.images[id]) || !/^data:image\//.test(j.images[id]) || j.images[id].length > 1500000) return;
+        if (S.images[id] || Object.keys(S.images).length >= 200) return;
+        S.images[id] = j.images[id];
+      });
+    j.notes.slice(0, 200).forEach(function (n) {
+      if (!isObj(n) || !isStr(n.text)) return;
+      var note = { id: uid(), text: clip(n.text, 300000), updated: Date.now() };
+      if (isStr(n.course) && n.course.trim()) note.course = clip(n.course.trim(), 60);
+      S.notes.push(note);
+      ids.push(note.id);
+      nn++;
+    });
+    (Array.isArray(j.cards) ? j.cards : []).slice(0, 1000).forEach(function (c) {
+      if (!isObj(c) || !isStr(c.q) || !isStr(c.a) || S.cards.length >= 5000) return;
+      var card = newCardBase(clip(isStr(c.deck) && c.deck ? c.deck : "Shared", 40), clip(c.q, 1000), { a: clip(c.a, 2000) });
+      if (isStr(c.course) && c.course.trim()) card.course = clip(c.course.trim(), 60);
+      if (isNum(c.cloze) && c.cloze > 0) card.cloze = Math.min(99, Math.floor(c.cloze));
+      S.cards.push(card);
+      nc++;
+    });
+    var f = { id: uid(), name: clip("Shared: " + (isStr(j.name) && j.name ? j.name : "folder"), 60), color: S.folders.length % 8, icon: 0, kind: "manual", course: "", rule: null, pin: false, archived: false, parent: "", assign: [], note: ids, created: Date.now() };
+    S.folders.push(f);
+    save();
+    refreshAll();
+    return { ok: true, msg: "Added " + nn + " note(s) and " + nc + " flash card(s) in a new folder called \u201c" + f.name + "\u201d.", id: f.id };
+  }
+
   function appFolders(w) {
     var curId = S.folders.length ? S.folders[0].id : null;
     var query = "";
@@ -11497,7 +12179,26 @@ window.addEventListener("error", function (e) {
       style: "flex:1;min-height:0;overflow:auto;margin:0;padding:0",
     });
 
-    function newFolder() {
+    var toolsRow = el("div", { class: "row", style: "gap:4px;flex-wrap:wrap;padding:4px 0" });
+    var archBtn = el("button", { class: "btn xs", title: "Archive this semester's courses", onclick: archiveSemester }, "Archive semester\u2026");
+    var importBtn = el("button", { class: "btn xs", title: "Open a folder someone shared with you", onclick: function () {
+      var inp = el("input", { type: "file", accept: ".json,application/json", style: "display:none" });
+      inp.onchange = function () {
+        var file = inp.files && inp.files[0];
+        if (!file) return;
+        var r = new FileReader();
+        r.onload = function () {
+          var res = importSharedFolder(String(r.result || ""));
+          if (res.ok) curId = res.id;
+          msgBox({ title: "Shared Folder", icon: res.ok ? "info" : "warn", text: res.msg });
+        };
+        r.readAsText(file);
+      };
+      w.body.append(inp);
+      inp.click();
+      setTimeout(function () { inp.remove(); }, 60000);
+    } }, "Import shared\u2026");
+    function newManualFolder() {
       askText("New Folder", "Folder name:", "", function (v) {
         var f = {
           id: uid(),
@@ -11506,6 +12207,13 @@ window.addEventListener("error", function (e) {
           assign: [],
           note: [],
           created: Date.now(),
+          parent: "",
+          icon: 0,
+          kind: "manual",
+          course: "",
+          rule: null,
+          pin: false,
+          archived: false,
         };
         S.folders.push(f);
         curId = f.id;
@@ -11570,7 +12278,7 @@ window.addEventListener("error", function (e) {
       "+ New Folder"
     );
 
-    function paintLeft() {
+    function paintLeftOld() {
       listLeft.textContent = "";
       if (!S.folders.length) {
         listLeft.append(
@@ -11708,7 +12416,7 @@ window.addEventListener("error", function (e) {
       );
     }
 
-    function paintRight() {
+    function paintManual() {
       header.textContent = "";
       toolbar.textContent = "";
       items.textContent = "";
@@ -12036,6 +12744,7 @@ window.addEventListener("error", function (e) {
           },
           el("div", { style: "font-weight:bold;font-size:13px" }, "Folders"),
           el("div", { style: "flex:1" }),
+          importBtn,
           newBtn
         ),
         el(
@@ -12044,17 +12753,349 @@ window.addEventListener("error", function (e) {
           el(
             "div",
             { class: "col", style: "width:200px;flex:none;gap:6px" },
-            listLeft
+            listLeft,
+            archBtn
           ),
           rightBox
         )
       )
     );
-    rightBox.append(header, toolbar, items);
+    rightBox.append(header, toolsRow, toolbar, items);
 
+    /* ----- course hubs, smart folders, nesting, archive and sharing ----- */
+    var showArchived = false;
+    function folderCount(f) {
+      var c = folderContents(f);
+      return c.notes.length + c.assign.length + (c.cards ? c.cards.length : 0) + (c.tasks ? c.tasks.length : 0);
+    }
+    function isRootFolder(f) {
+      return !f.parent || !folderById(f.parent);
+    }
+    function fmtDue(ms) {
+      return new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+    function paintLeft() {
+      listLeft.textContent = "";
+      if (!S.folders.length) {
+        listLeft.append(el("div", { class: "dim", style: "padding:14px 12px;text-align:center" }, "No folders yet.\n\nClick \u201c+ New Folder\u201d to create one."));
+        return;
+      }
+      var live = S.folders.filter(function (f) { return !f.archived; });
+      function addRow(f, depth) {
+        listLeft.append(
+          el(
+            "div",
+            {
+              class: "fl-fl" + (f.id === curId ? " sel" : ""),
+              style: "padding-left:" + (6 + depth * 14) + "px",
+              onclick: function () {
+                curId = f.id;
+                query = "";
+                classFilter = "";
+                draw();
+              },
+            },
+            el("span", { class: "fl-dot", style: "background:" + FOLDER_COLORS[(f.color || 0) % FOLDER_COLORS.length] }),
+            f.icon ? el("span", { style: "margin-right:3px" }, FOLDER_ICONS[f.icon] || "") : null,
+            el("span", { class: "fl-nm" }, f.name),
+            f.pin ? el("span", { title: "Pinned to Today", style: "color:#a06000;margin-right:3px" }, "\u25cf") : null,
+            el("span", { class: "fl-ct" }, f.archived && f.final ? f.final.letter || Math.round(f.final.pct) + "%" : String(folderCount(f)))
+          )
+        );
+      }
+      function head(t) {
+        listLeft.append(el("div", { class: "fl-sec", style: "padding:6px 8px 2px;font-weight:bold;color:#404040" }, t));
+      }
+      function tree(list, f, depth) {
+        addRow(f, depth);
+        list.filter(function (c) { return c.parent === f.id; }).forEach(function (c) { tree(list, c, depth + 1); });
+      }
+      var roots = live.filter(isRootFolder),
+        courses = roots.filter(function (f) { return f.kind === "course"; }),
+        others = roots.filter(function (f) { return f.kind !== "course"; });
+      if (courses.length) {
+        head("Courses");
+        courses.forEach(function (f) { tree(live, f, 0); });
+      }
+      if (others.length) {
+        head("Folders");
+        others.forEach(function (f) { tree(live, f, 0); });
+      }
+      var arch = S.folders.filter(function (f) { return f.archived; });
+      if (arch.length) {
+        listLeft.append(
+          el("div", { class: "fl-sec", style: "padding:6px 8px 2px;font-weight:bold;color:#404040", onclick: function () { showArchived = !showArchived; paintLeft(); } }, (showArchived ? "\u25bc" : "\u25b6") + " Archived (" + arch.length + ")")
+        );
+        if (showArchived) arch.forEach(function (f) { addRow(f, 0); });
+      }
+    }
+    function section(title, rows, empty) {
+      items.append(el("div", { class: "fl-sec", style: "padding:8px 10px 2px;font-weight:bold;border-top:1px solid #c0c0c0" }, title));
+      if (!rows.length) items.append(el("div", { class: "dim", style: "padding:2px 10px 6px" }, empty));
+      rows.forEach(function (r) { items.append(r); });
+    }
+    function linkRow(label, sub, fn) {
+      return el("div", { class: "fl-link", style: "display:flex;gap:8px;padding:3px 10px", onclick: fn }, el("span", { style: "flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" }, label), el("span", { class: "dim", style: "padding:0;white-space:nowrap" }, sub || ""));
+    }
+    function paintHeadFor(f, subtitle) {
+      header.textContent = "";
+      toolbar.textContent = "";
+      items.textContent = "";
+      add(header, [
+        el("span", { class: "fl-dot", style: "width:16px;height:16px;background:" + FOLDER_COLORS[(f.color || 0) % FOLDER_COLORS.length] }),
+        f.icon ? el("span", { style: "font-size:15px" }, FOLDER_ICONS[f.icon] || "") : null,
+        el("div", { style: "font-weight:bold;font-size:14px;flex:1;padding:2px 4px" }, f.name),
+        el("span", { class: "dim", style: "padding:0" }, subtitle),
+        el("button", { class: "btn xs", title: "Change colour", onclick: function () { f.color = ((f.color || 0) + 1) % FOLDER_COLORS.length; save(); refreshAll(); } }, "Colour"),
+      ]);
+    }
+    function paintHub(f) {
+      var H = courseHub(f.course),
+        open = H.assign.filter(function (a) { return !a.done; }).sort(function (a, b) { return (a.due || 0) - (b.due || 0); }),
+        over = open.filter(function (a) { return a.due && a.due < Date.now(); }).length,
+        dueCards = H.cards.filter(function (c) { return (c.dueAt || 0) <= Date.now(); }).length,
+        decks = {};
+      H.cards.forEach(function (c) { decks[c.deck] = (decks[c.deck] || 0) + 1; });
+      paintHeadFor(f, "course");
+      var g = H.grade;
+      toolbar.append(
+        el("span", { style: "font-weight:bold;padding:2px 6px" }, g && g.current != null ? "Grade " + gradeText(g) : H.gradeCourse ? "No grades entered yet" : "No Grade Calculator course named \u201c" + f.course + "\u201d"),
+        el("span", { class: "dim", style: "padding:2px 6px" }, open.length + " assignment(s) open" + (over ? ", " + over + " overdue" : "") + "  \u00b7  " + H.notes.length + " note(s)  \u00b7  " + H.cards.length + " card(s)" + (dueCards ? ", " + dueCards + " due" : "")),
+        el("button", { class: "btn xs", onclick: function () { openApp("grades"); } }, "Grade Calculator"),
+        el(
+          "button",
+          {
+            class: "btn xs",
+            onclick: function () {
+              var n = { id: uid(), text: "# " + f.course + " notes\n\n", updated: Date.now(), course: f.course };
+              S.notes.unshift(n);
+              save();
+              refreshAll();
+              openNote(n.id);
+            },
+          },
+          "New note"
+        )
+      );
+      section(
+        "Assignments",
+        open.map(function (a) { return linkRow(a.title, a.due ? (a.due < Date.now() ? "overdue " : "due ") + fmtDue(a.due) : "", function () { openApp("planner"); }); }),
+        "Nothing open. Assignments with this course name show up here."
+      );
+      section(
+        "Notes",
+        H.notes.map(function (n) { return linkRow(String(n.text || "").split("\n")[0].replace(/^#+\s*/, "") || "(untitled)", "", function () { openNote(n.id); }); }),
+        "No notes yet. Use the Course box in Notepad, or the New note button above."
+      );
+      section(
+        "Flash cards",
+        Object.keys(decks).map(function (d) { return linkRow(d, decks[d] + " card(s)", function () { openApp("cards"); }); }),
+        "No cards yet. Set a course on a deck in Flash Cards."
+      );
+      w.status(f.name + "  \u00b7  " + open.length + " assignment(s), " + H.notes.length + " note(s), " + H.cards.length + " card(s)");
+    }
+    function paintSmart(f) {
+      var r = smartItems(f.rule);
+      paintHeadFor(f, "smart folder");
+      toolbar.append(
+        el("span", { class: "dim", style: "padding:2px 6px" }, "Shows " + ruleText(f.rule)),
+        el("button", { class: "btn xs", onclick: function () { smartDialog(f); } }, "Edit rule"),
+        el("button", { class: "btn xs", onclick: deleteSmart }, "Delete")
+      );
+      section("Notes", r.notes.map(function (n) { return linkRow(String(n.text || "").split("\n")[0].replace(/^#+\s*/, "") || "(untitled)", n.course || "", function () { openNote(n.id); }); }), "None.");
+      section("Tasks", r.tasks.map(function (t) { return linkRow(t.text, t.due ? fmtDue(t.due) : "", function () { openApp("tasks"); }); }), "None.");
+      section("Assignments", r.assign.map(function (a) { return linkRow(a.title, (a.course || "") + (a.due ? "  " + fmtDue(a.due) : ""), function () { openApp("planner"); }); }), "None.");
+      section("Flash cards", r.cards.map(function (c) { return linkRow(String(c.q).replace(/\{\{c\d+::|\}\}/g, ""), c.deck, function () { openApp("cards"); }); }), "None.");
+      w.status(f.name + "  \u00b7  " + (r.notes.length + r.tasks.length + r.assign.length + r.cards.length) + " item(s)");
+    }
+    function deleteSmart() {
+      var f = folderById(curId);
+      if (!f) return;
+      S.folders = S.folders.filter(function (x) { return x.id !== f.id; });
+      S.folders.forEach(function (x) { if (x.parent === f.id) x.parent = f.parent || ""; });
+      curId = null;
+      save();
+      refreshAll();
+    }
+    function smartDialog(f) {
+      var rule = (f && f.rule) || { tag: "", course: "", due: "", kinds: [] };
+      var nameIn = el("input", { class: "in", value: f ? f.name : "", placeholder: "Name, e.g. Due this week", style: "width:100%" });
+      var tagIn = el("input", { class: "in", value: rule.tag || "", placeholder: "biology (without the #)", style: "width:100%" });
+      var courseIn = el("input", { class: "in", value: rule.course || "", list: "fd-courses-smart", placeholder: "Any course", style: "width:100%" });
+      var dl = el("datalist", { id: "fd-courses-smart" }, allCourses().map(function (c) { return el("option", { value: c }); }));
+      var dueSel = el("select", { class: "in", style: "width:100%" }, [["", "Any time"], ["today", "Due today"], ["week", "Due in the next 7 days"], ["overdue", "Overdue"]].map(function (o) { return el("option", { value: o[0], selected: (rule.due || "") === o[0] }, o[1]); }));
+      var boxes = {};
+      var kindsRow = el("div", { class: "row", style: "gap:10px;flex-wrap:wrap" });
+      [["notes", "Notes"], ["tasks", "Tasks"], ["assign", "Assignments"], ["cards", "Flash cards"]].forEach(function (k) {
+        boxes[k[0]] = el("input", { type: "checkbox", checked: !rule.kinds || !rule.kinds.length || rule.kinds.indexOf(k[0]) >= 0 });
+        kindsRow.append(el("label", { class: "row", style: "gap:4px;align-items:center" }, boxes[k[0]], k[1]));
+      });
+      var wrap = el("div", { class: "col", style: "gap:4px;text-align:left" }, el("div", null, "Name"), nameIn, el("div", null, "Has the tag"), tagIn, el("div", null, "Course"), courseIn, dl, el("div", null, "Due"), dueSel, el("div", null, "Include"), kindsRow);
+      msgBox({
+        title: f ? "Edit Smart Folder" : "New Smart Folder",
+        icon: "q",
+        width: 380,
+        text: "A smart folder fills itself with whatever matches.",
+        extra: wrap,
+        buttons: [
+          {
+            label: "Save",
+            fn: function () {
+              var name = nameIn.value.trim();
+              if (!name) return false;
+              var kinds = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
+              var r = cleanRule({ tag: tagIn.value, course: courseIn.value, due: dueSel.value, kinds: kinds.length === 4 ? [] : kinds });
+              if (f) {
+                f.name = clip(name, 60);
+                f.rule = r;
+              } else {
+                var nf = { id: uid(), name: clip(name, 60), color: S.folders.length % 8, icon: 0, kind: "smart", course: "", rule: r, pin: false, archived: false, parent: "", assign: [], note: [], created: Date.now() };
+                S.folders.push(nf);
+                curId = nf.id;
+              }
+              save();
+              refreshAll();
+            },
+          },
+          { label: "Cancel" },
+        ],
+      });
+    }
+    function newFolder() {
+      msgBox({
+        title: "New Folder",
+        icon: "q",
+        text: "What kind of folder?\n\nA regular folder holds what you put in it. A smart folder fills itself with notes, tasks, assignments and cards that match a tag, course or due date.",
+        buttons: [
+          { label: "Regular folder", fn: function () { newManualFolder(); } },
+          { label: "Smart folder", fn: function () { smartDialog(null); } },
+          { label: "Cancel" },
+        ],
+      });
+    }
+    function descendantsOf(id, acc) {
+      acc = acc || {};
+      folderChildren(id).forEach(function (c) {
+        if (!acc[c.id]) {
+          acc[c.id] = 1;
+          descendantsOf(c.id, acc);
+        }
+      });
+      return acc;
+    }
+    function paintTools(f) {
+      toolsRow.textContent = "";
+      if (!f) return;
+      function b(label, tip, fn) {
+        return el("button", { class: "btn xs", title: tip, onclick: fn }, label);
+      }
+      toolsRow.append(
+        b("Icon", "Change the icon", function () { f.icon = ((f.icon || 0) + 1) % FOLDER_ICONS.length; save(); refreshAll(); }),
+        b("New subfolder", "Make a folder inside this one", function () {
+          askText("New Subfolder", "Name:", "", function (v) {
+            var nf = { id: uid(), name: clip(v, 60), color: f.color || 0, icon: 0, kind: "manual", course: "", rule: null, pin: false, archived: false, parent: f.id, assign: [], note: [], created: Date.now() };
+            S.folders.push(nf);
+            curId = nf.id;
+            save();
+            refreshAll();
+          });
+        }),
+        b("Move\u2026", "Put this folder inside another one", function () {
+          var bad = descendantsOf(f.id);
+          bad[f.id] = 1;
+          var sel = el("select", { class: "in", style: "width:100%" }, [el("option", { value: "" }, "(top level)")].concat(S.folders.filter(function (x) { return !bad[x.id]; }).map(function (x) { return el("option", { value: x.id, selected: x.id === f.parent }, x.name); })));
+          msgBox({ title: "Move Folder", icon: "q", text: "Move \u201c" + f.name + "\u201d into:", extra: sel, buttons: [{ label: "Move", fn: function () { f.parent = sel.value; save(); refreshAll(); } }, { label: "Cancel" }] });
+        }),
+        b(f.pin ? "Unpin from Today" : "Pin to Today", "Show this folder on the Today page", function () { f.pin = !f.pin; save(); refreshAll(); }),
+        b(f.archived ? "Restore" : "Archive", f.archived ? "Bring it back" : "Tuck it away (a course keeps its final grade)", function () {
+          f.archived = !f.archived;
+          f.archivedAt = f.archived ? Date.now() : 0;
+          if (f.archived && f.kind === "course") {
+            var g = courseHub(f.course).grade;
+            if (g && g.current != null) {
+              var lt = letterOf(g.current);
+              lt = lt && lt.l ? lt.l : "";
+              f.final = { pct: Math.round(g.current * 10) / 10, letter: typeof lt === "string" ? lt : "" };
+            }
+          }
+          save();
+          refreshAll();
+        }),
+        b("Export zip", "Markdown notes, their pictures and the flash cards, in one zip file", function () {
+          var c = folderContents(f);
+          if (!c.notes.length && !(c.cards && c.cards.length)) return msgBox({ title: "Export", icon: "info", text: "This folder has no notes or flash cards to export yet." });
+          saveFile(slugOf(f.name) + ".zip", folderToZip(f));
+        }),
+        b("Share file", "One file to give to a study group: notes and flash cards only", function () {
+          var c = folderContents(f);
+          if (!c.notes.length && !(c.cards && c.cards.length)) return msgBox({ title: "Share", icon: "info", text: "This folder has no notes or flash cards to share yet." });
+          saveFile(slugOf(f.name) + ".focusdesk-folder.json", folderShareJson(f));
+        })
+      );
+    }
+    function archiveSemester() {
+      var courses = S.folders.filter(function (f) { return f.kind === "course" && !f.archived; });
+      if (!courses.length) return msgBox({ title: "Archive Semester", icon: "info", text: "There are no course folders to archive." });
+      var boxes = {},
+        wrap = el("div", { style: "text-align:left;max-height:240px;overflow:auto" });
+      courses.forEach(function (f) {
+        var g = courseHub(f.course).grade;
+        boxes[f.id] = el("input", { type: "checkbox", checked: true });
+        wrap.append(el("label", { class: "row", style: "gap:6px;align-items:center" }, boxes[f.id], f.name + (g && g.current != null ? "   " + gradeText(g) : "")));
+      });
+      msgBox({
+        title: "Archive Semester",
+        icon: "q",
+        width: 400,
+        text: "Tuck these courses away, each with its final grade. Nothing is deleted, and you can restore any of them.",
+        extra: wrap,
+        buttons: [
+          {
+            label: "Archive",
+            fn: function () {
+              courses.forEach(function (f) {
+                if (!boxes[f.id].checked) return;
+                var g = courseHub(f.course).grade;
+                f.archived = true;
+                f.archivedAt = Date.now();
+                if (g && g.current != null) {
+                  var lt = letterOf(g.current);
+                  lt = lt && lt.l ? lt.l : "";
+                  f.final = { pct: Math.round(g.current * 10) / 10, letter: typeof lt === "string" ? lt : "" };
+                }
+              });
+              save();
+              showArchived = true;
+              refreshAll();
+            },
+          },
+          { label: "Cancel" },
+        ],
+      });
+    }
+    HOOKS.folders = function (id) {
+      if (!folderById(id)) return;
+      var f = folderById(id);
+      if (f.archived) showArchived = true;
+      curId = id;
+      query = "";
+      classFilter = "";
+      draw();
+    };
+    function paintRight() {
+      var f = folderById(curId);
+      paintTools(f);
+      if (f && f.kind === "course") return paintHub(f);
+      if (f && f.kind === "smart") return paintSmart(f);
+      paintManual();
+    }
     function draw() {
+      syncCourseFolders();
       if (!S.folders.length) curId = null;
-      else if (!folderById(curId)) curId = S.folders[0].id;
+      else if (!folderById(curId)) {
+        var live = S.folders.filter(function (f) { return !f.archived; });
+        curId = (live[0] || S.folders[0]).id;
+      }
       paintLeft();
       paintRight();
     }
@@ -13951,6 +14992,127 @@ window.addEventListener("error", function (e) {
             })
           );
           var testOut = el("span", { class: "dim", style: "padding:0" });
+          /* ---- shortcuts you can change ---- */
+          var HK = [
+            ["capture", "hotkey", "Quick capture", true],
+            ["card", "cardHotkey", "New flash card from what you copied", true],
+            ["timer", "timerHotkey", "Start or pause the focus timer", false],
+            ["show", "showHotkey", "Bring FocusDesk to the front", false],
+          ];
+          function accelLabel(a) {
+            return a ? a.replace(/CommandOrControl|CmdOrCtrl/g, mac ? "Cmd" : "Ctrl").replace(/Control/g, "Ctrl").replace(/Command/g, "Cmd") : "Not set";
+          }
+          function eventAccel(e) {
+            var k = e.code,
+              key = null;
+            if (/^Key[A-Z]$/.test(k)) key = k.slice(3);
+            else if (/^Digit[0-9]$/.test(k)) key = k.slice(5);
+            else if (/^F([1-9]|1[0-9]|2[0-4])$/.test(k)) key = k;
+            else key = { Space: "Space", Tab: "Tab", Enter: "Return", Backspace: "Backspace", Delete: "Delete", Insert: "Insert", ArrowUp: "Up", ArrowDown: "Down", ArrowLeft: "Left", ArrowRight: "Right", Home: "Home", End: "End", PageUp: "PageUp", PageDown: "PageDown", Minus: "-", Equal: "=", BracketLeft: "[", BracketRight: "]", Semicolon: ";", Quote: "'", Comma: ",", Period: ".", Slash: "/", Backslash: "\\", Backquote: "`" }[k] || null;
+            if (!key) return null;
+            var mods = [];
+            if (e.metaKey) mods.push(mac ? "Command" : "Super");
+            if (e.ctrlKey) mods.push("Control");
+            if (e.altKey) mods.push("Alt");
+            if (e.shiftKey) mods.push("Shift");
+            if (!mods.length || (mods.length === 1 && mods[0] === "Shift")) return null;
+            return mods.concat([key]).join("+");
+          }
+          function recordKeys(title, done) {
+            var shown = el("div", { style: "font:bold 15px 'Courier New',monospace;text-align:center;padding:10px;background:#fff;border:2px inset #808080;min-height:20px" }, "Press the keys\u2026"),
+              picked = null;
+            function onKey(e) {
+              if (e.key === "Escape") return;
+              if (["Control", "Shift", "Alt", "Meta"].indexOf(e.key) >= 0) return;
+              e.preventDefault();
+              e.stopPropagation();
+              var a = eventAccel(e);
+              picked = a;
+              shown.textContent = a ? accelLabel(a) : "That combination can't be used. Hold Ctrl, Alt or " + (mac ? "Cmd" : "Win") + " and press a letter, number or F key.";
+            }
+            document.addEventListener("keydown", onKey, true);
+            function stop() {
+              document.removeEventListener("keydown", onKey, true);
+            }
+            msgBox({
+              title: title,
+              icon: "q",
+              width: 380,
+              text: "Press the shortcut you want. It works from any app while FocusDesk is running.",
+              extra: shown,
+              buttons: [
+                {
+                  label: "Use this",
+                  fn: function () {
+                    stop();
+                    if (picked) done(picked);
+                  },
+                },
+                {
+                  label: "Cancel",
+                  fn: stop,
+                },
+              ],
+            });
+          }
+          var hkRows = el("div", { class: "col", style: "gap:3px" });
+          function paintHotkeys() {
+            var st = (window.__focusdeskDStatus && window.__focusdeskDStatus.hotkeys) || {},
+              keys = (P && P.hotkeyKeys) || {},
+              DEF = { capture: "CommandOrControl+Shift+Space", card: "CommandOrControl+Shift+Y", timer: "", show: "" };
+            hkRows.textContent = "";
+            HK.forEach(function (h) {
+              var key = keys[h[0]] === undefined ? DEF[h[0]] : keys[h[0]],
+                state = st[h[0]],
+                msg = !P[h[1]] && !(h[3] && P[h[1]] === undefined) ? "" : !key ? "Choose keys first" : state === "ok" ? "Active" : state === "busy" ? "Another app is using these keys" : state === "dup" ? "Same keys as another shortcut" : "";
+              hkRows.append(
+                el(
+                  "div",
+                  { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
+                  el("input", {
+                    type: "checkbox",
+                    checked: h[3] ? P[h[1]] !== false : !!P[h[1]],
+                    "aria-label": h[2],
+                    onchange: function () {
+                      var o = {};
+                      o[h[1]] = this.checked;
+                      window.__focusdeskSetPrefs(o).then(function () {
+                        P = window.__focusdeskDPrefs || P;
+                        paintHotkeys();
+                      });
+                    },
+                  }),
+                  el("span", { style: "min-width:210px" }, h[2]),
+                  el("b", { style: "min-width:120px;font-family:'Courier New',monospace" }, accelLabel(key)),
+                  btn("Change\u2026", function () {
+                    recordKeys(h[2], function (a) {
+                      var o = { hotkeyKeys: {} };
+                      o.hotkeyKeys[h[0]] = a;
+                      o[h[1]] = true;
+                      window.__focusdeskSetPrefs(o).then(function () {
+                        P = window.__focusdeskDPrefs || P;
+                        paintHotkeys();
+                      });
+                    });
+                  }),
+                  btn("Reset", function () {
+                    var o = { hotkeyKeys: {} };
+                    o.hotkeyKeys[h[0]] = DEF[h[0]];
+                    if (!DEF[h[0]]) o[h[1]] = false;
+                    window.__focusdeskSetPrefs(o).then(function () {
+                      P = window.__focusdeskDPrefs || P;
+                      paintHotkeys();
+                    });
+                  }),
+                  el("span", { class: "dim", style: "padding:0;color:" + (state === "busy" || state === "dup" ? "#c00000" : "") }, msg)
+                )
+              );
+            });
+          }
+          function hotkeyBlock() {
+            paintHotkeys();
+            return el("div", { class: "col", style: "gap:3px" }, el("div", { style: "font-weight:bold" }, "Shortcuts (work from any app)"), hkRows);
+          }
           paintNote();
           paintBk();
           return el(
@@ -13979,8 +15141,7 @@ window.addEventListener("error", function (e) {
                 testOut
               ),
               opt("dueOverdue", "Show overdue tasks and assignments in the " + tray + " menu, too", true),
-              opt("hotkey", "Quick capture hotkey: " + (mac ? "Cmd" : "Ctrl") + "+Shift+Space", true),
-              opt("cardHotkey", "Flash card hotkey: " + (mac ? "Cmd" : "Ctrl") + "+Shift+Y (turns what you just copied into a new card)", true),
+              hotkeyBlock(),
               el(
                 "label",
                 { class: "row", style: "gap:6px;align-items:center" },
@@ -14051,6 +15212,14 @@ window.addEventListener("error", function (e) {
           );
         })()
       : null;
+    var updInfo = el("div", { class: "dim", style: "padding:4px 0 0" });
+    function paintUpd() {
+      updInfo.textContent = S.prefs.updLast
+        ? "Last checked " + new Date(S.prefs.updLast).toLocaleString() + (S.prefs.updMsg ? ": " + S.prefs.updMsg : ".")
+        : "Not checked yet. You're on " + VERSION + ".";
+    }
+    paintUpd();
+    window.__fdUpdPaint = paintUpd;
     var updBox = el(
       "fieldset",
       null,
@@ -14078,7 +15247,8 @@ window.addEventListener("error", function (e) {
         window.__focusdeskIsDesktop || location.protocol === "file:"
           ? el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.updAuto === true, onchange: function () { S.prefs.updAuto = this.checked; save(); } }), "Check automatically when FocusDesk starts")
           : null
-      )
+      ),
+      updInfo
     );
     var wallInfo = el("div", { style: "padding:0" });
     function drawWall() {
@@ -14833,6 +16003,7 @@ window.addEventListener("error", function (e) {
       )
     );
     var SECTION_DEFS = [
+      ["pinned", "Pinned folders"],
       ["schedule", "Schedule"],
       ["reminders", "Reminders"],
       ["overdue", "Overdue"],
@@ -14975,6 +16146,19 @@ window.addEventListener("error", function (e) {
         });
       var RANK = { high: 0, normal: 1, low: 2 };
       var SECTIONS = {
+        pinned: function () {
+          var pins = S.folders.filter(function (f) { return f.pin && !f.archived; });
+          return [
+            "Pinned folders",
+            pins.map(function (f) {
+              var c = folderContents(f),
+                n = c.notes.length + c.assign.length + (c.cards ? c.cards.length : 0) + (c.tasks ? c.tasks.length : 0),
+                g = f.kind === "course" && c.grade ? gradeText(c.grade) : "";
+              return [(f.icon ? FOLDER_ICONS[f.icon] + " " : "") + f.name, n + " item(s)" + (g ? "  " + g : "")];
+            }),
+            "Pin a folder in Folders to see it here.",
+          ];
+        },
         schedule: function () {
           return [
             "Schedule",
@@ -21275,77 +22459,146 @@ window.addEventListener("error", function (e) {
     });
   }
 
-  /* ================= 2.7: UPDATE CHECKER (GitHub releases) ================= */
+  /* ================= UPDATE CHECKER (GitHub releases) =================
+     The desktop app asks GitHub through its own process (no browser limits) and has a second source if the first is busy.
+     Browsers ask GitHub's API and fall back to a small file on the FocusDesk website. */
   var REPO = "apojidelegraphics/FocusDesk-96";
+  var SITE = "https://apojidelegraphics.github.io/FocusDesk-96/";
+  function releaseFromApi(rel) {
+    var tag = String((rel && rel.tag_name) || "").replace(/^v/i, ""),
+      out = { tag: tag, url: /^https:\/\/github\.com\//.test((rel && rel.html_url) || "") ? rel.html_url : "https://github.com/" + REPO + "/releases", browserVer: "", browserUrl: "" };
+    ((rel && rel.assets) || []).forEach(function (a) {
+      var m = /^FocusDesk-96-Browser-(\d+(?:\.\d+)*)\.zip$/.exec((a && a.name) || "");
+      if (m && /^https:\/\/github\.com\//.test(a.browser_download_url || "") && (!out.browserVer || verCmp(out.browserVer, m[1]) < 0)) {
+        out.browserVer = m[1];
+        out.browserUrl = a.browser_download_url;
+      }
+    });
+    return out;
+  }
+  function getReleaseInfo() {
+    if (window.focusdesk && window.focusdesk.latestRelease)
+      return window.focusdesk.latestRelease().then(function (r) {
+        if (!r || !r.ok) {
+          var e = new Error("release check failed");
+          e.status = (r && r.status) || 0;
+          throw e;
+        }
+        return r.info;
+      });
+    return fetch("https://api.github.com/repos/" + REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) {
+        if (!r.ok) {
+          var e = new Error("HTTP " + r.status);
+          e.status = r.status;
+          throw e;
+        }
+        return r.json();
+      })
+      .then(releaseFromApi)
+      .catch(function (err) {
+        /* GitHub's address is busy or unreachable: the website publishes the same numbers in a small file */
+        return fetch(SITE + "release-info.json", { cache: "no-store" })
+          .then(function (r) {
+            if (!r.ok) throw err;
+            return r.json();
+          })
+          .then(function (j) {
+            var zip = "https://github.com/" + REPO + "/releases/latest";
+            return { tag: String(j.desktop || "").replace(/^v/i, ""), url: zip, browserVer: String(j.browser || ""), browserUrl: zip };
+          })
+          .catch(function () {
+            throw err;
+          });
+      });
+  }
+  function updNote(text) {
+    S.prefs.updMsg = clip(text, 160);
+    save();
+    if (typeof window.__fdUpdPaint === "function") window.__fdUpdPaint();
+  }
   function checkUpdate(manual) {
     S.prefs.updLast = Date.now();
     save();
-    return fetch("https://api.github.com/repos/" + REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (rel) {
-        var tag = String(rel.tag_name || "").replace(/^v/i, ""),
-          url = /^https:\/\/github\.com\//.test(rel.html_url || "") ? rel.html_url : "https://github.com/" + REPO + "/releases";
-        if (!tag) throw new Error("no release");
-        var isDesk = !!window.__focusdeskIsDesktop;
-        /* Browser copies compare against the Browser zip attached to the release. */
-        var brz = null;
-        if (!isDesk && location.protocol === "file:")
-          (rel.assets || []).forEach(function (a) {
-            var m = /^FocusDesk-96-Browser-(\d+(?:\.\d+)*)\.zip$/.exec((a && a.name) || "");
-            if (m && /^https:\/\/github\.com\//.test(a.browser_download_url || "") && (!brz || verCmp(brz.v, m[1]) < 0))
-              brz = { v: m[1], url: a.browser_download_url };
-          });
-        if (brz) {
-          if (verCmp(VERSION, brz.v) < 0) {
-            if (manual || S.prefs.updSeen !== "b" + brz.v) {
-              S.prefs.updSeen = "b" + brz.v;
-              save();
-              msgBox({
-                title: "Update Available",
-                icon: "bulb",
-                width: 380,
-                text:
-                  "Browser version " + brz.v + " is available (you have " + VERSION + ").\n\nThis downloads the BROWSER version as a zip. Unzip it and open index.html. Before you switch, use Control Panel \u2192 Save backup file so your data is safe.",
-                buttons: [
-                  { label: "Download zip", fn: function () { window.open(brz.url, "_blank", "noopener"); } },
-                  { label: "Later" },
-                ],
-              });
-            }
-          } else if (manual)
-            msgBox({ title: "Updates", icon: "info", text: "You're up to date. Browser version " + VERSION + " is the newest." });
+    var isDesk = !!window.__focusdeskIsDesktop,
+      isZip = !isDesk && location.protocol === "file:";
+    return getReleaseInfo().then(
+      function (info) {
+        var tag = info.tag;
+        if (!tag) {
+          updNote("The release list was empty.");
+          if (manual) msgBox({ title: "Updates", icon: "warn", text: "GitHub didn't list any releases yet." });
           return;
         }
-        if (isDesk && verCmp(VERSION, tag) < 0) {
-          if (!manual && S.prefs.updSeen === tag) return;
-          S.prefs.updSeen = tag;
-          save();
-          msgBox({
-            title: "Update Available",
-            icon: "bulb",
-            text: "FocusDesk 96 " + tag + " is available (you have " + VERSION + ").\n\nDownload the new installer and run it over your current copy. Your data is kept.",
-            buttons: [
-              { label: "Download", fn: function () { window.open(url, "_blank", "noopener"); } },
-              { label: "Later" },
-            ],
-          });
-        } else if (manual) {
+        var url = info.url;
+        if (isDesk) {
+          if (verCmp(VERSION, tag) < 0) {
+            updNote("Version " + tag + " is available (you have " + VERSION + ").");
+            if (!manual && S.prefs.updSeen === tag) return;
+            S.prefs.updSeen = tag;
+            save();
+            msgBox({
+              title: "Update Available",
+              icon: "bulb",
+              text: "FocusDesk 96 " + tag + " is available (you have " + VERSION + ").\n\nDownload the new installer and run it over your current copy. Your data is kept. On a Mac, you need to run the two Terminal steps from the release page again.",
+              buttons: [
+                { label: "Download", fn: function () { window.open(url, "_blank", "noopener"); } },
+                { label: "Later" },
+              ],
+            });
+          } else {
+            updNote("Up to date (" + VERSION + ").");
+            if (manual) msgBox({ title: "Updates", icon: "info", text: "You're up to date. FocusDesk 96 " + VERSION + " is the newest release." });
+          }
+          return;
+        }
+        if (isZip) {
+          if (!info.browserVer) {
+            updNote("Couldn't find the newest browser version.");
+            if (manual) msgBox({ title: "Updates", icon: "warn", text: "The newest release doesn't list a browser download, so I can't tell if there's a newer one. Check the Releases page." , buttons: [{ label: "Open Releases", fn: function () { window.open(url, "_blank", "noopener"); } }, { label: "OK" }] });
+            return;
+          }
+          if (verCmp(VERSION, info.browserVer) < 0) {
+            updNote("Browser version " + info.browserVer + " is available (you have " + VERSION + ").");
+            if (!manual && S.prefs.updSeen === "b" + info.browserVer) return;
+            S.prefs.updSeen = "b" + info.browserVer;
+            save();
+            msgBox({
+              title: "Update Available",
+              icon: "bulb",
+              width: 380,
+              text: "Browser version " + info.browserVer + " is available (you have " + VERSION + ").\n\nThis downloads the BROWSER version as a zip. Unzip it and open index.html. Export a backup first if you like; your data stays in this browser.",
+              buttons: [
+                { label: "Download zip", fn: function () { window.open(info.browserUrl, "_blank", "noopener"); } },
+                { label: "Later" },
+              ],
+            });
+          } else {
+            updNote("Up to date (" + VERSION + ").");
+            if (manual) msgBox({ title: "Updates", icon: "info", text: "You're up to date. Browser version " + VERSION + " is the newest." });
+          }
+          return;
+        }
+        /* the website: it always serves the newest browser version, so there's nothing to download */
+        var behind = info.browserVer && verCmp(VERSION, info.browserVer) < 0;
+        updNote(behind ? "A newer version of the website is out (" + info.browserVer + "). Reload to get it." : "This website is on the newest version (" + VERSION + ").");
+        if (manual)
           msgBox({
             title: "Updates",
-            icon: "info",
-            text: isDesk
-              ? "You're up to date. FocusDesk 96 " + VERSION + " is the newest release."
-              : "Desktop app " + tag + " is available. You're using the browser version " + VERSION + ".",
-            buttons: isDesk ? [{ label: "OK" }] : [{ label: "Get the desktop app", fn: function () { window.open(url, "_blank", "noopener"); } }, { label: "Close" }],
+            icon: behind ? "bulb" : "info",
+            text: (behind ? "A newer version of this page (" + info.browserVer + ") is available. Reload the page to get it (Ctrl/Cmd+Shift+R).\n\n" : "You're using the website, which always has the newest browser version (" + VERSION + ").\n\n") + "The desktop app's newest version is " + tag + ".",
+            buttons: [{ label: "Get the desktop app", fn: function () { window.open(url, "_blank", "noopener"); } }, { label: "OK" }],
           });
-        }
-      })
-      .catch(function () {
-        if (manual) msgBox({ title: "Updates", icon: "warn", text: "Couldn't reach GitHub to check for updates. Check your connection and try again." });
-      });
+      },
+      function (e) {
+        var limited = e && (e.status === 403 || e.status === 429),
+          msg = limited
+            ? "GitHub is limiting update checks from your network right now. Try again in a little while."
+            : "Couldn't reach GitHub to check for updates. Check your connection and try again.";
+        updNote(msg);
+        if (manual) msgBox({ title: "Updates", icon: "warn", text: msg });
+      }
+    );
   }
   function autoUpdateCheck() {
     if (!S.prefs.updAuto) return;

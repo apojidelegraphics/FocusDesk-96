@@ -278,7 +278,7 @@ async function loadAll() {
   mem.wall = wall && typeof wall.dataUrl === "string" && wall.dataUrl ? wall.dataUrl : null;
   mem.settings = cleanStringMap(await loadJson(FILES.settings, isPlainObject));
   mem.keys = cleanStringMap(await loadJson(FILES.keys, isPlainObject));
-  dprefs = Object.assign({}, DEFAULT_DPREFS, cleanDprefs(await loadJson(FILES.desktop, isPlainObject)));
+  dprefs = mergeDprefs(DEFAULT_DPREFS, await loadJson(FILES.desktop, isPlainObject));
   await ensureDailyBackup();
 }
 
@@ -298,6 +298,7 @@ function bootPayload() {
     dprefs: dprefs,
     hotkeyOk: hotkeyOk,
     cardHotkeyOk: cardHotkeyOk,
+    hotkeys: hotkeyState,
     trayOk: !!tray,
     titleBar: compactActive,
   };
@@ -519,21 +520,48 @@ const DEFAULT_DPREFS = {
   launchAtLogin: false,
   startHidden: false,
   slimTitle: true, // Windows: menu behind a ⋯ button in a slim title bar. (Set false in desktop.json to turn off.)
+  timerHotkey: false, // start / pause the focus timer from anywhere (you choose the keys)
+  showHotkey: false, // bring FocusDesk to the front from anywhere (you choose the keys)
+  hotkeyKeys: { capture: "CommandOrControl+Shift+Space", card: "CommandOrControl+Shift+Y", timer: "", show: "" },
   backupPath: "",
   backupKeep: 7,
 };
 let compactActive = false; // was the current window built with the slim title bar? (Windows only, set at creation)
-const HOTKEY = "CommandOrControl+Shift+Space";
-const CARD_HOTKEY = "CommandOrControl+Shift+Y";
 let cardHotkeyOk = false;
+let hotkeyState = {}; // per shortcut: "ok", "busy" (another app has it), "dup" (same keys as another one) or "off"
 let dprefs = Object.assign({}, DEFAULT_DPREFS);
 let tray = null;
 let captureWin = null;
 let hotkeyOk = false;
 let firstWindow = true;
 
+/* A shortcut is modifier keys plus one key, like "Control+Alt+K". Plain keys are refused so FocusDesk can't take over typing. */
+function validAccel(s) {
+  if (typeof s !== "string" || s.length > 60) return false;
+  const parts = s.split("+");
+  if (parts.length < 2 || parts.length > 5) return false;
+  const key = parts.pop();
+  const MODS = ["Command", "Cmd", "Control", "Ctrl", "CommandOrControl", "CmdOrCtrl", "Alt", "Option", "Shift", "Super", "Meta"];
+  if (!parts.every((x) => MODS.indexOf(x) >= 0)) return false;
+  if (new Set(parts).size !== parts.length) return false;
+  if (!/^([A-Z0-9]|F([1-9]|1[0-9]|2[0-4])|Space|Tab|Backspace|Delete|Insert|Return|Up|Down|Left|Right|Home|End|PageUp|PageDown|[-=\[\];',.\/\\`])$/.test(key)) return false;
+  return parts.some((x) => x !== "Shift");
+}
+function mergeDprefs(base, p) {
+  const clean = cleanDprefs(p);
+  const out = Object.assign({}, base, clean);
+  out.hotkeyKeys = Object.assign({}, DEFAULT_DPREFS.hotkeyKeys, base && base.hotkeyKeys, clean.hotkeyKeys);
+  return out;
+}
 function cleanDprefs(p) {
   const out = {};
+  if (p && p.hotkeyKeys && typeof p.hotkeyKeys === "object") {
+    out.hotkeyKeys = {};
+    for (const id of Object.keys(DEFAULT_DPREFS.hotkeyKeys)) {
+      const v = p.hotkeyKeys[id];
+      if (v === "" || validAccel(v)) out.hotkeyKeys[id] = v;
+    }
+  }
   if (p && typeof p === "object")
     for (const k of Object.keys(DEFAULT_DPREFS)) {
       if (typeof DEFAULT_DPREFS[k] === "boolean" && typeof p[k] === "boolean") out[k] = p[k];
@@ -654,27 +682,39 @@ function openCapture(kind) {
   });
 }
 
+const HOTKEY_ACTIONS = [
+  { id: "capture", on: "hotkey", run: () => openCapture("task") },
+  { id: "card", on: "cardHotkey", run: () => openCapture("card") },
+  { id: "timer", on: "timerHotkey", run: () => sendCmd("timer-toggle", false) },
+  { id: "show", on: "showHotkey", run: () => showMainWindow() },
+];
 function registerHotkey() {
   try {
-    globalShortcut.unregister(HOTKEY);
-    globalShortcut.unregister(CARD_HOTKEY);
+    globalShortcut.unregisterAll();
   } catch (_) {}
-  hotkeyOk = false;
-  cardHotkeyOk = false;
-  if (dprefs.hotkey) {
-    try {
-      hotkeyOk = globalShortcut.register(HOTKEY, () => openCapture("task")) && globalShortcut.isRegistered(HOTKEY);
-    } catch (_) {
-      hotkeyOk = false;
+  hotkeyState = {};
+  const used = {};
+  for (const a of HOTKEY_ACTIONS) {
+    const key = dprefs.hotkeyKeys && dprefs.hotkeyKeys[a.id];
+    if (!dprefs[a.on] || !key) {
+      hotkeyState[a.id] = "off";
+      continue;
     }
-  }
-  if (dprefs.cardHotkey) {
-    try {
-      cardHotkeyOk = globalShortcut.register(CARD_HOTKEY, () => openCapture("card")) && globalShortcut.isRegistered(CARD_HOTKEY);
-    } catch (_) {
-      cardHotkeyOk = false;
+    if (used[key.toLowerCase()]) {
+      hotkeyState[a.id] = "dup";
+      continue;
     }
+    used[key.toLowerCase()] = 1;
+    let ok = false;
+    try {
+      ok = globalShortcut.register(key, a.run) && globalShortcut.isRegistered(key);
+    } catch (_) {
+      ok = false;
+    }
+    hotkeyState[a.id] = ok ? "ok" : "busy";
   }
+  hotkeyOk = hotkeyState.capture === "ok";
+  cardHotkeyOk = hotkeyState.card === "ok";
 }
 
 const mmss = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
@@ -1078,7 +1118,7 @@ function registerDesktopIpc() {
 
   ipcMain.handle("focusdesk:setDesktopPrefs", async (e, p) => {
     assertTrusted(e);
-    dprefs = Object.assign({}, dprefs, cleanDprefs(p));
+    dprefs = mergeDprefs(dprefs, p);
     await atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2));
     registerHotkey();
     ensureTray();
@@ -1087,7 +1127,7 @@ function registerDesktopIpc() {
       await ensureDailyBackup();
     }
     const login = applyLoginItem();
-    return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, cardHotkeyOk: cardHotkeyOk, trayOk: !!tray, login: login };
+    return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, cardHotkeyOk: cardHotkeyOk, hotkeys: hotkeyState, trayOk: !!tray, login: login };
   });
 
   ipcMain.handle("focusdesk:popupMenu", (e, p) => {
@@ -1118,6 +1158,53 @@ function registerDesktopIpc() {
     x = Math.max(d.x - b.width + 80, Math.min(x, d.x + d.width - 80)); // always leave part of it on a screen
     y = Math.max(d.y, Math.min(y, d.y + d.height - 40));
     win.setBounds({ x: x, y: y, width: b.width, height: b.height }); // keep the size fixed while moving
+  });
+
+  /* Newest release: GitHub's API first, then the public release feed (which has no request limit). */
+  ipcMain.handle("focusdesk:latestRelease", async (e) => {
+    assertTrusted(e);
+    const REPO = "apojidelegraphics/FocusDesk-96";
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 15000);
+    const get = (url, accept) => net.fetch(url, { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "FocusDesk96", Accept: accept } });
+    let status = 0;
+    try {
+      try {
+        const r = await get("https://api.github.com/repos/" + REPO + "/releases/latest", "application/vnd.github+json");
+        status = r.status;
+        if (r.ok) {
+          const rel = await r.json();
+          const tag = String(rel.tag_name || "").replace(/^v/i, "");
+          if (/^\d+(\.\d+){1,3}$/.test(tag)) {
+            let browserVer = "",
+              browserUrl = "";
+            (rel.assets || []).forEach((a) => {
+              const mm = /^FocusDesk-96-Browser-(\d+(?:\.\d+)*)\.zip$/.exec((a && a.name) || "");
+              if (mm && /^https:\/\/github\.com\//.test(a.browser_download_url || "")) {
+                browserVer = mm[1];
+                browserUrl = a.browser_download_url;
+              }
+            });
+            const url = /^https:\/\/github\.com\//.test(rel.html_url || "") ? rel.html_url : "https://github.com/" + REPO + "/releases";
+            return { ok: true, info: { tag: tag, url: url, browserVer: browserVer, browserUrl: browserUrl } };
+          }
+        }
+      } catch (_) {
+        status = status || 0;
+      }
+      // the API said no (busy, blocked, or odd answer): the release feed lists the same releases
+      try {
+        const f = await get("https://github.com/" + REPO + "/releases.atom", "application/atom+xml,text/xml,*/*");
+        if (f.ok) {
+          const xml = await f.text();
+          const hit = /<link[^>]*href="https:\/\/github\.com\/[^"]*\/releases\/tag\/v?(\d+(?:\.\d+){1,3})"/.exec(xml);
+          if (hit) return { ok: true, info: { tag: hit[1], url: "https://github.com/" + REPO + "/releases/tag/v" + hit[1], browserVer: "", browserUrl: "" } };
+        }
+      } catch (_) {}
+      return { ok: false, status: status };
+    } finally {
+      clearTimeout(timer);
+    }
   });
 
   /* Download a web page so the Citation Maker can read its title, author and date. https only, size and time limited. */

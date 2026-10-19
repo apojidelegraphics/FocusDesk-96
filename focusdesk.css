@@ -3937,3 +3937,14 @@ html.dt-tb.dt-tb-off #desktop { top: 0; }
 .cf-np-s { font-size: 11px; color: #404040; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cf-np .btn.on { box-shadow: inset 1px 1px #404040, inset -1px -1px #fff; background: #d8d8d8; color: #000080; }
 .cf-np input[type="range"] { accent-color: #000080; height: 14px; }
+
+/* ===== command palette ===== */
+.pal-back { position: fixed; inset: 0; z-index: 99990; background: rgba(0, 0, 0, 0.35); display: flex; justify-content: center; align-items: flex-start; padding-top: 12vh; }
+.pal-box { width: min(620px, 92vw); background: #c0c0c0; border: 2px solid; border-color: #fff #404040 #404040 #fff; outline: 1px solid #000; padding: 8px; display: flex; flex-direction: column; gap: 6px; box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35); }
+.pal-in { width: 100%; font-size: 14px; padding: 6px 8px; }
+.pal-list { background: #fff; border: 2px inset #808080; max-height: 46vh; overflow: auto; }
+.pal-row { display: flex; gap: 10px; padding: 4px 8px; cursor: default; align-items: baseline; }
+.pal-row.sel { background: #000080; color: #fff; }
+.pal-k { width: 86px; flex: none; font-size: 11px; opacity: 0.75; }
+.pal-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-hint { padding: 0; font-size: 11px; }

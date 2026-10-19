@@ -46,6 +46,9 @@ jobs:
             | sed 's#</head>#<link rel="manifest" href="manifest.webmanifest" />\n    <link rel="apple-touch-icon" href="icon-192.png" />\n  </head>#' \
             | sed 's#</body>#<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }</script>\n  </body>#' \
             > site/index.html
+          # the update checker in browsers reads this when GitHub's own address is busy
+          node -e "const fs=require('fs');const pk=require('./package.json');const m=/VERSION_BROWSER = \"([^\"]+)\"/.exec(fs.readFileSync('focusdesk.js','utf8'));fs.writeFileSync('site/release-info.json',JSON.stringify({desktop:pk.version,browser:m&&m[1]}))"
+          cat site/release-info.json
           touch site/.nojekyll
           grep -c 'manifest.webmanifest' site/index.html
           grep -c 'serviceWorker' site/index.html

@@ -20,8 +20,8 @@ accounts and no cloud. Everything runs on your computer.
 **Study tools**
 - 📅 Calendar — Month and Week views, drag to reschedule, click any hour to time-block. Click the taskbar clock for a mini calendar with a dot under every day you have something to do, plus your timers
 - 🔗 Calendar Link — Load a `.ics` file from Canvas, Infinite Campus or Apple Calendar; assignments and classes flow into everything else
-- 📝 Notepad — Markdown editor with live preview, note linking, task checkboxes, templates, LaTeX math, and pasted or dropped images
-- 🗂 Folders — Group assignments and notes, search, filter by class
+- 📝 Notepad — Markdown editor with live preview, note linking, task checkboxes, templates, LaTeX math, pasted or dropped images, `#tags` and a course for each note
+- 🗂 Folders — Course hubs that gather a course's assignments, notes, flash cards and grade by themselves, smart folders (a tag, a course, a due date), nested folders with colours and icons, pin to Today, archive a semester with final grades, export as a zip of Markdown notes, and share notes and cards with a study group as one file
 - 🃏 Flash Cards — Real spaced repetition (SM-2), cloze cards, image-occlusion cards, import from Quizlet
 - ⏱ Focus Timer — Pomodoro with background sound and auto-logged stats
 - 📚 Grade Calculator — Current grade, exactly what you need on the rest, and a "what if" slider
@@ -46,6 +46,7 @@ accounts and no cloud. Everything runs on your computer.
 - Clipy and Control Panel show when an assistant can't be reached
 
 **Extras**
+- 🔎 Command palette — `Ctrl/Cmd+K` searches everything (notes, tasks, cards, assignments, courses, tags) and opens any app or action. `#tag`, `@course` and `>` narrow it down
 - 🎮 Games — Solitaire, Sudoku, Tetris, Snake, 2048, Memory, Pong, Minesweeper, Typing, Board Games
 - 🎨 12 colour themes + Tritone icon themes
 - 🖱 Colourable pixel-art cursors
@@ -54,7 +55,12 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
-### Since 1.0
+### New in 1.2.x
+
+- ⌨️ **Shortcuts you can change.** Control Panel → Desktop lists every global shortcut with Change and Reset buttons, tells you when
+  another app already has the keys, and has two new ones to switch on: start or pause the focus timer, and bring FocusDesk to the front.
+- 🔄 **Update checking that explains itself.** The desktop app asks GitHub from its own process, with a second source if the first is
+  busy, and Control Panel shows when it last checked and what it found.
 
 - 🃏 **Flash card hotkey.** Press `Cmd/Ctrl+Shift+Y` anywhere to turn the text you just copied into a new flash card. The
   quick capture window opens on the Card tab with the front filled in, so you only type the back.
@@ -88,6 +94,9 @@ accounts and no cloud. Everything runs on your computer.
   an option to start hidden.
 - ⬆️ **Update checker.** FocusDesk tells you when a new version is out and links to the download. Silent
   auto-update isn't included yet.
+
+### Since 1.0
+
 - 📁 **Real files on your computer.** Your data lives in a plain, readable
   `data.json` in your OS's standard user-data folder. Back it up, sync it
   with Dropbox, or open it in a text editor.
@@ -195,7 +204,7 @@ FocusDesk has no servers of its own and sends nothing to us. It only reaches out
 - your **AI assistant**, if you add a key (or your own computer, if you use Ollama or LM Studio)
 - **Research** lookups (Wikipedia, Crossref, Open Library, Datamuse, DuckDuckGo)
 - the **Citation Maker**, when you press Fill in with a DOI, an ISBN or (desktop app) a web link
-- the **update check**, which asks GitHub for the latest version
+- the **update check**, which asks GitHub for the latest version number (and, if GitHub is busy, a small file on the FocusDesk website)
 - your **calendar feed link**, if you save one
 - **album covers** in Now Playing, from the music service's image server
 - **Feedback**, which opens a pre-filled GitHub page in your browser (nothing is sent until you press Submit)
