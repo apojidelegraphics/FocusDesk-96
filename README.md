@@ -54,7 +54,7 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
-### New in 1.2.x
+### New in 1.2.4
 
 - 🃏 **Flash card hotkey.** Press `Cmd/Ctrl+Shift+Y` anywhere to turn the text you just copied into a new flash card. The
   quick capture window opens on the Card tab with the front filled in, so you only type the back.
