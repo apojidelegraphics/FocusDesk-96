@@ -13,6 +13,7 @@ on:
       - apojilogo.js
       - pwa/**
       - scripts/check-ascii.js
+      - scripts/check-load-order.js
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -38,6 +39,7 @@ jobs:
         shell: bash
         run: |
           node scripts/check-ascii.js
+          node scripts/check-load-order.js
           mkdir site
           cp focusdesk.js focusdesk.css apojilogo.js site/
           cp pwa/* site/

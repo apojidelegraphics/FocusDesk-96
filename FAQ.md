@@ -84,6 +84,12 @@ No. FocusDesk has no servers and no accounts. It only goes online for things you
 ### My reminder or timer notifications don't show up
 Check your system's notification settings for FocusDesk 96 (and that Do Not Disturb or Focus mode isn't on). In the desktop app, Control Panel → Desktop has a button that sends a test notification and tells you what it found.
 
+### It says my saved data couldn't be read, or my theme and notes are gone after updating
+This was a mistake in browser versions 2.7.5 and 2.8 and desktop versions 1.2.5 and 1.2.6, fixed in 2.8.1 and 1.2.7. Your data wasn't deleted. Update first, then:
+
+- **Website or browser version:** open Control Panel → Backup and press **Recover set-aside copy…** (the message also has a **Try to recover it** button). If it isn't there, try **Recover last restore point**.
+- **Desktop app:** open Control Panel → Desktop → **Open data folder**, then the `backups` folder. Each day's first launch saves a dated copy. Quit FocusDesk, copy the newest dated file from before the problem over `data.json` in the main folder, and start FocusDesk again. If Control Panel shows **Recover set-aside copy…**, use that first.
+
 ### FocusDesk is stuck in full screen (Windows)
 Update to 1.2.6, where the full-screen button, `Alt+Enter`, `F11` and the View menu all agree. On an older version, quit FocusDesk, open `%APPDATA%\FocusDesk 96\window-state.json` in Notepad, change `"fullScreen": true` to `"fullScreen": false`, and save it.
 

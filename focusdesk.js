@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.8";
-  var VERSION_DESKTOP = "1.2.6";
+  var VERSION_BROWSER = "2.8.1";
+  var VERSION_DESKTOP = "1.2.7";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -43,6 +43,26 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.8.1",
+      date: "October 2026",
+      title: "Fix: saved data wasn't read after updating",
+      apps: [],
+      notes: [
+        "Fixed a mistake in 2.7.5 and 2.8: if you had saved folders or structured citations, FocusDesk could say your saved data couldn't be read and start fresh (and show the wrong theme and icon colours) the next time it opened. Nothing was deleted, and it's fixed now.",
+        "If you saw that message, press Try to recover it, or use Control Panel > Backup > Recover set-aside copy. You can also use Recover last restore point.",
+      ],
+    },
+    {
+      v: "1.2.7",
+      date: "October 2026",
+      title: "Desktop 1.2.7: saved data fix",
+      apps: [],
+      notes: [
+        "Fixed the same mistake on the desktop (where it could show up as the theme resetting and a Not saving warning after updating). Your data wasn't deleted, and daily backups are kept in the backups folder.",
+        "If your data looks reset, open Control Panel > Backup > Recover set-aside copy, or restore the newest file from the backups folder.",
       ],
     },
     {
@@ -794,6 +814,25 @@ window.addEventListener("error", function (e) {
       if (THEMES[i].key === k) return THEMES[i];
     return THEMES[0];
   }
+
+  /* constants that reading saved data needs, kept above everything that reads it */
+  var FOLDER_ICONS = ["", "\u2605", "\u2665", "\u266b", "\u270e", "\u2699", "\u260e", "\u2602", "\u2708", "\u26a1"];
+  var CITE_TYPES = [
+    ["web", "Website"],
+    ["book", "Book"],
+    ["journal", "Journal article"],
+    ["video", "Video"],
+    ["podcast", "Podcast episode"],
+    ["lecture", "Lecture"],
+    ["dataset", "Dataset"],
+    ["ai", "AI-generated text"],
+  ];
+  var CITE_FIELDS = ["authors", "title", "container", "date", "url", "vol", "issue", "pages", "publisher", "city", "accessed", "version", "extra"];
+  var ymd = function (d) {
+    return (
+      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate())
+    );
+  };
 
   function defaults() {
     return {
@@ -1695,7 +1734,14 @@ window.addEventListener("error", function (e) {
     var raw = null;
     if (window.__focusdeskInitialData) {
       /* Desktop: data.json was read before this script ran. */
-      S = sanitize(window.__focusdeskInitialData);
+      try {
+        S = sanitize(window.__focusdeskInitialData);
+      } catch (e) {
+        corruptLoad = true;
+        try {
+          localStorage.setItem(KEY + ".corrupt", JSON.stringify(window.__focusdeskInitialData));
+        } catch (x) {}
+      }
     } else raw = localStorage.getItem(KEY);
     if (window.__focusdeskCorrupt && window.__focusdeskCorrupt.length)
       corruptLoad = true;
@@ -1899,11 +1945,6 @@ window.addEventListener("error", function (e) {
   }
   var pad = function (n) {
     return String(n).padStart(2, "0");
-  };
-  var ymd = function (d) {
-    return (
-      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate())
-    );
   };
   var hm = function (d) {
     return pad(d.getHours()) + ":" + pad(d.getMinutes());
@@ -11223,7 +11264,6 @@ window.addEventListener("error", function (e) {
 
   /* ================= APP: FOLDERS ================= */
   /* ===== tags (typed as #tag in notes, tasks and cards) and courses ===== */
-  var FOLDER_ICONS = ["", "\u2605", "\u2665", "\u266b", "\u270e", "\u2699", "\u260e", "\u2602", "\u2708", "\u26a1"];
   var HOOKS = {};
   function tagsOfText(text) {
     var m = String(text || "").match(/(?:^|\s)#([\w\-]+)/g) || [],
@@ -15928,7 +15968,10 @@ window.addEventListener("error", function (e) {
               "button",
               { class: "btn sm", onclick: autoBackup },
               "Recover last restore point"
-            )
+            ),
+            hasSetAside()
+              ? el("button", { class: "btn sm", title: "Bring back the copy FocusDesk set aside when it couldn't read your saved data", onclick: recoverDamaged }, "Recover set-aside copy\u2026")
+              : null
           ),
           el(
             "div",
@@ -20312,16 +20355,6 @@ window.addEventListener("error", function (e) {
     );
   }
   /* ===== Citation Maker 2.0 ===== */
-  var CITE_TYPES = [
-    ["web", "Website"],
-    ["book", "Book"],
-    ["journal", "Journal article"],
-    ["video", "Video"],
-    ["podcast", "Podcast episode"],
-    ["lecture", "Lecture"],
-    ["dataset", "Dataset"],
-    ["ai", "AI-generated text"],
-  ];
   var CITE_STYLES = [
     ["apa", "APA 7"],
     ["mla", "MLA 9"],
@@ -20330,7 +20363,6 @@ window.addEventListener("error", function (e) {
     ["ieee", "IEEE"],
     ["turabian", "Turabian"],
   ];
-  var CITE_FIELDS = ["authors", "title", "container", "date", "url", "vol", "issue", "pages", "publisher", "city", "accessed", "version", "extra"];
   var CITE_SHOW = {
     web: ["authors", "title", "container", "date", "url", "accessed"],
     book: ["authors", "title", "version", "publisher", "city", "date", "url"],
@@ -33108,6 +33140,55 @@ window.addEventListener("error", function (e) {
       ],
     });
   }
+  /* Bring back the copy that was set aside when saved data couldn't be read (works if it was a program fault, not real damage). */
+  function hasSetAside() {
+    try {
+      return !!localStorage.getItem(KEY + ".corrupt");
+    } catch (e) {
+      return false;
+    }
+  }
+  function recoverDamaged() {
+    var raw = null;
+    try {
+      raw = localStorage.getItem(KEY + ".corrupt");
+    } catch (e) {}
+    if (!raw) return msgBox({ title: "Recover Saved Data", icon: "info", text: "There's no set-aside copy here to recover." });
+    var obj, clean;
+    try {
+      obj = JSON.parse(raw);
+      clean = sanitize(obj);
+    } catch (e) {
+      return msgBox({ title: "Recover Saved Data", icon: "warn", text: "That saved copy really is damaged, so it can't be recovered here. If you have a backup file, use Control Panel \u2192 Restore from file instead." });
+    }
+    msgBox({
+      title: "Recover Saved Data",
+      icon: "q",
+      width: 400,
+      text: "Found a saved copy with " + clean.notes.length + " note(s), " + clean.tasks.length + " task(s), " + clean.cards.length + " flash card(s) and " + clean.folders.length + " folder(s).\n\nRestoring it replaces what's here now.",
+      buttons: [
+        {
+          label: "Restore it",
+          fn: function () {
+            function done() {
+              try {
+                localStorage.removeItem(KEY + ".corrupt");
+              } catch (e) {}
+              location.reload();
+            }
+            /* switch to the recovered data first, so the save that happens as the page reloads writes IT, not the fresh data */
+            S = clean;
+            if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.write) window.focusdesk.write(clean).then(done, done);
+            else {
+              flush();
+              done();
+            }
+          },
+        },
+        { label: "Cancel" },
+      ],
+    });
+  }
   function boot() {
     var b = $("#boot"),
       bar = $("#bootbar");
@@ -33153,8 +33234,9 @@ window.addEventListener("error", function (e) {
           title: "FocusDesk 96",
           icon: "warn",
           text:
-            "Your saved data couldn't be read, so FocusDesk started fresh.\nThe damaged copy was kept aside. Restore a backup in Control Panel if you have one." +
+            "Your saved data couldn't be read, so FocusDesk started fresh.\nThe damaged copy was kept aside. Press Try to recover it first. If that doesn't work, restore a backup in Control Panel." +
             (window.__focusdeskCorruptNote || ""),
+          buttons: [{ label: "Try to recover it", fn: recoverDamaged }, { label: "OK" }],
         });
       }
       try {

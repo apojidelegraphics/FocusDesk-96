@@ -7,7 +7,7 @@
   <key>CFBundleName</key>
   <string>FocusDesk 96 Mac Helper</string>
   <key>CFBundleVersion</key>
-  <string>1.2.6</string>
+  <string>1.2.7</string>
   <key>NSCalendarsUsageDescription</key>
   <string>FocusDesk 96 reads your Apple Calendar events so they can appear in its own calendar. It never changes them.</string>
   <key>NSCalendarsFullAccessUsageDescription</key>
