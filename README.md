@@ -54,7 +54,7 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
-### New in 1.2.4
+### Since 1.0
 
 - 🃏 **Flash card hotkey.** Press `Cmd/Ctrl+Shift+Y` anywhere to turn the text you just copied into a new flash card. The
   quick capture window opens on the Card tab with the front filled in, so you only type the back.
@@ -88,9 +88,6 @@ accounts and no cloud. Everything runs on your computer.
   an option to start hidden.
 - ⬆️ **Update checker.** FocusDesk tells you when a new version is out and links to the download. Silent
   auto-update isn't included yet.
-
-### Since 1.0
-
 - 📁 **Real files on your computer.** Your data lives in a plain, readable
   `data.json` in your OS's standard user-data folder. Back it up, sync it
   with Dropbox, or open it in a text editor.
