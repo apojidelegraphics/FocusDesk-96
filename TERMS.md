@@ -4,7 +4,7 @@
 **Publisher:** Apoji Delegraphics
 **Designed by:** Apoji Studios
 
-This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.5), the Browser Edition (Version 2.8), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
+This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.6), the Browser Edition (Version 2.8), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
 
 ---
 
@@ -16,7 +16,7 @@ This document governs the use, development, and distribution of Apoji Delegraphi
 
 These General Terms and Conditions ("T&C") apply to all users accessing or utilizing the following products (collectively, the "Products"):
 
-* a. **FocusDesk 96 Desktop Edition, Version 1.2.5**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
+* a. **FocusDesk 96 Desktop Edition, Version 1.2.6**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
 * b. **FocusDesk 96 Browser Edition, Version 2.8**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
 * c. **The FocusDesk 96 feature set**, consisting of: Habit Breaker, Achievements, the focus session log, LaTeX and image support in notes and flash cards, cloze and image-occlusion flash cards, the grade what-if projection, and the other apps in the Start menu.
 
@@ -73,7 +73,7 @@ The grade calculator, GPA projection, and study statistics are planning aids. Th
 
 ## PART II: DESKTOP EDITION AGREEMENT
 
-This Part applies to the Desktop Edition (Version 1.2.5).
+This Part applies to the Desktop Edition (Version 1.2.6).
 
 ### 4. Installation, Builds, and Data Location
 
@@ -102,6 +102,7 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * k. **Now Playing in the taskbar (Desktop Edition).** While the clock flyout is open, or if You turn on the taskbar indicator, FocusDesk checks what is playing on Your computer every few seconds. This stays on Your device.
 * l. **Update checks.** When You check for updates (or leave automatic checks on), the Desktop Edition asks GitHub for the newest release number, first through GitHub's programming interface and then through its public release feed. Browsers ask GitHub's interface and, if it is busy, read a small file on the FocusDesk website. Only the version number is looked at. Nothing about You is sent beyond what any web request includes, such as Your network address.
 * m. **Shared folder files.** A shared folder file contains only the notes and flash cards You chose to put in it, plus the pictures those notes use. It does not contain Your grades, assignments' progress or settings. FocusDesk creates the file on Your device and does not send it anywhere; whoever You give it to can open it with Import shared.
+* n. **Log file (Desktop Edition).** FocusDesk keeps a small text log called `focusdesk.log` in its data folder, noting problems such as a file that could not be saved. It stays on Your computer and is never sent anywhere; You can read or delete it. Please check it for anything private before sharing it with a bug report.
 
 **4.4. Data Location**
 

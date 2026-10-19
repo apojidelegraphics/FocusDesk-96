@@ -84,6 +84,18 @@ No. FocusDesk has no servers and no accounts. It only goes online for things you
 ### My reminder or timer notifications don't show up
 Check your system's notification settings for FocusDesk 96 (and that Do Not Disturb or Focus mode isn't on). In the desktop app, Control Panel → Desktop has a button that sends a test notification and tells you what it found.
 
+### FocusDesk is stuck in full screen (Windows)
+Update to 1.2.6, where the full-screen button, `Alt+Enter`, `F11` and the View menu all agree. On an older version, quit FocusDesk, open `%APPDATA%\FocusDesk 96\window-state.json` in Notepad, change `"fullScreen": true` to `"fullScreen": false`, and save it.
+
+### The taskbar icon shows a number, and I have no notifications
+That red number counts what's due (flash cards, tasks and assignments, including overdue ones), not system notifications. In 1.2.6 it's off by default. You can turn it on in Control Panel → Desktop → "Show a red number on the taskbar icon".
+
+### It says "Couldn't save" or "Not saving"
+Control Panel → Storage now tells you which file couldn't be saved and why, and **Open data folder** (Control Panel → Desktop) takes you to your files. Save a backup file straight away (Control Panel → Save backup file). Antivirus and cloud-sync tools sometimes lock files for a moment, and FocusDesk 1.2.6 is much more patient with them. If it keeps happening, send us `focusdesk.log` from the data folder (check it for anything private first).
+
+### Now Playing doesn't show the cover (or the song)
+Play something first, then press **Check Now Playing** in Control Panel → Desktop. It shows what your computer told FocusDesk. If the cover is missing, copy that text and send it with your feedback.
+
 ### The hotkey doesn't work, or I want different keys
 Another app is probably using the same keys. Control Panel → Desktop lists every shortcut with its keys, and tells you when another app has them. Press **Change…** and then the keys you want (they need Ctrl, Alt or Cmd/Win with a letter, number or F key), or **Reset** to go back. The defaults are `Cmd/Ctrl+Shift+Space` for quick capture and `Cmd/Ctrl+Shift+Y` for a flash card from what you copied. Two more can be switched on: starting or pausing the focus timer, and bringing FocusDesk to the front.
 

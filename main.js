@@ -16,6 +16,7 @@
 
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen, globalShortcut, Tray, nativeImage, Notification, net, clipboard } = require("electron");
 const nowPlaying = require("./nowplaying");
+const makeSafeWrite = require("./safewrite");
 const path = require("path");
 const fs = require("fs");
 const fsp = fs.promises;
@@ -81,35 +82,20 @@ function safeName(name) {
   return n.slice(0, 120);
 }
 
-async function renameRetry(from, to) {
-  for (let i = 0; ; i++) {
-    try {
-      return await fsp.rename(from, to);
-    } catch (e) {
-      // Windows can briefly refuse a rename while antivirus / Dropbox holds the file.
-      if (i < 6 && (e.code === "EPERM" || e.code === "EBUSY" || e.code === "EACCES")) await sleep(50 * (i + 1));
-      else throw e;
-    }
-  }
-}
-
-/** Atomic write: temp file in the same folder -> fsync -> rename over the target. */
-async function atomicWrite(file, contents) {
-  const tmp = file + "." + process.pid + "." + Date.now() + ".tmp";
-  let fh = null;
+/* A small log in the data folder (focusdesk.log) so problems like a failed save can be explained afterwards. */
+function logLine(msg) {
   try {
-    fh = await fsp.open(tmp, "w");
-    await fh.writeFile(contents);
-    await fh.sync();
-    await fh.close();
-    fh = null;
-    await renameRetry(tmp, file);
-  } catch (e) {
-    if (fh) await fh.close().catch(() => {});
-    await fsp.unlink(tmp).catch(() => {});
-    throw e;
-  }
+    const f = path.join(DATA_DIR, "focusdesk.log");
+    let old = "";
+    try {
+      old = fs.readFileSync(f, "utf8");
+    } catch (_) {}
+    if (old.length > 150000) old = old.slice(old.length - 80000);
+    fs.writeFileSync(f, old + new Date().toISOString() + "  " + String(msg).replace(/\s+/g, " ").slice(0, 400) + "\n");
+  } catch (_) {}
 }
+let lastSaveError = null; // what the last failed save was, so the app can say so instead of a vague warning
+const { atomicWrite } = makeSafeWrite({ log: (m) => logLine(m) });
 
 /** Synchronous twin, used only for the tiny window-state file inside the close handler. */
 function atomicWriteSync(file, contents) {
@@ -175,9 +161,12 @@ function flushDirty() {
       try {
         if (kind === "data") await ensureDailyBackup(); // snapshot the old file before replacing it
         await writeKind(kind);
+        if (lastSaveError && lastSaveError.kind === kind) lastSaveError = null;
       } catch (e) {
         dirty[kind] = true; // retry on the next flush
         console.error("[focusdesk] write failed:", kind, e);
+        lastSaveError = { kind: kind + ".json", code: (e && e.code) || "", message: String((e && e.message) || e).slice(0, 200), folder: DATA_DIR };
+        logLine("write failed: " + kind + " " + lastSaveError.code + " " + lastSaveError.message);
         if (!firstError) firstError = e;
       }
     }
@@ -346,7 +335,7 @@ function applyWrite(p) {
   }
   return flushDirty().then(
     () => ({ ok: true }),
-    (e) => ({ ok: false, error: String((e && e.message) || e) })
+    (e) => ({ ok: false, error: String((e && e.message) || e), detail: lastSaveError })
   );
 }
 
@@ -515,6 +504,7 @@ const DEFAULT_DPREFS = {
   notifyAlways: true, // show native notifications even while FocusDesk is the front window
   dueOverdue: true, // include overdue tasks and assignments in the tray / menu bar list
   hotkey: true,
+  taskbarBadge: false, // a red number on the taskbar icon for what is due (off unless you want it)
   cardHotkey: true, // Ctrl/Cmd+Shift+Y sends the text on your clipboard to a new flash card
   closeToTray: false,
   launchAtLogin: false,
@@ -734,6 +724,15 @@ let due = { cards: 0, tasks: 0, tasksOver: 0, assign: 0, assignOver: 0, items: [
 let lastTimer = null;
 let miniWin = null;
 
+function quickFromArgs(argv) {
+  const a = (argv || []).find((x) => /^--quick=(task|card|timer|nowplaying)$/.test(String(x)));
+  return a ? String(a).slice(8) : "";
+}
+function runQuick(kind) {
+  if (kind === "task" || kind === "card") openCapture(kind);
+  else if (kind === "timer") sendCmd("timer-toggle", true);
+  else if (kind === "nowplaying") openNowPlaying();
+}
 function sendCmd(cmd, show) {
   return whenMainReady().then((wc) => {
     if (show) showMainWindow();
@@ -787,8 +786,8 @@ function applyDue() {
   const total = due.cards + due.tasks + due.assign;
   try {
     if (process.platform === "win32" && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.setOverlayIcon(total > 0 && due.badge ? nativeImage.createFromDataURL(due.badge) : null, total > 0 ? total + " due" : "");
-    } else if (process.platform === "linux") app.setBadgeCount(total);
+      mainWindow.setOverlayIcon(dprefs.taskbarBadge && total > 0 && due.badge ? nativeImage.createFromDataURL(due.badge) : null, dprefs.taskbarBadge && total > 0 ? total + " due" : "");
+    } else if (process.platform === "linux") app.setBadgeCount(dprefs.taskbarBadge ? total : 0);
     // macOS: no dock badge on purpose; the counts are inside the menu bar menu.
   } catch (_) {}
 }
@@ -1244,6 +1243,23 @@ function registerDesktopIpc() {
     }
   });
 
+  ipcMain.handle("focusdesk:toggleFullscreen", (e) => {
+    assertTrusted(e);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (!win || win.isDestroyed()) return { ok: false };
+    win.setFullScreen(!win.isFullScreen());
+    return { ok: true, fullScreen: win.isFullScreen() };
+  });
+  ipcMain.handle("focusdesk:openDataFolder", async (e) => {
+    assertTrusted(e);
+    const err = await shell.openPath(DATA_DIR);
+    return { ok: !err, error: err || "", folder: DATA_DIR };
+  });
+  ipcMain.handle("focusdesk:npDiag", async (e) => {
+    assertTrusted(e);
+    return nowPlaying.diag();
+  });
+
   /* Apple Calendar and Reminders (Mac only, read-only). */
   ipcMain.handle("focusdesk:apple", (e, p) => {
     assertTrusted(e);
@@ -1535,7 +1551,14 @@ function createWindow(hidden) {
   win.on("enter-full-screen", () => win.webContents.send("focusdesk:fs", true));
   win.on("leave-full-screen", () => win.webContents.send("focusdesk:fs", false));
   if (st.maximized) win.maximize();
-  if (st.fullScreen) win.setFullScreen(true);
+  // full screen is never restored at launch: it left some people stuck in it
+  win.webContents.on("before-input-event", (ev, input) => {
+    // F11 is handled here, once, so the menu and the page can't both toggle it
+    if (input.type === "keyDown" && input.key === "F11" && !input.alt && !input.control && !input.meta) {
+      ev.preventDefault();
+      win.setFullScreen(!win.isFullScreen());
+    }
+  });
   win.once("ready-to-show", () => {
     if (!keepHidden) win.show();
   });
@@ -1742,8 +1765,10 @@ if (!app.requestSingleInstanceLock()) {
   // A second copy would fight the first over the same files.
   app.quit();
 } else {
-  app.on("second-instance", () => {
-    showMainWindow();
+  app.on("second-instance", (e, argv) => {
+    const q = quickFromArgs(argv);
+    if (q) runQuick(q);
+    else showMainWindow();
   });
   app.on("before-quit", () => {
     isQuitting = true;
@@ -1781,6 +1806,20 @@ if (!app.requestSingleInstanceLock()) {
       buildMenu();
       applyDesktopPrefs();
       createWindow();
+      if (process.platform === "win32" && app.isPackaged) {
+        // the menu you get by right-clicking the taskbar icon
+        const task = (arg, title, description) => ({ program: process.execPath, arguments: "--quick=" + arg, title: title, description: description, iconPath: process.execPath, iconIndex: 0 });
+        try {
+          app.setUserTasks([
+            task("task", "Add a quick task", "Open quick capture"),
+            task("card", "New flash card from the clipboard", "Turn what you copied into a card"),
+            task("timer", "Start or pause the focus timer", "Control the focus timer"),
+            task("nowplaying", "Open Now Playing", "Show what is playing"),
+          ]);
+        } catch (_) {}
+      }
+      const first = quickFromArgs(process.argv);
+      if (first) setTimeout(() => runQuick(first), 2000);
     })
     .catch((e) => {
       console.error(e);

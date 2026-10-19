@@ -12,8 +12,8 @@ const path = require("path");
 
 function run(cmd, args, ms) {
   return new Promise((resolve) => {
-    cp.execFile(cmd, args, { timeout: ms || 5000, windowsHide: true, maxBuffer: 8 << 20 }, (err, out) => {
-      if (err) resolve({ ok: false, code: err.code, out: "" });
+    cp.execFile(cmd, args, { timeout: ms || 5000, windowsHide: true, maxBuffer: 8 << 20 }, (err, out, errOut) => {
+      if (err) resolve({ ok: false, code: err.code, err: String((err && err.message) || "").slice(0, 300), stderr: String(errOut || "").slice(0, 300), out: String(out || "") });
       else resolve({ ok: true, out: String(out) });
     });
   });
@@ -186,6 +186,30 @@ async function art(source) {
   return null;
 }
 
+/* ---------- what the player reports, for troubleshooting ---------- */
+async function diag() {
+  const out = { platform: process.platform };
+  try {
+    if (process.platform === "win32") {
+      const t0 = Date.now(),
+        r = await winRun(WIN_STATUS);
+      out.statusMs = Date.now() - t0;
+      out.status = r.ok ? (r.out.trim().slice(0, 300) || "(empty)") : "FAILED: " + (r.err || r.code || "unknown") + (r.stderr ? " | " + r.stderr : "");
+      const t1 = Date.now(),
+        a = await winRun(WIN_ART);
+      out.artMs = Date.now() - t1;
+      const t = a.ok ? a.out.trim() : "";
+      out.cover = !a.ok ? "FAILED: " + (a.err || a.code || "unknown") + (a.stderr ? " | " + a.stderr : "") : t === "NONE" || !t ? "the player reported no cover picture" : "received " + t.length + " characters of image data (starts " + t.slice(0, 12) + ")";
+    } else {
+      out.status = JSON.stringify(await status()).slice(0, 400);
+      out.cover = "not checked on this system";
+    }
+  } catch (e) {
+    out.error = String((e && e.message) || e);
+  }
+  return out;
+}
+
 /* ---------- public ---------- */
 async function status() {
   try {
@@ -211,4 +235,4 @@ async function control(cmd, source, arg) {
   } catch (e) {}
 }
 
-module.exports = { status, control, art, parseFields, parseTriple: parseFields, WIN_STATUS, WIN_ART, MUSIC_ART, encode };
+module.exports = { status, control, art, diag, parseFields, parseTriple: parseFields, WIN_STATUS, WIN_ART, MUSIC_ART, encode };

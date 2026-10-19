@@ -28,7 +28,7 @@ window.addEventListener("error", function (e) {
   "use strict";
 
   var VERSION_BROWSER = "2.8";
-  var VERSION_DESKTOP = "1.2.5";
+  var VERSION_DESKTOP = "1.2.6";
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -43,6 +43,19 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "1.2.6",
+      date: "October 2026",
+      title: "Desktop 1.2.6: Windows fixes",
+      apps: [],
+      notes: [
+        "Full screen: the button, Alt+Enter, F11 and the View menu now all work the same way, and FocusDesk no longer starts in full screen.",
+        "Saving is tougher on Windows (antivirus and cloud-sync tools can lock files). If a save ever fails, Control Panel now says which file and why, and a log is kept in the data folder (focusdesk.log).",
+        "The red number on the taskbar icon is now optional and off by default (Control Panel > Desktop). Right-clicking the taskbar icon on Windows now offers quick actions.",
+        "The boot screen waits until the window is on screen, so it's always seen.",
+        "Control Panel > Desktop has Open data folder and Check Now Playing buttons for troubleshooting.",
       ],
     },
     {
@@ -3479,6 +3492,7 @@ window.addEventListener("error", function (e) {
   }
 
   function fsElement() {
+    if (window.__focusdeskFs) return document.documentElement;
     return (
       document.fullscreenElement ||
       document.webkitFullscreenElement ||
@@ -3499,6 +3513,11 @@ window.addEventListener("error", function (e) {
     });
   }
   function toggleFullscreen() {
+    /* desktop app: the window itself goes full screen, the same way F11 and the View menu do */
+    if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.toggleFullscreen) {
+      window.focusdesk.toggleFullscreen();
+      return;
+    }
     if (fsElement()) {
       var ex =
         document.exitFullscreen ||
@@ -13846,12 +13865,15 @@ window.addEventListener("error", function (e) {
       }
     }
     function draw() {
-      status.textContent = storageOK
+      var saveErr = window.__focusdeskIsDesktop && window.__focusdeskSaveError;
+      status.textContent = saveErr
+        ? "\u26A0 Couldn't save " + (saveErr.kind || "your data") + (saveErr.code ? " (" + saveErr.code + ")" : "") + ": " + (saveErr.message || "unknown problem") + ". Your data is still in the open window, so save a backup file now." + (saveErr.folder ? "  Folder: " + saveErr.folder : "")
+        : storageOK
         ? window.__focusdeskIsDesktop
           ? "\u2714 Saving to files on this computer."
           : "\u2714 Saving to this browser."
         : "\u26A0 Not saving! This browser is blocking storage. Download a backup now.";
-      status.style.color = storageOK ? "#006000" : "#c00000";
+      status.style.color = storageOK && !saveErr ? "#006000" : "#c00000";
       drawWall();
       drawIcons();
       drawAbout();
@@ -14992,6 +15014,7 @@ window.addEventListener("error", function (e) {
             })
           );
           var testOut = el("span", { class: "dim", style: "padding:0" });
+          var diagOut = el("span", { class: "dim", style: "padding:0" });
           /* ---- shortcuts you can change ---- */
           var HK = [
             ["capture", "hotkey", "Quick capture", true],
@@ -15141,6 +15164,39 @@ window.addEventListener("error", function (e) {
                 testOut
               ),
               opt("dueOverdue", "Show overdue tasks and assignments in the " + tray + " menu, too", true),
+              opt("taskbarBadge", mac ? "Show a number on the Dock icon for what's due (Linux and Windows: on the taskbar icon)" : "Show a red number on the taskbar icon for what's due", false),
+              el(
+                "div",
+                { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
+                btn("Open data folder", function () {
+                  fdk.openDataFolder();
+                }, "Opens the folder where FocusDesk keeps your files"),
+                btn("Check Now Playing", function () {
+                  diagOut.textContent = "Checking\u2026";
+                  fdk.npDiag().then(function (r) {
+                    diagOut.textContent = "";
+                    var text = Object.keys(r || {})
+                      .map(function (k) {
+                        return k + ": " + r[k];
+                      })
+                      .join("\n");
+                    var ta = el("textarea", { class: "in", readonly: true, rows: 9, style: "width:100%;font:11px 'Courier New',monospace" });
+                    ta.value = text;
+                    msgBox({
+                      title: "Now Playing Check",
+                      icon: "info",
+                      width: 460,
+                      text: "Play something in your music app first, then press Check. This shows what your computer told FocusDesk. If a cover doesn't show up, copy this and send it with your feedback.",
+                      extra: ta,
+                      buttons: [
+                        { label: "Copy", fn: function () { try { navigator.clipboard.writeText(text); } catch (e) {} return false; } },
+                        { label: "Close" },
+                      ],
+                    });
+                  });
+                }, "Shows what your music player reports, for troubleshooting"),
+                diagOut
+              ),
               hotkeyBlock(),
               el(
                 "label",
@@ -22791,7 +22847,7 @@ window.addEventListener("error", function (e) {
         assign: a.today.length + a.over.length,
         assignOver: a.over.length,
         items: items,
-        badge: window.__focusdeskPlatform === "win32" && total > 0 ? makeBadge(total) : null,
+        badge: window.__focusdeskPlatform === "win32" && total > 0 && (window.__focusdeskDPrefs || {}).taskbarBadge === true ? makeBadge(total) : null,
       });
     };
     setTimeout(function () {
@@ -33128,7 +33184,10 @@ window.addEventListener("error", function (e) {
       autoUpdateCheck();
       checkAchSoon();
     }
+    var hiddenTicks = 0;
     var iv = setInterval(function () {
+      /* desktop app: don't run the loading bar while the window isn't on screen yet (so it's actually seen) */
+      if (window.__focusdeskIsDesktop && document.hidden && hiddenTicks++ < 90) return;
       if (n < segs.length) segs[n++].style.opacity = 1;
       else finish();
     }, 90);
@@ -33247,6 +33306,7 @@ window.addEventListener("error", function (e) {
       return;
     }
   });
+  window.__fdUpdFs = updFs;
   updFs();
   var rzT;
   window.addEventListener("resize", function () {

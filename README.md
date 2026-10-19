@@ -57,6 +57,10 @@ accounts and no cloud. Everything runs on your computer.
 
 ### New in 1.2.x
 
+- 🪟 **Windows fixes (1.2.6).** Full screen works the same from the button, `Alt+Enter`, `F11` and the View menu, and FocusDesk no longer
+  starts in full screen. Saving copes with antivirus and cloud-sync tools, and says exactly what went wrong if a save fails. The red
+  number on the taskbar icon is now optional, and right-clicking the taskbar icon offers quick actions.
+
 - ⌨️ **Shortcuts you can change.** Control Panel → Desktop lists every global shortcut with Change and Reset buttons, tells you when
   another app already has the keys, and has two new ones to switch on: start or pause the focus timer, and bring FocusDesk to the front.
 - 🔄 **Update checking that explains itself.** The desktop app asks GitHub from its own process, with a second source if the first is
@@ -177,6 +181,7 @@ Inside it:
 | `backups/` | Automatic daily backups, one per day (newest 7 kept by default; you can choose another folder and how many to keep) |
 | `migrate/` | A copy of every file the Migrate app exports |
 | `window-state.json` | Window size and position |
+| `focusdesk.log` | A small log of problems (like a failed save), kept on your computer |
 | `mini-timer.json`, `now-playing.json` | Where you left the mini timer and Now Playing pills |
 
 **Back up or move to another computer:** quit FocusDesk, copy the folder (or just `data.json`),

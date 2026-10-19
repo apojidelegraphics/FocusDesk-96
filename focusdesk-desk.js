@@ -80,7 +80,7 @@
     return fd.setDesktopPrefs(p).then(function (r) {
       if (r && r.prefs) {
         window.__focusdeskDPrefs = r.prefs;
-        if (p && p.dueOverdue !== undefined && typeof window.__focusdeskDue === "function") window.__focusdeskDue();
+        if (p && (p.dueOverdue !== undefined || p.taskbarBadge !== undefined) && typeof window.__focusdeskDue === "function") window.__focusdeskDue();
         window.__focusdeskDStatus = { hotkeyOk: !!r.hotkeyOk, cardHotkeyOk: !!r.cardHotkeyOk, hotkeys: r.hotkeys || {}, trayOk: !!r.trayOk, login: r.login };
       }
       return r;
@@ -99,6 +99,12 @@
   fd.onCapture(function (p) {
     var r = typeof window.__focusdeskCapture === "function" ? window.__focusdeskCapture(p.kind, p.text) : null;
     if (r && r.msg) fd.captureDone({ msg: r.msg });
+  });
+  /* the window's own full-screen state (F11, the View menu and the full-screen button all go through it) */
+  window.__focusdeskFs = false;
+  fd.onFullscreen(function (on) {
+    window.__focusdeskFs = !!on;
+    if (typeof window.__fdUpdFs === "function") window.__fdUpdFs();
   });
   fd.onNowPlaying(function (st) {
     if (typeof window.__focusdeskNP === "function") window.__focusdeskNP(st);
@@ -284,11 +290,16 @@
   }
 
   /* ---------- 5. debounced, queued writer ---------- */
-  function setWarn(failed) {
+  function setWarn(failed, detail) {
     var w = document.getElementById("saveWarn");
+    window.__focusdeskSaveError = failed ? detail || { message: "The save request failed." } : null;
+    if (typeof window.__fdSaveInfo === "function") window.__fdSaveInfo();
     if (!w) return;
     w.hidden = !failed;
-    if (failed) w.title = "Couldn't write to disk — changes are NOT being saved.";
+    if (failed) {
+      var dd = window.__focusdeskSaveError;
+      w.title = "Couldn't write to disk, so changes are NOT being saved." + (dd && dd.kind ? " Problem: " + dd.kind + (dd.code ? " (" + dd.code + ")" : "") + ". Open Control Panel for details." : "");
+    }
   }
   function hasDirty() {
     for (var k in dirty) if (dirty[k]) return true;
@@ -321,9 +332,10 @@
     lastSend = Date.now();
     var job = Promise.all(jobs).then(
       function (rs) {
-        setWarn(rs.some(function (r) {
+        var bad = rs.filter(function (r) {
           return r && r.ok === false;
-        }));
+        })[0];
+        setWarn(!!bad, bad && bad.detail);
       },
       function () {
         setWarn(true);
