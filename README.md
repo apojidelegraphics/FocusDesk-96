@@ -55,7 +55,7 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
-### New in 1.2.x
+### Since 1.0
 
 - 🪟 **Windows fixes (1.2.6).** Full screen works the same from the button, `Alt+Enter`, `F11` and the View menu, and FocusDesk no longer
   starts in full screen. Saving copes with antivirus and cloud-sync tools, and says exactly what went wrong if a save fails. The red
@@ -98,9 +98,6 @@ accounts and no cloud. Everything runs on your computer.
   an option to start hidden.
 - ⬆️ **Update checker.** FocusDesk tells you when a new version is out and links to the download. Silent
   auto-update isn't included yet.
-
-### Since 1.0
-
 - 📁 **Real files on your computer.** Your data lives in a plain, readable
   `data.json` in your OS's standard user-data folder. Back it up, sync it
   with Dropbox, or open it in a text editor.
