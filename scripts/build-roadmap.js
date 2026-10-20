@@ -37,7 +37,7 @@ const next = data.upcoming.find((u) => u.status !== "shipped" && u.status !== "u
 const md = [];
 md.push("# FocusDesk 96 update schedule", "");
 md.push("*" + data.policy.headline + "*", "");
-md.push("**Next update:** " + day(next.target) + " - version " + next.version + ", " + next.title + ".", "");
+md.push("**Next update:** " + (next.when || day(next.target)) + " - version " + next.version + ", " + next.title + ".", "");
 md.push("**Right now:** desktop app " + data.current.desktop + ", browser version " + data.current.browser + ". [Latest release](" + REPO + "/releases/latest)", "");
 md.push("The same schedule is on the website: " + SITE + "roadmap.html", "");
 md.push("## How updates work", "");
@@ -45,7 +45,7 @@ data.policy.points.forEach((p) => md.push("- " + p));
 md.push("", "## Coming up", "");
 data.upcoming.forEach((u) => {
   md.push("### " + (u.version === "next" ? "Next" : "Version " + u.version) + ": " + u.title, "");
-  md.push("- **When:** " + day(u.target) + " (" + STATUS[u.status].toLowerCase() + ")");
+  md.push("- **When:** " + (u.when || day(u.target)) + " (" + STATUS[u.status].toLowerCase() + ")");
   if (u.desktop || u.browser) md.push("- **Versions:** desktop " + (u.desktop || "-") + ", browser " + (u.browser || "-"));
   u.items.forEach((i) => md.push("- " + i));
   if (u.note) md.push("- *" + u.note + "*");
@@ -81,7 +81,7 @@ const cards = data.upcoming
       esc(STATUS[u.status]) +
       "</span></div>" +
       '<p class="when">' +
-      esc(day(u.target)) +
+      esc(u.when || day(u.target)) +
       (u.desktop || u.browser ? " &middot; desktop " + esc(u.desktop || "-") + ", browser " + esc(u.browser || "-") : "") +
       "</p>" +
       li(u.items) +
@@ -107,7 +107,7 @@ const html =
   esc(data.policy.headline) +
   "</p>\n" +
   '<div class="panel"><div class="big">Next update: ' +
-  esc(day(next.target)) +
+  esc(next.when || day(next.target)) +
   "</div><div>Version " +
   esc(next.version) +
   " &mdash; " +
@@ -146,5 +146,5 @@ if (process.argv.includes("--check")) {
   console.log("roadmap check: ok");
 } else {
   Object.keys(out).forEach((f) => fs.writeFileSync(path.join(root, f), out[f]));
-  console.log("wrote ROADMAP.md and roadmap.html (next update: " + day(next.target) + ")");
+  console.log("wrote ROADMAP.md and roadmap.html (next update: " + (next.when || day(next.target)) + ")");
 }
