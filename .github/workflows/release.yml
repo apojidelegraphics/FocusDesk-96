@@ -79,6 +79,8 @@ jobs:
   release:
     name: Draft release
     needs: [build, browser]
+    # still make the draft if one platform failed, so the others aren't lost (the failed job stays red)
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -87,9 +89,19 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: What is attached
+        shell: bash
+        run: |
+          ls -la dist || true
+          for pat in "*.dmg" "*.exe" "*.AppImage" "*.zip"; do
+            if ! ls dist/$pat >/dev/null 2>&1; then
+              echo "::warning::No $pat file was built, so it is missing from this draft release. Open the failed job to see why."
+            fi
+          done
+
       - uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
           files: dist/*

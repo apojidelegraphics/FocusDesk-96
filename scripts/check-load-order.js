@@ -8,7 +8,8 @@
 const fs = require("fs");
 const path = require("path");
 const file = path.join(__dirname, "..", "focusdesk.js");
-const lines = fs.readFileSync(file, "utf8").split("\n");
+/* Windows checks files out with CRLF line endings, so split on either kind */
+const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
 const boot = lines.findIndex((l) => l === "  var S = defaults();");
 if (boot < 0) {
   console.error("check-load-order: couldn't find the line that reads saved data (var S = defaults();)");

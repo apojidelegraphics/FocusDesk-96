@@ -1,0 +1,7 @@
+# Keep every text file with plain LF line endings on every computer (Windows included),
+# so the build checks and generated files behave the same everywhere.
+* text=auto eol=lf
+*.png binary
+*.icns binary
+*.ico binary
+*.woff2 binary
