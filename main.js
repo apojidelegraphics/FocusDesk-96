@@ -305,6 +305,7 @@ function bootPayload() {
     hotkeyOk: hotkeyOk,
     cardHotkeyOk: cardHotkeyOk,
     hotkeys: hotkeyState,
+    updater: { supported: !!updater, mode: dprefs.updateMode },
     trayOk: !!tray,
     titleBar: compactActive,
   };
@@ -526,6 +527,8 @@ const DEFAULT_DPREFS = {
   notifyAlways: true, // show native notifications even while FocusDesk is the front window
   dueOverdue: true, // include overdue tasks and assignments in the tray / menu bar list
   hotkey: true,
+  updateMode: process.platform === "darwin" ? "notify" : "auto", // "auto" installs updates by itself, "ask" asks first, "notify" just tells you (Mac is always "notify")
+  popoutBounds: {}, // where each popped-out app was last (size and position)
   mirrorLatest: false, // keep focusdesk-latest.json (your newest data) in the backup folder, for the browser version to pick up
   npCoverLookup: false, // when the player gives no cover picture, look one up online by song and artist (off unless you want it)
   taskbarBadge: false, // a red number on the taskbar icon for what is due (off unless you want it)
@@ -561,10 +564,14 @@ function validAccel(s) {
   if (!/^([A-Z0-9]|F([1-9]|1[0-9]|2[0-4])|Space|Tab|Backspace|Delete|Insert|Return|Up|Down|Left|Right|Home|End|PageUp|PageDown|[-=\[\];',.\/\\`])$/.test(key)) return false;
   return parts.some((x) => x !== "Shift");
 }
+function validBounds(b) {
+  return !!b && typeof b === "object" && [b.x, b.y, b.width, b.height].every((n) => typeof n === "number" && isFinite(n)) && b.width >= 300 && b.height >= 200 && b.width <= 12000 && b.height <= 12000 && Math.abs(b.x) < 40000 && Math.abs(b.y) < 40000;
+}
 function mergeDprefs(base, p) {
   const clean = cleanDprefs(p);
   const out = Object.assign({}, base, clean);
   out.hotkeyKeys = Object.assign({}, DEFAULT_DPREFS.hotkeyKeys, base && base.hotkeyKeys, clean.hotkeyKeys);
+  out.popoutBounds = Object.assign({}, base && base.popoutBounds, clean.popoutBounds);
   return out;
 }
 function cleanDprefs(p) {
@@ -583,6 +590,16 @@ function cleanDprefs(p) {
   if (p && typeof p.backupPath === "string" && p.backupPath.length < 1000 && path.isAbsolute(p.backupPath)) out.backupPath = p.backupPath;
   if (p && p.backupPath === "") out.backupPath = "";
   if (p && [0, 7, 14, 30].indexOf(p.backupKeep) >= 0) out.backupKeep = p.backupKeep;
+  if (p && ["auto", "ask", "notify"].indexOf(p.updateMode) >= 0) out.updateMode = p.updateMode;
+  if (p && p.popoutBounds && typeof p.popoutBounds === "object") {
+    out.popoutBounds = {};
+    Object.keys(p.popoutBounds)
+      .slice(0, 40)
+      .forEach((id) => {
+        const b = p.popoutBounds[id];
+        if (/^[a-z]{2,20}$/.test(id) && validBounds(b)) out.popoutBounds[id] = { x: Math.round(b.x), y: Math.round(b.y), width: Math.round(b.width), height: Math.round(b.height), max: !!b.max };
+      });
+  }
   return out;
 }
 
@@ -1187,7 +1204,7 @@ function registerDesktopIpc() {
       await ensureDailyBackup();
     }
     const login = applyLoginItem();
-    return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, cardHotkeyOk: cardHotkeyOk, hotkeys: hotkeyState, trayOk: !!tray, login: login };
+    return { ok: true, prefs: dprefs, hotkeyOk: hotkeyOk, cardHotkeyOk: cardHotkeyOk, hotkeys: hotkeyState, updater: { supported: !!updater, mode: dprefs.updateMode }, trayOk: !!tray, login: login };
   });
 
   ipcMain.handle("focusdesk:popupMenu", (e, p) => {
@@ -1304,6 +1321,32 @@ function registerDesktopIpc() {
     }
   });
 
+  ipcMain.handle("focusdesk:updateCheck", (e) => {
+    assertTrusted(e);
+    if (!updater) return { ok: false, supported: false };
+    sendUpdate({ phase: "checking" });
+    checkForUpdate();
+    return { ok: true, supported: true };
+  });
+  ipcMain.handle("focusdesk:updateDownload", (e) => {
+    assertTrusted(e);
+    if (!updater) return { ok: false };
+    startUpdateDownload();
+    return { ok: true };
+  });
+  ipcMain.handle("focusdesk:updateInstallOnQuit", (e) => {
+    assertTrusted(e);
+    if (updater) updater.autoInstallOnAppQuit = true;
+    return { ok: !!updater };
+  });
+  ipcMain.handle("focusdesk:updateInstall", async (e) => {
+    assertTrusted(e);
+    if (!updater || updState.phase !== "ready") return { ok: false };
+    await flushDirty().catch(() => {}); // save everything first
+    installingUpdate = true;
+    updater.quitAndInstall(true, true); // silent installer (no setup wizard) and start FocusDesk again afterwards
+    return { ok: true };
+  });
   ipcMain.handle("focusdesk:toggleFullscreen", (e) => {
     assertTrusted(e);
     const win = BrowserWindow.fromWebContents(e.sender);
@@ -1578,6 +1621,83 @@ function askRendererToFlush(win) {
   });
 }
 
+/* ---- automatic updates (Windows and Linux). A Mac always uses the notify-and-download notice, because Apple signing isn't paid for. ----
+   If anything goes wrong, the app falls back to that notice, so a broken update can never leave anyone stuck. */
+let updater = null;
+let updState = { phase: "idle" };
+let installingUpdate = false;
+let quitFlushed = false;
+function sendUpdate(st) {
+  updState = st;
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("focusdesk:update", st);
+}
+function setupUpdater() {
+  if (process.platform !== "win32" && process.platform !== "linux") return;
+  if (!app.isPackaged && !process.env.FD_TEST_UPDATER) return; // a development run doesn't update itself
+  try {
+    updater = require("electron-updater").autoUpdater;
+  } catch (e) {
+    logLine("automatic updates unavailable: " + String((e && e.message) || e).slice(0, 150));
+    updater = null;
+    return;
+  }
+  updater.autoDownload = false;
+  updater.autoInstallOnAppQuit = false;
+  updater.allowPrerelease = false;
+  updater.allowDowngrade = false;
+  if (process.env.FD_TEST_UPDATER === "real") updater.forceDevUpdateConfig = true;
+  updater.on("update-available", (info) => {
+    sendUpdate({ phase: "available", version: String((info && info.version) || "") });
+    if (dprefs.updateMode === "auto") startUpdateDownload();
+  });
+  updater.on("update-not-available", () => sendUpdate({ phase: "none" }));
+  updater.on("download-progress", (p) => sendUpdate({ phase: "progress", version: updState.version || "", percent: Math.max(0, Math.min(100, Math.round((p && p.percent) || 0))) }));
+  updater.on("update-downloaded", (info) => {
+    if (dprefs.updateMode === "auto") updater.autoInstallOnAppQuit = true; // installs when FocusDesk is closed
+    sendUpdate({ phase: "ready", version: String((info && info.version) || ""), auto: dprefs.updateMode === "auto" });
+  });
+  updater.on("error", (err) => {
+    const msg = String((err && err.message) || err).replace(/\s+/g, " ").slice(0, 200);
+    logLine("update problem: " + msg);
+    sendUpdate({ phase: "error", message: msg });
+  });
+}
+function startUpdateDownload() {
+  if (updater) updater.downloadUpdate().catch(() => {}); // problems arrive as an "error" event
+}
+function checkForUpdate() {
+  if (!updater) return false;
+  Promise.resolve(updater.checkForUpdates()).catch(() => {});
+  return true;
+}
+function updateTick() {
+  if (updater && dprefs.updateMode !== "notify" && ["checking", "progress", "ready"].indexOf(updState.phase) < 0) checkForUpdate();
+}
+
+/* ---- where each popped-out app was last: size and position, kept between runs ---- */
+function popoutBoundsFor(id) {
+  const b = dprefs.popoutBounds && dprefs.popoutBounds[id];
+  if (!validBounds(b)) return null;
+  try {
+    // only if it would still be visible on a connected screen (a screen may have been unplugged)
+    const visible = screen.getAllDisplays().some((d) => {
+      const w = d.workArea,
+        ox = Math.min(b.x + b.width, w.x + w.width) - Math.max(b.x, w.x),
+        oy = Math.min(b.y + b.height, w.y + w.height) - Math.max(b.y, w.y);
+      return ox >= 160 && oy >= 100;
+    });
+    return visible ? b : null;
+  } catch (_) {
+    return null;
+  }
+}
+function rememberPopout(win, id) {
+  if (!win || win.isDestroyed()) return;
+  const b = win.getNormalBounds();
+  dprefs.popoutBounds = Object.assign({}, dprefs.popoutBounds, { [id]: { x: b.x, y: b.y, width: b.width, height: b.height, max: win.isMaximized() } });
+  atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2)).catch(() => {});
+}
+
 /* ---- pop-out windows: an app in its own real window (same data, kept in step with the main window) ---- */
 const popouts = new Set();
 // the apps that can be popped out, with their names (checked against the app by scripts/check-menu-apps.js)
@@ -1617,10 +1737,11 @@ function openPopout(id, near) {
   }
   const iconPath = path.join(__dirname, "build", "icon.png");
   const at = near && !near.isDestroyed() ? near.getBounds() : null;
+  const saved = popoutBoundsFor(id);
   const win = new BrowserWindow({
-    width: 900,
-    height: 720,
-    ...(at ? { x: Math.max(0, at.x + 60 + popouts.size * 28), y: Math.max(0, at.y + 50 + popouts.size * 28) } : {}),
+    width: (saved && saved.width) || 900,
+    height: (saved && saved.height) || 720,
+    ...(saved ? { x: saved.x, y: saved.y } : at ? { x: Math.max(0, at.x + 60 + popouts.size * 28), y: Math.max(0, at.y + 50 + popouts.size * 28) } : {}),
     minWidth: 420,
     minHeight: 320,
     show: false,
@@ -1634,6 +1755,18 @@ function openPopout(id, near) {
   });
   win.__appId = id;
   popouts.add(win);
+  if (saved && saved.max) win.maximize();
+  let rememberT = null;
+  const remember = () => {
+    clearTimeout(rememberT);
+    rememberT = setTimeout(() => rememberPopout(win, id), 700);
+  };
+  win.on("resize", remember);
+  win.on("move", remember);
+  win.on("close", () => {
+    clearTimeout(rememberT);
+    rememberPopout(win, id);
+  });
   win.setMenuBarVisibility(false);
   win.once("ready-to-show", () => win.show());
   win.on("closed", () => popouts.delete(win));
@@ -1925,9 +2058,13 @@ if (!app.requestSingleInstanceLock()) {
   app.on("will-quit", (e) => {
     globalShortcut.unregisterAll();
     // The page's last save can land just as the final window closes: let it finish.
-    if (writing > 0 || Object.keys(dirty).some((k) => dirty[k]) || (dprefs.mirrorLatest && Date.now() - lastMirror > 5000)) {
+    if (!quitFlushed && !installingUpdate && (writing > 0 || Object.keys(dirty).some((k) => dirty[k]) || (dprefs.mirrorLatest && Date.now() - lastMirror > 5000))) {
       e.preventDefault();
-      flushDirty().catch(() => {}).then(() => mirrorLatest(true)).catch(() => {}).then(() => app.exit(0));
+      // save everything, then quit again the normal way (so an update waiting to install gets its turn)
+      flushDirty().catch(() => {}).then(() => mirrorLatest(true)).catch(() => {}).then(() => {
+        quitFlushed = true;
+        app.quit();
+      });
     }
   });
 
@@ -1949,6 +2086,9 @@ if (!app.requestSingleInstanceLock()) {
       buildMenu();
       applyDesktopPrefs();
       createWindow();
+      setupUpdater();
+      setTimeout(updateTick, 25000);
+      setInterval(updateTick, 12 * 3600000);
       if (process.platform === "win32" && app.isPackaged) {
         // the menu you get by right-clicking the taskbar icon
         const task = (arg, title, description) => ({ program: process.execPath, arguments: "--quick=" + arg, title: title, description: description, iconPath: process.execPath, iconIndex: 0 });

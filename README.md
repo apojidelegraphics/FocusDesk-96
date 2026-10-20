@@ -57,6 +57,14 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
+### New in 1.3.2
+
+- 🔄 **Silent updates** for Windows and Linux (you choose: automatic, ask first, or just tell me). A Mac still tells you and links to the download.
+- 🎵 **Windows Now Playing checks every media session**, so it finds the one that's playing and more covers.
+- 🤖 **Clipy has an Undo button** after it adds things, and can make flash cards.
+- 🪟 Pop-outs **remember their size and position**, and the command palette can pop out any app.
+- 🌐 The website shows a **new-version bar**, and warns when browser storage is nearly full.
+
 ### New in 1.3.1
 
 - 🤖 **Clipy can add things.** Ask for an event, reminder, task or assignment in plain English; Clipy shows what it wants to add and you press Add.

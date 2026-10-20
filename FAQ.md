@@ -84,6 +84,18 @@ No. FocusDesk has no servers and no accounts. It only goes online for things you
 ### My reminder or timer notifications don't show up
 Check your system's notification settings for FocusDesk 96 (and that Do Not Disturb or Focus mode isn't on). In the desktop app, Control Panel → Desktop has a button that sends a test notification and tells you what it found.
 
+### Does FocusDesk update itself?
+On **Windows and Linux**, yes, from version 1.3.2. In Control Panel → Updates you choose: **install it automatically**, **ask me first**, or **just tell me**. Automatic updates download in the background and install when you close FocusDesk (or when you press Restart now). If an update ever fails, FocusDesk falls back to telling you and linking to the download. Version 1.3.1 and older can't update themselves, so install 1.3.2 by hand once. On a **Mac**, FocusDesk tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.
+
+### Where can I see when the next update is coming?
+Control Panel → Updates → **See the update schedule**, or https://apojidelegraphics.github.io/FocusDesk-96/roadmap.html
+
+### Can I undo something Clipy added?
+Yes. Right after Clipy adds something, an **Undo** button appears in the chat. It removes exactly what Clipy just added. Press **Keep it** (or just carry on chatting) to dismiss it. Clipy can also make flash cards: try "make a card: capital of France is Paris".
+
+### The website says a new version is ready
+That's the bar the website shows when a newer version has been published. Press **Reload** (it saves first). If you used the browser zip instead, the update checker in Control Panel tells you.
+
 ### Can Clipy add things for me?
 Yes. Ask in the chat, like "remind me to call mum tomorrow at 9", "add a study group on Friday at 3" or "my lab report is due on the 14th". Clipy shows what it wants to add, and you press **Add** or **Skip**. If Clipy needs a date or time, it asks. Clipy's menu has **Add things without asking** if you'd rather skip the question. What Clipy adds shows up in the Calendar, Tasks, Reminders and Assignment Planner like anything else. On a Mac, Calendar Link has **Also write what Clipy adds for me** to send those to Apple Calendar and Reminders too (it's off until you turn it on, and Apple writing itself has to be on).
 

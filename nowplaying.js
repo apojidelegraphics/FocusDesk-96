@@ -98,15 +98,30 @@ async function linuxControl(cmd, arg) {
 }
 
 /* ---------- Windows (system media controls via PowerShell) ---------- */
-const WIN_PRELUDE = [
+const WIN_BASE = [
   "Add-Type -AssemblyName System.Runtime.WindowsRuntime",
   "$asTask = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]",
   "function Await($op, $type) { $m = $asTask.MakeGenericMethod($type); $t = $m.Invoke($null, @($op)); $t.Wait(-1) | Out-Null; $t.Result }",
   "[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime] | Out-Null",
   "$mgr = Await ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])",
-  "$s = $mgr.GetCurrentSession()",
+].join("\n");
+/* The old way: only the session Windows calls "current". Kept as the fallback if the new way ever fails. */
+const WIN_PRELUDE_LEGACY = [WIN_BASE, "$s = $mgr.GetCurrentSession()", "if ($s -eq $null) { Write-Output 'NONE'; exit }"].join("\n");
+/* The new way: look at EVERY media session (a music app, a browser tab, a video player...) and use the one that is playing.
+   If none is playing, use the one Windows calls current, and failing that the first one. */
+const WIN_PRELUDE = [
+  WIN_BASE,
+  "$s = $null",
+  "try { foreach ($c in @($mgr.GetSessions())) { if ($s -eq $null -and $c.GetPlaybackInfo().PlaybackStatus.ToString() -eq 'Playing') { $s = $c } } } catch {}",
+  "if ($s -eq $null) { $s = $mgr.GetCurrentSession() }",
+  "if ($s -eq $null) { try { $first = @($mgr.GetSessions()); if ($first.Count -gt 0) { $s = $first[0] } } catch {} }",
   "if ($s -eq $null) { Write-Output 'NONE'; exit }",
 ].join("\n");
+/* every session and whether it has a cover picture (for Check Now Playing) */
+const WIN_SESSIONS =
+  WIN_BASE +
+  "\n" +
+  "foreach ($c in @($mgr.GetSessions())) { try { $p = Await ($c.TryGetMediaPropertiesAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties]); $th = 'no'; if ($p.Thumbnail -ne $null) { $th = 'yes' }; Write-Output (@($c.SourceAppUserModelId, $c.GetPlaybackInfo().PlaybackStatus.ToString(), $p.Title, $p.Artist, ('cover: ' + $th)) -join [char]9) } catch { Write-Output ($c.SourceAppUserModelId + [char]9 + 'ERROR') } }";
 const WIN_STATUS =
   WIN_PRELUDE +
   "\n" +
@@ -120,7 +135,12 @@ const WIN_STATUS =
 const winControl = (method) => WIN_PRELUDE + "\n" + "Await ($s." + method + "()) ([bool]) | Out-Null";
 const encode = (script) => Buffer.from(script, "utf16le").toString("base64");
 async function winRun(script) {
-  return run("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encode(script)], 9000);
+  const r = await run("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encode(script)], 9000);
+  if (!r.ok && script.indexOf(WIN_PRELUDE) === 0) {
+    // the multi-session way failed (an older Windows, or anything unexpected): do it the old way, with just the current session
+    return run("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encode(WIN_PRELUDE_LEGACY + script.slice(WIN_PRELUDE.length))], 9000);
+  }
+  return r;
 }
 async function winStatus() {
   const r = await winRun(WIN_STATUS);
@@ -170,8 +190,14 @@ const WIN_ART =
 async function art(source) {
   try {
     if (process.platform === "win32") {
-      const r = await winRun(WIN_ART);
-      const b64 = r.ok ? r.out.trim() : "";
+      let r = await winRun(WIN_ART);
+      let b64 = r.ok ? r.out.trim() : "";
+      if (!b64 || b64 === "NONE") {
+        // browsers and some players hand over the cover picture a moment after the song info: look once more
+        await new Promise((res) => setTimeout(res, 1500));
+        r = await winRun(WIN_ART);
+        b64 = r.ok ? r.out.trim() : "";
+      }
       return b64 && b64 !== "NONE" && /^[A-Za-z0-9+/=\s]+$/.test(b64) ? { b64: b64.replace(/\s+/g, "") } : null;
     }
     if (process.platform === "darwin" && source === "Music") {
@@ -191,6 +217,8 @@ async function diag() {
   const out = { platform: process.platform };
   try {
     if (process.platform === "win32") {
+      const sr = await run("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encode(WIN_SESSIONS)], 9000);
+      out.sessions = sr.ok ? sr.out.trim().split(/\r?\n/).filter(Boolean).join("  ||  ") || "(none)" : "FAILED: " + (sr.err || sr.code || "unknown");
       const t0 = Date.now(),
         r = await winRun(WIN_STATUS);
       out.statusMs = Date.now() - t0;

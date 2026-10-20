@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.9";
-  var VERSION_DESKTOP = "1.3.1";
+  var VERSION_BROWSER = "2.9.1";
+  var VERSION_DESKTOP = "1.3.2";
   /* set when this window is an app popped out of the main window (the desktop app) */
   var POP = (function () {
     try {
@@ -52,6 +52,31 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.9.1",
+      date: "October 2026",
+      title: "Clipy undo and flash cards, a new-version bar, a storage warning",
+      apps: [],
+      notes: [
+        "After Clipy adds something, an Undo button takes it back. Clipy can also make flash cards: \"make a card: capital of France is Paris\".",
+        "The website now tells you when a newer version is ready, with a Reload button.",
+        "A warning when this browser's storage is nearly full, at most once a day, with a button to save a backup file.",
+        "Control Panel has a See the update schedule button next to the update checker.",
+      ],
+    },
+    {
+      v: "1.3.2",
+      date: "October 2026",
+      title: "Desktop 1.3.2: silent updates, Windows Now Playing, pop-out memory",
+      apps: [],
+      notes: [
+        "Windows and Linux can now update by themselves. Control Panel > Updates lets you choose: install automatically, ask me first, or just tell me. If an automatic update ever fails, FocusDesk falls back to telling you and linking to the download. (A Mac still tells you and links to the download.)",
+        "Windows Now Playing now looks at every media session, so it picks the one that is actually playing and finds more covers. Check Now Playing lists every session.",
+        "Popped-out apps remember their size and position, and the command palette (Ctrl/Cmd+K) can pop out any app.",
+        "After Clipy adds something there's an Undo button, and Clipy can make flash cards.",
+        "Includes browser version 2.9.1.",
       ],
     },
     {
@@ -597,7 +622,7 @@ window.addEventListener("error", function (e) {
       "Press the small arrow button in an app's title bar, or use File > Pop Out App, to move it into its own window, for example Notepad on one screen and your reading on the other. Changes in either window appear in the other. Closing the main window closes the pop-outs.",
       "",
       "### Clipy can add things",
-      "Ask Clipy to add something, like \"remind me to call mum tomorrow at 9\" or \"add a study group on Friday at 3\". Clipy shows what it wants to add and you press Add or Skip. Say it in the chat; Clipy asks if it needs a date or time. In Clipy's menu, Add things without asking skips the question. On a Mac you can also send what Clipy adds to Apple Calendar (Calendar Link).",
+      "Ask Clipy to add something, like \"remind me to call mum tomorrow at 9\" or \"add a study group on Friday at 3\". Clipy shows what it wants to add and you press Add or Skip. Say it in the chat; Clipy asks if it needs a date or time. In Clipy's menu, Add things without asking skips the question. Clipy can also make flash cards, and after it adds something an Undo button takes it back. On a Mac you can also send what Clipy adds to Apple Calendar (Calendar Link).",
       "",
       "### Habit Tracker",
       "Daily habits with 7, 14, 30 or 90-day views. **Right-click any day cell** to attach a note. Shows current and best streaks.",
@@ -979,6 +1004,7 @@ window.addEventListener("error", function (e) {
         appleWriteLast: 0,
         mxesEngine: "server",
         clipyAuto: false,
+        storageWarnedAt: 0,
         appleClipy: false,
         clipyMade: {},
         bakFolderAuto: false,
@@ -1652,6 +1678,7 @@ window.addEventListener("error", function (e) {
     o.prefs.appleWriteLast = isNum(pp.appleWriteLast) ? pp.appleWriteLast : 0;
     o.prefs.mxesEngine = pp.mxesEngine === "apple" ? "apple" : "server";
     o.prefs.clipyAuto = pp.clipyAuto === true;
+    o.prefs.storageWarnedAt = isNum(pp.storageWarnedAt) ? pp.storageWarnedAt : 0;
     o.prefs.appleClipy = pp.appleClipy === true;
     o.prefs.clipyMade = {}; /* which items Clipy made: { "ev:ID": 1, ... } */
     if (isObj(pp.clipyMade))
@@ -9403,6 +9430,68 @@ window.addEventListener("error", function (e) {
     }
     return { used: used, free: lo, capped: capped };
   }
+  /* browser: when the page opens, say so if this browser's storage is nearly full (at most once a day) */
+  function storageStartWarn() {
+    if (window.__focusdeskIsDesktop || POP) return;
+    if (Date.now() - (S.prefs.storageWarnedAt || 0) < 86400000) return;
+    var r = measureStorage();
+    if (!r || (!r.free && !r.used)) return;
+    var pct = Math.round((r.used / (r.used + r.free)) * 100);
+    if (pct < 85) return;
+    S.prefs.storageWarnedAt = Date.now();
+    save();
+    msgBox({
+      title: "Storage Nearly Full",
+      icon: "warn",
+      width: 400,
+      text: "This browser's storage for FocusDesk is " + pct + "% full. When it fills up, new changes can't be saved.\n\nSave a backup file now, then consider removing old notes, images or cards.",
+      buttons: [
+        { label: "Save backup file", fn: function () { quickBackup(); } },
+        { label: "Later" },
+      ],
+    });
+  }
+  /* the website: tell the person when a newer version has been published */
+  var siteVerShown = "";
+  function showNewVersionBar(v) {
+    var old = document.getElementById("fdNewVer");
+    if (old) old.remove();
+    var bar = el(
+      "div",
+      { id: "fdNewVer", class: "fd-newver", role: "status" },
+      el("span", null, "A new version of FocusDesk 96 (" + v + ") is ready."),
+      el(
+        "button",
+        {
+          class: "btn sm",
+          onclick: function () {
+            flush(); /* save first, then load the new version */
+            setTimeout(function () {
+              location.reload();
+            }, 400);
+          },
+        },
+        "Reload"
+      ),
+      el("button", { class: "btn sm", onclick: function () { bar.remove(); } }, "Later")
+    );
+    document.body.append(bar);
+  }
+  function siteVersionCheck(force) {
+    if (window.__focusdeskIsDesktop || POP) return;
+    if (force !== true && !/^https?:$/.test(location.protocol)) return; /* only the website, not a saved zip */
+    fetch("release-info.json", { cache: "no-store" })
+      .then(function (r) {
+        return r.ok ? r.json() : null;
+      })
+      .then(function (j) {
+        var v = j && isStr(j.browser) ? j.browser : "";
+        if (!/^\d+(\.\d+){0,3}$/.test(v) || verCmp(VERSION, v) >= 0 || siteVerShown === v) return;
+        siteVerShown = v;
+        showNewVersionBar(v);
+      })
+      .catch(function () {});
+  }
   function bakSupported() {
     return !window.__focusdeskIsDesktop && typeof window.showDirectoryPicker === "function";
   }
@@ -12356,6 +12445,16 @@ window.addEventListener("error", function (e) {
       ["Show the taskbar calendar", function () { showClockFlyout(); }],
       ["Ask Clipy", function () { if (typeof openClipyPanel === "function") openClipyPanel(); }],
     ];
+    if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.popOut && !POP)
+      POPOUT_OK.forEach(function (id) {
+        if (APPS[id])
+          list.push([
+            "Pop out " + APPS[id].title + " into its own window",
+            function () {
+              popOutApp(id);
+            },
+          ]);
+      });
     if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.openCapture)
       list.push(["Quick capture", function () { window.focusdesk.openCapture("task"); }], ["New flash card from the clipboard", function () { window.focusdesk.openCapture("card"); }]);
     return list.map(function (a) {
@@ -16216,6 +16315,21 @@ window.addEventListener("error", function (e) {
           );
         })()
       : null;
+    var updLinkRow = el(
+      "div",
+      { class: "row", style: "gap:8px;align-items:center;flex-wrap:wrap;padding-top:4px" },
+      el(
+        "button",
+        {
+          class: "btn sm",
+          title: "Opens the page that says when the next updates are coming",
+          onclick: function () {
+            window.open(SITE + "roadmap.html", "_blank", "noopener");
+          },
+        },
+        "See the update schedule"
+      )
+    );
     var bakFolderBox = bakFolderUI();
     var updInfo = el("div", { class: "dim", style: "padding:4px 0 0" });
     function paintUpd() {
@@ -16253,7 +16367,9 @@ window.addEventListener("error", function (e) {
           ? el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.updAuto === true, onchange: function () { S.prefs.updAuto = this.checked; save(); } }), "Check automatically when FocusDesk starts")
           : null
       ),
-      updInfo
+      updateModeRow(),
+      updInfo,
+      updLinkRow
     );
     var wallInfo = el("div", { style: "padding:0" });
     function drawWall() {
@@ -23515,7 +23631,123 @@ window.addEventListener("error", function (e) {
     save();
     if (typeof window.__fdUpdPaint === "function") window.__fdUpdPaint();
   }
+  /* ---- automatic updates (the desktop app on Windows and Linux) ---- */
+  function updaterOn() {
+    var st = window.__focusdeskDStatus;
+    return !!(window.__focusdeskIsDesktop && st && st.updater && st.updater.supported);
+  }
+  function updateMode() {
+    return (window.__focusdeskDPrefs || {}).updateMode || "auto";
+  }
+  var updManual = false,
+    updToldAbout = "",
+    updLastPct = -1;
+  function installNowButtons(version) {
+    return [
+      {
+        label: "Restart now",
+        fn: function () {
+          window.focusdesk.updateInstall();
+        },
+      },
+      {
+        label: "Later",
+        fn: function () {
+          window.focusdesk.updateInstallOnQuit(); /* it installs when FocusDesk is closed */
+        },
+      },
+    ];
+  }
+  window.__focusdeskUpdate = function (st) {
+    if (!st || typeof st.phase !== "string") return;
+    var v = isStr(st.version) ? st.version : "";
+    if (st.phase === "checking") return;
+    if (st.phase === "none") {
+      updNote("Up to date (" + VERSION + ").");
+      if (updManual) msgBox({ title: "Updates", icon: "info", text: "You're up to date. FocusDesk 96 " + VERSION + " is the newest release." });
+      updManual = false;
+    } else if (st.phase === "available") {
+      updNote("Version " + v + " is available (you have " + VERSION + ").");
+      if (updateMode() === "ask" && updToldAbout !== v) {
+        updToldAbout = v;
+        msgBox({
+          title: "Update Available",
+          icon: "bulb",
+          width: 400,
+          text: "FocusDesk 96 " + v + " is available (you have " + VERSION + ").\n\nDownload and install it? FocusDesk restarts to finish. Your data is kept.",
+          buttons: [
+            {
+              label: "Download",
+              fn: function () {
+                updNote("Downloading version " + v + "\u2026");
+                window.focusdesk.updateDownload();
+              },
+            },
+            { label: "Later" },
+          ],
+        });
+      } else if (updateMode() === "auto") updNote("Downloading version " + v + "\u2026");
+    } else if (st.phase === "progress") {
+      var pct = isNum(st.percent) ? st.percent : 0;
+      if (pct === 100 || pct - updLastPct >= 10 || updLastPct < 0) {
+        updLastPct = pct;
+        updNote("Downloading version " + v + ": " + pct + "%");
+      }
+    } else if (st.phase === "ready") {
+      updLastPct = -1;
+      updNote("Version " + v + " is ready to install.");
+      msgBox({
+        title: "Update Ready",
+        icon: "bulb",
+        width: 400,
+        text: "FocusDesk 96 " + v + " has been downloaded.\n\n" + (st.auto ? "It installs when you close FocusDesk, or you can restart now." : "Restart now to install it, or choose Later and it installs when you close FocusDesk."),
+        buttons: installNowButtons(v),
+      });
+    } else if (st.phase === "error") {
+      /* the automatic way failed, so fall back to telling the person and linking to the download */
+      updNote("Couldn't update by itself, so here is the download link instead.");
+      var manual = updManual;
+      updManual = false;
+      legacyCheckUpdate(manual);
+    }
+  };
+  function updateModeRow() {
+    if (!window.__focusdeskIsDesktop) return null;
+    if (!updaterOn())
+      return el("div", { class: "dim", style: "padding:4px 0 0" }, window.__focusdeskPlatform === "darwin" ? "On a Mac, FocusDesk tells you when an update is out and links to the download." : "Automatic updating isn't available in this build. FocusDesk tells you when an update is out.");
+    var sel = el(
+      "select",
+      {
+        class: "in",
+        "aria-label": "What to do when an update is available",
+        onchange: function () {
+          window.__focusdeskSetPrefs({ updateMode: this.value });
+        },
+      },
+      [["auto", "Install it automatically"], ["ask", "Ask me first"], ["notify", "Just tell me"]].map(function (o) {
+        return el("option", { value: o[0], selected: updateMode() === o[0] }, o[1]);
+      })
+    );
+    return el("div", { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap;padding-top:4px" }, "When an update is available:", sel);
+  }
   function checkUpdate(manual) {
+    if (updaterOn() && updateMode() !== "notify") {
+      updManual = !!manual;
+      updLastPct = -1;
+      S.prefs.updLast = Date.now();
+      save();
+      return window.focusdesk.updateCheck({ manual: !!manual }).then(
+        function (r) {
+          if (!r || !r.ok) return legacyCheckUpdate(manual);
+        },
+        function () {
+          return legacyCheckUpdate(manual);
+        }
+      );
+    }
+    return legacyCheckUpdate(manual);
+  }
+  function legacyCheckUpdate(manual) {
     S.prefs.updLast = Date.now();
     save();
     var isDesk = !!window.__focusdeskIsDesktop,
@@ -23599,6 +23831,7 @@ window.addEventListener("error", function (e) {
     );
   }
   function autoUpdateCheck() {
+    if (updaterOn() && updateMode() !== "notify") return; /* the app checks by itself */
     if (!S.prefs.updAuto) return;
     if (!window.__focusdeskIsDesktop && location.protocol !== "file:") return;
     if (Date.now() - (S.prefs.updLast || 0) < 12 * 3600000) return;
@@ -30825,6 +31058,7 @@ window.addEventListener("error", function (e) {
       '[[ACTION {"do":"reminder","text":"Call mum","date":"2030-01-15","time":"09:00"}]]\n' +
       '[[ACTION {"do":"task","text":"Read chapter 3","date":"2030-01-15"}]] (the date is optional for a task)\n' +
       '[[ACTION {"do":"assignment","title":"Lab report","course":"BIO 101","date":"2030-01-15","time":"23:59"}]] (course and time are optional)\n' +
+      '[[ACTION {"do":"card","front":"Capital of France","back":"Paris","deck":"Geography"}]] (a flash card; the deck is optional)\n' +
       "Today is " + ymd(d) + " (" + names[d.getDay()] + "). Use real dates (YYYY-MM-DD) and 24-hour times (HH:MM). If you don't have a date or time you need, ask the user instead of guessing. Never add anything the user didn't ask for, and don't mention these lines in your sentence."
     );
   }
@@ -30838,8 +31072,15 @@ window.addEventListener("error", function (e) {
   /* one requested item, checked strictly; anything odd is dropped */
   function cleanClipyAction(o) {
     if (!isObj(o)) return null;
-    var kind = o["do"],
-      title = clip(String(o.title || o.text || "").replace(/\s+/g, " ").trim(), 200);
+    var kind = o["do"];
+    if (kind === "card") {
+      var front = clip(String(o.front || o.q || o.title || "").replace(/\s+/g, " ").trim(), 1000),
+        back = clip(String(o.back || o.answer || o.a || "").replace(/\s+/g, " ").trim(), 2000),
+        deck = clip(String(o.deck || "Clipy").trim() || "Clipy", 40);
+      if (!front || !back) return null;
+      return { kind: "card", title: front, back: back, deck: deck, date: "", time: "" };
+    }
+    var title = clip(String(o.title || o.text || "").replace(/\s+/g, " ").trim(), 200);
     if (["event", "reminder", "task", "assignment"].indexOf(kind) < 0 || !title) return null;
     var date = o.date == null || o.date === "" ? "" : clipyOkDate(String(o.date)),
       time = o.time == null || o.time === "" ? "" : String(o.time);
@@ -30863,6 +31104,7 @@ window.addEventListener("error", function (e) {
     return { text: clean.replace(/\n{3,}/g, "\n\n").trim(), actions: acts };
   }
   function clipyDescribe(a) {
+    if (a.kind === "card") return "Flash card: " + clip(a.title, 60) + " -> " + clip(a.back, 60) + " (" + a.deck + ")";
     var when = "";
     if (a.date) {
       var d = new Date(a.date + "T" + (a.time || "12:00") + ":00");
@@ -30873,8 +31115,12 @@ window.addEventListener("error", function (e) {
   /* put the item into FocusDesk like any other; Apple Calendar writing then sees it too (if you allowed Clipy's items) */
   function clipyMake(a) {
     var id = uid(),
-      prefix;
-    if (a.kind === "event") {
+      prefix = "";
+    if (a.kind === "card") {
+      var card = newCardBase(a.deck, a.title, { a: a.back });
+      id = card.id;
+      S.cards.push(card);
+    } else if (a.kind === "event") {
       var ev = { id: id, title: a.title, date: a.date, time: a.time, kind: "other", repeat: "none" };
       if (a.minutes) ev.dur = a.minutes;
       S.events.push(ev);
@@ -30889,10 +31135,32 @@ window.addEventListener("error", function (e) {
       S.assign.push({ id: id, uid: "clipy-" + id, title: a.title, course: a.course || "", due: new Date(a.date + "T" + (a.time || "23:59") + ":00").getTime(), allDay: !a.time, done: false, src: "manual", url: "" });
       prefix = "as";
     }
-    S.prefs.clipyMade = S.prefs.clipyMade || {};
-    S.prefs.clipyMade[aKey(prefix, id)] = 1;
-    var keys = Object.keys(S.prefs.clipyMade);
-    if (keys.length > 500) keys.slice(0, keys.length - 500).forEach(function (k) { delete S.prefs.clipyMade[k]; });
+    if (prefix) {
+      S.prefs.clipyMade = S.prefs.clipyMade || {};
+      S.prefs.clipyMade[aKey(prefix, id)] = 1;
+      var keys = Object.keys(S.prefs.clipyMade);
+      if (keys.length > 500) keys.slice(0, keys.length - 500).forEach(function (k) { delete S.prefs.clipyMade[k]; });
+    }
+    return { kind: a.kind, id: id };
+  }
+  /* take back what Clipy just added */
+  function clipyUndo(made) {
+    var n = 0,
+      LISTS = { event: "events", reminder: "reminders", task: "tasks", assignment: "assign", card: "cards" },
+      PREFIX = { event: "ev", reminder: "rm", task: "tk", assignment: "as" };
+    made.forEach(function (m) {
+      var list = LISTS[m.kind];
+      if (!list) return;
+      var before = S[list].length;
+      S[list] = S[list].filter(function (x) {
+        return x.id !== m.id;
+      });
+      if (S[list].length < before) n++;
+      if (PREFIX[m.kind] && S.prefs.clipyMade) delete S.prefs.clipyMade[aKey(PREFIX[m.kind], m.id)];
+    });
+    save();
+    refreshAll();
+    return n;
   }
   function hideClipyBubble() {
     if (clipy.bubble) clipy.bubble.hidden = true;
@@ -31458,8 +31726,46 @@ window.addEventListener("error", function (e) {
       );
     }
     var pendingActs = null; /* what Clipy wants to add, waiting for a yes or no */
+    var lastAdd = null; /* what Clipy just added, so it can be undone */
+    function undoCard() {
+      var made = lastAdd;
+      return el(
+        "div",
+        { class: "cm assistant" },
+        el("span", { class: "who2" }, "Clipy"),
+        el("div", null, "Added " + made.length + (made.length === 1 ? " thing." : " things.")),
+        el(
+          "div",
+          { class: "cm-actions" },
+          el(
+            "button",
+            {
+              class: "btn xs",
+              onclick: function () {
+                var list = lastAdd;
+                lastAdd = null;
+                var n = clipyUndo(list || []);
+                pushMsg("sys", n ? "Undone: removed " + n + (n === 1 ? " item." : " items.") : "Nothing to undo.");
+              },
+            },
+            "Undo"
+          ),
+          el(
+            "button",
+            {
+              class: "btn xs",
+              onclick: function () {
+                lastAdd = null;
+                paintMsgs();
+              },
+            },
+            "Keep it"
+          )
+        )
+      );
+    }
     function applyClipyActs(list) {
-      list.forEach(clipyMake);
+      lastAdd = list.map(clipyMake);
       save();
       refreshAll();
       pushMsg("sys", "Added: " + list.map(clipyDescribe).join("; ") + ".");
@@ -31515,6 +31821,7 @@ window.addEventListener("error", function (e) {
       );
     }
     function pushMsg(role, text) {
+      if (role === "user") lastAdd = null; /* the Undo offer goes away once you carry on talking */
       var m = { role: role, text: text, at: Date.now() };
       S.clipy.msgs.push(m);
       if (S.clipy.msgs.length > 200)
@@ -31707,6 +32014,7 @@ window.addEventListener("error", function (e) {
       });
       if (typing) msgs.append(typing);
       if (pendingActs) msgs.append(actsCard());
+      else if (lastAdd && lastAdd.length) msgs.append(undoCard());
       msgs.scrollTop = msgs.scrollHeight;
     }
     var RETRY_MSG = "Something came up while Clipy was answering. Never fear, he's trying again right now!";
@@ -34362,6 +34670,9 @@ window.addEventListener("error", function (e) {
       pruneImages();
       autoUpdateCheck();
       bakStart();
+      setTimeout(storageStartWarn, 9000);
+      setTimeout(siteVersionCheck, 20000);
+      setInterval(siteVersionCheck, 30 * 60000);
       checkAchSoon();
     }
     if (POP && APPS[POP]) {

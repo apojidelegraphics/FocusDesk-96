@@ -19,8 +19,8 @@ jobs:
       matrix:
         include:
           - { name: macOS,   os: macos-latest,   script: "build:mac",   files: "dist/*.dmg" }
-          - { name: Windows, os: windows-latest, script: "build:win",   files: "dist/*.exe" }
-          - { name: Linux,   os: ubuntu-latest,  script: "build:linux", files: "dist/*.AppImage" }
+          - { name: Windows, os: windows-latest, script: "build:win",   files: "dist/*.exe\ndist/*.exe.blockmap\ndist/latest.yml" }
+          - { name: Linux,   os: ubuntu-latest,  script: "build:linux", files: "dist/*.AppImage\ndist/latest-linux.yml" }
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +45,13 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false" # builds are intentionally unsigned
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check the update file was built (Windows and Linux updates need it)
+        if: matrix.name != 'macOS'
+        shell: bash
+        run: |
+          ls -la dist
+          if [ "${{ matrix.name }}" = "Windows" ]; then ls dist/latest.yml dist/*.exe.blockmap; else ls dist/latest-linux.yml; fi
 
       - name: Check both Mac installers were built
         if: matrix.name == 'macOS'
@@ -100,7 +107,7 @@ jobs:
         shell: bash
         run: |
           ls -la dist || true
-          for pat in "*-arm64.dmg" "*-x64.dmg" "*.exe" "*.AppImage" "*.zip"; do
+          for pat in "*-arm64.dmg" "*-x64.dmg" "*.exe" "latest.yml" "*.AppImage" "latest-linux.yml" "*.zip"; do
             if ! ls dist/$pat >/dev/null 2>&1; then
               echo "::warning::No $pat file was built, so it is missing from this draft release. Open the failed job to see why."
             fi

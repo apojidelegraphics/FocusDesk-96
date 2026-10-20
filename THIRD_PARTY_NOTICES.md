@@ -40,3 +40,11 @@ FocusDesk 96 can contact third-party web services when You use features that nee
 ## FocusDesk 96 brand assets
 
 The names "FocusDesk 96," "Apoji Studios," and "Apoji Delegraphics," the Apoji logo, and the application icon are described in Section 2.2 of `TERMS.md`.
+
+## electron-updater (and its small helper libraries)
+
+Used by the Windows and Linux Desktop Edition to download and install updates from GitHub.
+
+- electron-updater, builder-util-runtime: MIT License, Copyright (c) electron-userland (https://github.com/electron-userland/electron-builder)
+- Its other helper libraries (js-yaml, semver, fs-extra, lazy-val and similar) carry their own MIT or ISC licenses, included with the package.
+

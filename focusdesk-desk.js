@@ -70,7 +70,7 @@
   /* ---------- desktop 1.1 bridges ---------- */
   window.__focusdeskPlatform = init.platform || "";
   window.__focusdeskDPrefs = init.dprefs || {};
-  window.__focusdeskDStatus = { hotkeyOk: !!init.hotkeyOk, cardHotkeyOk: !!init.cardHotkeyOk, hotkeys: init.hotkeys || {}, trayOk: !!init.trayOk };
+  window.__focusdeskDStatus = { hotkeyOk: !!init.hotkeyOk, cardHotkeyOk: !!init.cardHotkeyOk, hotkeys: init.hotkeys || {}, updater: init.updater || {}, trayOk: !!init.trayOk };
   window.__focusdeskNotify = function (title, body) {
     try {
       fd.notify(String(title || "FocusDesk 96"), String(body || ""));
@@ -81,7 +81,7 @@
       if (r && r.prefs) {
         window.__focusdeskDPrefs = r.prefs;
         if (p && (p.dueOverdue !== undefined || p.taskbarBadge !== undefined) && typeof window.__focusdeskDue === "function") window.__focusdeskDue();
-        window.__focusdeskDStatus = { hotkeyOk: !!r.hotkeyOk, cardHotkeyOk: !!r.cardHotkeyOk, hotkeys: r.hotkeys || {}, trayOk: !!r.trayOk, login: r.login };
+        window.__focusdeskDStatus = { hotkeyOk: !!r.hotkeyOk, cardHotkeyOk: !!r.cardHotkeyOk, hotkeys: r.hotkeys || {}, updater: r.updater || {}, trayOk: !!r.trayOk, login: r.login };
       }
       return r;
     });
@@ -105,6 +105,9 @@
   fd.onFullscreen(function (on) {
     window.__focusdeskFs = !!on;
     if (typeof window.__fdUpdFs === "function") window.__fdUpdFs();
+  });
+  fd.onUpdate(function (st) {
+    if (typeof window.__focusdeskUpdate === "function") window.__focusdeskUpdate(st);
   });
   fd.onExternal(function (data) {
     if (typeof window.__focusdeskExternal === "function") window.__focusdeskExternal(data);
