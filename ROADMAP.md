@@ -1,6 +1,6 @@
 # FocusDesk 96 update schedule
 
-*Feature updates come on the first Saturday of every month. Fixes come when they're ready.*
+*An update every two to three weeks, on a Saturday. Fixes come when they're ready.*
 
 **Next update:** Saturday 7 November 2026 - version 1.3.1, Clipy makes things, and tidier pop-outs.
 
@@ -10,12 +10,13 @@ The same schedule is on the website: https://apojidelegraphics.github.io/FocusDe
 
 ## How updates work
 
-- Feature updates: the first Saturday of each month. New features are finished by the Wednesday before, and Thursday and Friday are for testing, including on a real Windows PC.
+- Updates come every two to three weeks, always on a Saturday. The next dates are listed below, so you can see what's coming and when.
+- New features are finished by the Wednesday before. Thursday and Friday are for testing, including on a real Windows PC.
 - Fix releases: when needed, usually within a week of a confirmed bug.
 - Anything that could lose your data is fixed as fast as possible, often the same day.
 - If an update isn't ready or hasn't been tested properly, it moves to the next date instead of shipping. This page says so and why.
 - The browser version (the website) updates as soon as a release is published. The browser zip is attached to every release.
-- Silent updates for Windows and Linux are planned. The date will be posted here once it's scheduled. On a Mac the app tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.
+- Windows and Linux get silent updates in version 1.3.2. On a Mac the app tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.
 
 ## Coming up
 
@@ -30,9 +31,17 @@ The same schedule is on the website: https://apojidelegraphics.github.io/FocusDe
 - Browser version: the storage bar shows the real limit in every browser
 - *Needs testing on a real Windows PC before it ships.*
 
+### Version 1.3.2: Silent updates for Windows and Linux
+
+- **When:** Saturday 21 November 2026 (planned)
+- **Versions:** desktop 1.3.2, browser 2.9
+- Silent auto-update for Windows and Linux (Mac stays notify-and-download)
+- A few smaller improvements will be added here as they're confirmed
+- *Windows is tested on a real PC. Linux can only be tested in a virtual environment, so Linux updating is best effort.*
+
 ### Version 1.4: Stability release
 
-- **When:** Saturday 5 December 2026 (planned)
+- **When:** Saturday 12 December 2026 (planned)
 - **Versions:** desktop 1.4.0, browser 3.0.0
 - No new features: fixes, testing and making things more reliable
 - Testing on Mac, Windows and Linux
@@ -40,7 +49,7 @@ The same schedule is on the website: https://apojidelegraphics.github.io/FocusDe
 ### Next: To be announced
 
 - **When:** Saturday 2 January 2027 (not planned yet)
-- Still on the list, with no date yet: silent updates for Windows and Linux, and Now Playing covers on Windows that check every media session.
+- Still on the list, with no date yet: Now Playing covers on Windows that check every media session.
 - The plan for this one is posted here once 1.4 is out.
 
 Dates are targets. If something isn't ready or hasn't been tested, it moves, and this page says so.
