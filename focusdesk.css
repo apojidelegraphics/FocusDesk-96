@@ -3954,3 +3954,6 @@ html.dt-tb.dt-tb-off #desktop { top: 0; }
 body.popout #taskbar, body.popout #icons { display: none !important; }
 body.popout .win > .title, body.popout .win > .grip { display: none !important; }
 body.popout .win { border-width: 0; }
+/* no taskbar here, so the app fills the whole window and no desktop colour shows at the bottom */
+body.popout, body.popout #desktop { background: #c0c0c0 !important; }
+body.popout #desktop { bottom: 0 !important; }

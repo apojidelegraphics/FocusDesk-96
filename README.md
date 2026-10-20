@@ -9,6 +9,8 @@ instead of browser storage. Portable, backupable, and fully yours.
 
 ![FocusDesk 96 boot screen](docs/boot.png)
 
+**When does it update?** See the [update schedule](ROADMAP.md) (also on the [website](https://apojidelegraphics.github.io/FocusDesk-96/roadmap.html)): feature updates come on the first Saturday of every month, and fixes come when they're ready.
+
 FocusDesk 96 is a complete study and productivity environment built as a Windows 95-style
 desktop: windows, a taskbar, a Start menu, and a little assistant called Clipy. It has no
 accounts and no cloud. Everything runs on your computer.
@@ -54,6 +56,13 @@ accounts and no cloud. Everything runs on your computer.
 - 💬 Feedback — report a problem or suggest an idea from Control Panel
 
 ## What's new in the desktop version
+
+### New in 1.3.1
+
+- 🤖 **Clipy can add things.** Ask for an event, reminder, task or assignment in plain English; Clipy shows what it wants to add and you press Add.
+  On a Mac you can also send what Clipy adds to Apple Calendar (optional).
+- 🪟 **Pop-outs are tidier**, and any app can be opened in its own window from **File > Pop Out App** or the tray icon.
+- 💾 **The browser's storage bar is accurate** in every browser.
 
 ### New in 1.3
 

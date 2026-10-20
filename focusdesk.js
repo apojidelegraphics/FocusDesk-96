@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.8.2";
-  var VERSION_DESKTOP = "1.3.0";
+  var VERSION_BROWSER = "2.9";
+  var VERSION_DESKTOP = "1.3.1";
   /* set when this window is an app popped out of the main window (the desktop app) */
   var POP = (function () {
     try {
@@ -52,6 +52,30 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.9",
+      date: "November 2026",
+      title: "Clipy can add things, and a storage bar that tells the truth",
+      apps: [],
+      notes: [
+        "Ask Clipy to add something and it will: \"remind me to call mum tomorrow at 9\", \"add a study group on Friday at 3\", \"put my lab report due on the 14th\". Clipy shows what it wants to add and you press Add or Skip. Clipy's menu has Add things without asking if you'd rather skip the question.",
+        "Clipy's tips and fun facts no longer come back to back: they're at least a few minutes apart.",
+        "The storage bar in Control Panel now measures how much your browser really allows instead of guessing, so it's accurate in Chrome, Firefox, Safari and Edge.",
+      ],
+    },
+    {
+      v: "1.3.1",
+      date: "November 2026",
+      title: "Desktop 1.3.1: Clipy adds things, pop-out menu, tidier pop-outs",
+      apps: [],
+      notes: [
+        "Clipy can add events, reminders, tasks and assignments when you ask. On a Mac, Calendar Link has a switch (Also write what Clipy adds for me) to send them to Apple Calendar and Reminders too. It's off until you turn it on.",
+        "Open any app in its own window from the menu: File > Pop Out App (and from the tray icon).",
+        "Pop-out windows: no more desktop strip at the bottom, and on Windows the title bar now matches the main window.",
+        "Fixed Clipy giving tips and fun facts one after another when a pop-out window was open.",
+        "Includes browser version 2.9.",
       ],
     },
     {
@@ -570,7 +594,10 @@ window.addEventListener("error", function (e) {
       "Press **Ctrl+K** (Cmd+K on a Mac) anywhere to search everything and open any app or action. Type `#tag` for everything with that tag, `@course` for everything in a course, or `>` for actions only. Tags work everywhere: type `#biology` in a note, a task or a flash card.",
       "",
       "### Pop out an app (desktop app)",
-      "Press the small arrow button in an app's title bar to move it into its own window, for example Notepad on one screen and your reading on the other. Changes in either window appear in the other. Closing the main window closes the pop-outs.",
+      "Press the small arrow button in an app's title bar, or use File > Pop Out App, to move it into its own window, for example Notepad on one screen and your reading on the other. Changes in either window appear in the other. Closing the main window closes the pop-outs.",
+      "",
+      "### Clipy can add things",
+      "Ask Clipy to add something, like \"remind me to call mum tomorrow at 9\" or \"add a study group on Friday at 3\". Clipy shows what it wants to add and you press Add or Skip. Say it in the chat; Clipy asks if it needs a date or time. In Clipy's menu, Add things without asking skips the question. On a Mac you can also send what Clipy adds to Apple Calendar (Calendar Link).",
       "",
       "### Habit Tracker",
       "Daily habits with 7, 14, 30 or 90-day views. **Right-click any day cell** to attach a note. Shows current and best streaks.",
@@ -951,6 +978,9 @@ window.addEventListener("error", function (e) {
         appleWriteMsg: "",
         appleWriteLast: 0,
         mxesEngine: "server",
+        clipyAuto: false,
+        appleClipy: false,
+        clipyMade: {},
         bakFolderAuto: false,
         bakFolderName: "",
         bakFolderLoaded: 0,
@@ -1621,6 +1651,15 @@ window.addEventListener("error", function (e) {
     o.prefs.appleWriteMsg = isStr(pp.appleWriteMsg) ? clip(pp.appleWriteMsg, 160) : "";
     o.prefs.appleWriteLast = isNum(pp.appleWriteLast) ? pp.appleWriteLast : 0;
     o.prefs.mxesEngine = pp.mxesEngine === "apple" ? "apple" : "server";
+    o.prefs.clipyAuto = pp.clipyAuto === true;
+    o.prefs.appleClipy = pp.appleClipy === true;
+    o.prefs.clipyMade = {}; /* which items Clipy made: { "ev:ID": 1, ... } */
+    if (isObj(pp.clipyMade))
+      Object.keys(pp.clipyMade)
+        .slice(-500)
+        .forEach(function (k) {
+          if (/^[a-z]{2}:[A-Za-z0-9_\-]{1,60}$/.test(k)) o.prefs.clipyMade[k] = 1;
+        });
     o.prefs.bakFolderAuto = pp.bakFolderAuto === true;
     o.prefs.bakFolderName = isStr(pp.bakFolderName) ? clip(pp.bakFolderName, 80) : "";
     o.prefs.bakFolderLoaded = isNum(pp.bakFolderLoaded) ? pp.bakFolderLoaded : 0;
@@ -1958,7 +1997,11 @@ window.addEventListener("error", function (e) {
       applyBg();
     } catch (e) {}
     refreshAll();
-    if (S.prefs.showClipy && !POP) mountClipy();
+    if (!POP) {
+      /* only if Clipy was switched on or off: mounting Clipy shows a tip, so doing it on every sync flooded tips */
+      if (S.prefs.showClipy && !clipy.node) mountClipy();
+      else if (!S.prefs.showClipy && clipy.node) unmountClipy();
+    }
     if (changedHere) save();
   }
   window.__focusdeskExternal = applyExternal;
@@ -5807,6 +5850,18 @@ window.addEventListener("error", function (e) {
     });
   }
   var POPOUT_OK = ["notepad", "cards", "tasks", "calendar", "reminders", "grades", "planner", "schedule", "weekly", "cite", "paint", "folders", "periodic", "formula", "habits", "calc", "grapher", "equation", "convert", "dict", "links", "find", "research"];
+  /* move an app into its own window (from its title bar button, or from the File menu) */
+  function popOutApp(id) {
+    if (POP || !window.focusdesk || !window.focusdesk.popOut || POPOUT_OK.indexOf(id) < 0 || !APPS[id]) return;
+    /* save what's here first, so the new window starts from it, and from then on keep the two in step */
+    flush();
+    startMulti();
+    setTimeout(function () {
+      window.focusdesk.popOut({ app: id }).then(function (r) {
+        if (r && r.ok && wins[id]) closeWin(wins[id]);
+      });
+    }, 450);
+  }
   function makeWin(app) {
     var dr = desk.getBoundingClientRect();
     var n = Object.keys(wins).length;
@@ -5829,14 +5884,7 @@ window.addEventListener("error", function (e) {
             "aria-label": "Pop out into its own window",
             title: "Pop out into its own window",
             onclick: function () {
-              /* save what's here first, so the new window starts from it, and from then on keep the two in step */
-              flush();
-              startMulti();
-              setTimeout(function () {
-                window.focusdesk.popOut({ app: app.id }).then(function (r) {
-                  if (r && r.ok) closeWin(w);
-                });
-              }, 450);
+              popOutApp(app.id);
             },
           })
         : null;
@@ -9025,6 +9073,10 @@ window.addEventListener("error", function (e) {
         if (t.src === "apple" || !isFinite(t.due) || t.due == null) return; /* from Apple, or no due date */
         want[aKey("tk", t.id)] = { op: "upsertReminder", title: t.text, due: t.due, hasTime: false, done: !!t.done, priority: t.pri || "normal", repeat: t.repeat || "none" };
       });
+    /* what Clipy added only goes to Apple if you said so */
+    Object.keys(want).forEach(function (k) {
+      if (S.prefs.clipyMade && S.prefs.clipyMade[k] && !S.prefs.appleClipy) delete want[k];
+    });
     return want;
   }
   var appleWriteBusy = false,
@@ -9073,6 +9125,7 @@ window.addEventListener("error", function (e) {
     });
     Object.keys(map).forEach(function (key) {
       if (want[key] || !K[appleKindOfKey(key)]) return; /* still wanted, or that kind is switched off */
+      if (S.prefs.clipyMade && S.prefs.clipyMade[key] && !S.prefs.appleClipy) return; /* switching Clipy off doesn't remove what is already in Apple */
       ops.push({ op: key.slice(0, 2) === "ev" || key.slice(0, 2) === "as" ? "deleteEvent" : "deleteReminder", local: key, aid: map[key].a });
     });
     /* looking for things changed over in Apple (ticked off, deleted) is only done now and then, not on every save */
@@ -9234,6 +9287,20 @@ window.addEventListener("error", function (e) {
       el("label", { class: "row", style: "gap:6px;align-items:center;font-weight:bold" }, on, "Write FocusDesk items to Apple Calendar and Reminders"),
       el("div", { class: "dim", style: "padding:0" }, "Adds to a calendar and a Reminders list named \u201cFocusDesk\u201d, and changes only those. Tick off a reminder on your iPhone and it ticks off here too. If you delete one in Apple, FocusDesk puts it back, because FocusDesk keeps the master copy."),
       kindsRow,
+      el(
+        "label",
+        { class: "row", style: "gap:4px;align-items:center" },
+        el("input", {
+          type: "checkbox",
+          checked: !!S.prefs.appleClipy,
+          onchange: function () {
+            S.prefs.appleClipy = this.checked;
+            save();
+            if (this.checked) appleWriteSoon();
+          },
+        }),
+        "Also write what Clipy adds for me"
+      ),
       el("div", { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" }, el("button", { class: "btn sm", onclick: function () { appleWriteNow(true); } }, "Write now"), msg)
     );
   }
@@ -9292,6 +9359,50 @@ window.addEventListener("error", function (e) {
      The desktop app can keep focusdesk-latest.json (and dated backups) in a folder. Browsers that can open folders
      (Chrome, Edge, Brave...) remember the one you choose and offer the newest file when the page opens. */
   var bakHandle = null;
+  /* How full this browser's storage is, MEASURED instead of guessed. Browsers have different limits and count differently,
+     so we count what's stored and then find out how much more the browser will accept (a temporary key, removed straight away). */
+  function measureStorage() {
+    var probe = KEY + ".probe",
+      used = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k === probe) continue;
+        used += k.length + (localStorage.getItem(k) || "").length;
+      }
+    } catch (e) {
+      return null;
+    }
+    var lo = 0,
+      hi = 6 * 1048576,
+      capped = false;
+    try {
+      /* if even 6 million more characters fit, this browser has plenty and we stop there */
+      try {
+        localStorage.removeItem(probe);
+        localStorage.setItem(probe, new Array(hi + 1).join("a"));
+        capped = true;
+        lo = hi;
+      } catch (e) {}
+      while (!capped && hi - lo > 131072) {
+        var mid = Math.floor((lo + hi) / 2),
+          ok = true;
+        try {
+          localStorage.removeItem(probe);
+          localStorage.setItem(probe, new Array(mid + 1).join("a"));
+        } catch (e) {
+          ok = false;
+        }
+        if (ok) lo = mid;
+        else hi = mid;
+      }
+    } finally {
+      try {
+        localStorage.removeItem(probe);
+      } catch (e) {}
+    }
+    return { used: used, free: lo, capped: capped };
+  }
   function bakSupported() {
     return !window.__focusdeskIsDesktop && typeof window.showDirectoryPicker === "function";
   }
@@ -14665,65 +14776,38 @@ window.addEventListener("error", function (e) {
     });
     function drawStorageBar() {
       storageBar.textContent = "";
-      if (window.__focusdeskIsDesktop) return; /* files on disk: no 5 MB limit */
-      try {
-        var total = 0;
-        for (var k in localStorage)
-          if (localStorage.hasOwnProperty(k))
-            total += (localStorage.getItem(k) || "").length;
-        var maxBytes = 5 * 1024 * 1024;
-        var bytes = total * 2;
-        var pct = Math.min(100, Math.round((bytes / maxBytes) * 100));
-        var kb = (bytes / 1024).toFixed(1);
-        var barColor = pct < 60 ? "#006000" : pct < 85 ? "#a05000" : "#c00000";
-        storageBar.append(
-          el(
-            "div",
-            { style: "font-size:11px;color:#404040" },
-            "Approx. " +
-              kb +
-              " KB used (" +
-              pct +
-              "% of typical 5 MB origin limit)"
-          ),
-          el(
-            "div",
-            {
-              style:
-                "height:12px;background:#e8e8e8;position:relative;box-shadow:inset 1px 1px #808080,inset -1px -1px #fff",
-            },
-            el("i", {
-              style:
-                "display:block;height:100%;width:" +
-                pct +
-                "%;background:" +
-                barColor,
-            })
-          )
-        );
-        if (pct >= 85)
-          storageBar.append(
-            el(
-              "div",
-              { style: "color:#c00000;font-size:11px;font-weight:bold" },
-              "Storage is nearly full. Save a backup and consider removing old notes or cards."
-            )
-          );
-        storageBar.append(
-          el(
-            "div",
-            { style: "font-size:11px;color:#606060;padding-top:4px" },
-            "Keys: " +
-              Object.keys(localStorage).length +
-              "  \u00b7  FocusDesk data: " +
-              ((JSON.stringify(S).length / 1024).toFixed(1) + " KB")
-          )
-        );
-      } catch (e) {
-        storageBar.append(
-          el("div", { class: "dim" }, "Storage info not available.")
-        );
+      if (window.__focusdeskIsDesktop) return; /* files on disk: no browser limit */
+      storageBar.append(el("div", { class: "dim", style: "padding:0" }, "Measuring storage\u2026"));
+      setTimeout(function () {
+        paintStorageBar(measureStorage());
+      }, 30);
+    }
+    function paintStorageBar(r) {
+      storageBar.textContent = "";
+      if (!r) {
+        storageBar.append(el("div", { class: "dim" }, "Storage info isn't available in this browser."));
+        return;
       }
+      if (!r.free && !r.used) {
+        storageBar.append(el("div", { style: "color:#c00000;font-size:11px;font-weight:bold" }, "This browser isn't letting FocusDesk store anything here (private browsing, or storage is blocked). Download a backup file to keep your work."));
+        return;
+      }
+      var total = r.used + r.free,
+        pct = Math.min(100, Math.round((r.used / total) * 100)),
+        barColor = pct < 60 ? "#006000" : pct < 85 ? "#a05000" : "#c00000",
+        mb = total / 1048576;
+      storageBar.append(
+        el("div", { style: "font-size:11px;color:#404040" }, "Using " + (r.used / 1024).toFixed(1) + " KB of about " + (r.capped ? "at least " + mb.toFixed(0) : mb.toFixed(1)) + " MB that this browser allows (" + pct + "%)"),
+        el(
+          "div",
+          { style: "height:12px;background:#e8e8e8;position:relative;box-shadow:inset 1px 1px #808080,inset -1px -1px #fff" },
+          el("i", { style: "display:block;height:100%;width:" + pct + "%;background:" + barColor })
+        )
+      );
+      if (pct >= 85) storageBar.append(el("div", { style: "color:#c00000;font-size:11px;font-weight:bold" }, "Storage is nearly full. Save a backup and consider removing old notes or cards."));
+      try {
+        storageBar.append(el("div", { style: "font-size:11px;color:#606060;padding-top:4px" }, "Keys: " + Object.keys(localStorage).length + "  \u00b7  FocusDesk data: " + (JSON.stringify(S).length / 1024).toFixed(1) + " KB"));
+      } catch (e) {}
     }
     function draw() {
       var saveErr = window.__focusdeskIsDesktop && window.__focusdeskSaveError;
@@ -23643,7 +23727,7 @@ window.addEventListener("error", function (e) {
       else if (cmd.indexOf("open:") === 0) {
         var id = cmd.slice(5);
         if (APPS[id]) openApp(id);
-      }
+      } else if (cmd.indexOf("popout:") === 0) popOutApp(cmd.slice(7));
     };
     /* Due counts for the tray menu and the Windows taskbar badge. */
     var dueT = 0;
@@ -30730,6 +30814,86 @@ window.addEventListener("error", function (e) {
     tipTimer: null,
     bubbleT: null,
   };
+  /* ===== Clipy can add things (events, reminders, tasks, assignments) when you ask ===== */
+  var CLIPY_ACTION_RE = /\[\[\s*ACTION\s*(\{[\s\S]*?\})\s*\]\]/g;
+  function clipyActionPrompt() {
+    var d = new Date(),
+      names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return (
+      "You can also ADD things for the user. Only when the user clearly asks you to add, schedule, remind or create something, answer in one short sentence and then add one line per item at the very end of your reply, exactly like these examples (valid JSON inside double square brackets):\n" +
+      '[[ACTION {"do":"event","title":"Study group","date":"2030-01-15","time":"15:00","minutes":60}]]\n' +
+      '[[ACTION {"do":"reminder","text":"Call mum","date":"2030-01-15","time":"09:00"}]]\n' +
+      '[[ACTION {"do":"task","text":"Read chapter 3","date":"2030-01-15"}]] (the date is optional for a task)\n' +
+      '[[ACTION {"do":"assignment","title":"Lab report","course":"BIO 101","date":"2030-01-15","time":"23:59"}]] (course and time are optional)\n' +
+      "Today is " + ymd(d) + " (" + names[d.getDay()] + "). Use real dates (YYYY-MM-DD) and 24-hour times (HH:MM). If you don't have a date or time you need, ask the user instead of guessing. Never add anything the user didn't ask for, and don't mention these lines in your sentence."
+    );
+  }
+  function clipyOkDate(v) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+    var t = new Date(v + "T12:00:00").getTime();
+    if (!isFinite(t) || ymd(new Date(t)) !== v) return null; /* rejects dates like 2030-02-31 */
+    if (t < Date.now() - 3 * 86400000 || t > Date.now() + 800 * 86400000) return null;
+    return v;
+  }
+  /* one requested item, checked strictly; anything odd is dropped */
+  function cleanClipyAction(o) {
+    if (!isObj(o)) return null;
+    var kind = o["do"],
+      title = clip(String(o.title || o.text || "").replace(/\s+/g, " ").trim(), 200);
+    if (["event", "reminder", "task", "assignment"].indexOf(kind) < 0 || !title) return null;
+    var date = o.date == null || o.date === "" ? "" : clipyOkDate(String(o.date)),
+      time = o.time == null || o.time === "" ? "" : String(o.time);
+    if (date === null) return null;
+    if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
+    if (kind !== "task" && !date) return null;
+    var out = { kind: kind, title: title, date: date, time: time };
+    if (kind === "event" && isNum(o.minutes) && o.minutes >= 5 && o.minutes <= 1440) out.minutes = Math.round(o.minutes);
+    if (kind === "assignment" && o.course) out.course = clip(String(o.course).trim(), 60);
+    return out;
+  }
+  function extractClipyActions(text) {
+    var acts = [],
+      clean = String(text || "").replace(CLIPY_ACTION_RE, function (all, json) {
+        try {
+          var a = cleanClipyAction(JSON.parse(json));
+          if (a && acts.length < 8) acts.push(a);
+        } catch (e) {}
+        return "";
+      });
+    return { text: clean.replace(/\n{3,}/g, "\n\n").trim(), actions: acts };
+  }
+  function clipyDescribe(a) {
+    var when = "";
+    if (a.date) {
+      var d = new Date(a.date + "T" + (a.time || "12:00") + ":00");
+      when = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + (a.time ? ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "");
+    }
+    return { event: "Event", reminder: "Reminder", task: "Task", assignment: "Assignment" }[a.kind] + ": " + a.title + (a.course ? " [" + a.course + "]" : "") + (when ? " - " + when : "");
+  }
+  /* put the item into FocusDesk like any other; Apple Calendar writing then sees it too (if you allowed Clipy's items) */
+  function clipyMake(a) {
+    var id = uid(),
+      prefix;
+    if (a.kind === "event") {
+      var ev = { id: id, title: a.title, date: a.date, time: a.time, kind: "other", repeat: "none" };
+      if (a.minutes) ev.dur = a.minutes;
+      S.events.push(ev);
+      prefix = "ev";
+    } else if (a.kind === "reminder") {
+      S.reminders.push({ id: id, text: a.title, at: new Date(a.date + "T" + (a.time || "09:00") + ":00").getTime(), done: false, fired: false, repeat: "none" });
+      prefix = "rm";
+    } else if (a.kind === "task") {
+      S.tasks.push({ id: id, text: a.title, done: false, pri: "normal", due: a.date ? new Date(a.date + "T" + (a.time || "12:00") + ":00").getTime() : null, created: Date.now(), repeat: "none" });
+      prefix = "tk";
+    } else {
+      S.assign.push({ id: id, uid: "clipy-" + id, title: a.title, course: a.course || "", due: new Date(a.date + "T" + (a.time || "23:59") + ":00").getTime(), allDay: !a.time, done: false, src: "manual", url: "" });
+      prefix = "as";
+    }
+    S.prefs.clipyMade = S.prefs.clipyMade || {};
+    S.prefs.clipyMade[aKey(prefix, id)] = 1;
+    var keys = Object.keys(S.prefs.clipyMade);
+    if (keys.length > 500) keys.slice(0, keys.length - 500).forEach(function (k) { delete S.prefs.clipyMade[k]; });
+  }
   function hideClipyBubble() {
     if (clipy.bubble) clipy.bubble.hidden = true;
     if (clipy.bubbleT) {
@@ -30847,6 +31011,11 @@ window.addEventListener("error", function (e) {
     if (!S.prefs.showClipy) return;
     var forced = kind === true || typeof kind === "string";
     if (S.prefs.clipyTips === false && !forced) return;
+    /* tips never come back to back: automatic ones are at least 3 minutes apart, and a button press can't fire twice in a moment */
+    var sinceTip = Date.now() - (clipy.lastTipAt || 0);
+    if (!forced && sinceTip < 180000) return;
+    if (forced && sinceTip < 3000) return;
+    clipy.lastTipAt = Date.now();
     var t = suggestClipyTip(typeof kind === "string" ? kind : undefined);
     clipy.bubble.textContent = "";
     clipy.bubble.append(
@@ -30984,6 +31153,14 @@ window.addEventListener("error", function (e) {
                   ? "Sticky mode is on. Your current word stays put until you click \u201cNew word.\u201d"
                   : "Daily mode is on. A fresh word is chosen once per calendar day.",
             });
+          },
+        },
+        {
+          label: "Add things without asking",
+          check: !!S.prefs.clipyAuto,
+          fn: function () {
+            S.prefs.clipyAuto = !S.prefs.clipyAuto;
+            save();
           },
         },
         {
@@ -31280,6 +31457,63 @@ window.addEventListener("error", function (e) {
         )
       );
     }
+    var pendingActs = null; /* what Clipy wants to add, waiting for a yes or no */
+    function applyClipyActs(list) {
+      list.forEach(clipyMake);
+      save();
+      refreshAll();
+      pushMsg("sys", "Added: " + list.map(clipyDescribe).join("; ") + ".");
+    }
+    function offerClipyActions(acts) {
+      if (S.prefs.clipyAuto) return applyClipyActs(acts);
+      pendingActs = acts;
+      paintMsgs();
+    }
+    function actsCard() {
+      var acts = pendingActs,
+        lines = el("div", { class: "col", style: "gap:2px;padding:2px 0" }),
+        toApple = appleOn() && S.prefs.appleWrite && S.prefs.appleClipy;
+      add(
+        lines,
+        acts.map(function (a) {
+          return el("div", null, "\u2022 " + clipyDescribe(a));
+        })
+      );
+      return el(
+        "div",
+        { class: "cm assistant" },
+        el("span", { class: "who2" }, "Clipy \u2014 wants to add"),
+        lines,
+        toApple ? el("div", { class: "dim", style: "padding:0" }, "These will also go to Apple Calendar.") : null,
+        el(
+          "div",
+          { class: "cm-actions" },
+          el(
+            "button",
+            {
+              class: "btn xs",
+              onclick: function () {
+                var list = pendingActs;
+                pendingActs = null;
+                applyClipyActs(list);
+              },
+            },
+            acts.length > 1 ? "Add all" : "Add"
+          ),
+          el(
+            "button",
+            {
+              class: "btn xs",
+              onclick: function () {
+                pendingActs = null;
+                pushMsg("sys", "Okay, I didn't add anything.");
+              },
+            },
+            "Skip"
+          )
+        )
+      );
+    }
     function pushMsg(role, text) {
       var m = { role: role, text: text, at: Date.now() };
       S.clipy.msgs.push(m);
@@ -31472,6 +31706,7 @@ window.addEventListener("error", function (e) {
         msgs.append(bubble(m));
       });
       if (typing) msgs.append(typing);
+      if (pendingActs) msgs.append(actsCard());
       msgs.scrollTop = msgs.scrollHeight;
     }
     var RETRY_MSG = "Something came up while Clipy was answering. Never fear, he's trying again right now!";
@@ -31520,6 +31755,8 @@ window.addEventListener("error", function (e) {
           "If you don't know something about the user, say so instead of guessing.\n\n" +
           "What you know about the user right now:\n" +
           clipyContext() +
+          "\n\n" +
+          clipyActionPrompt() +
           (contextPrefix
             ? "\n\nEarlier, in the Research window:\n---\n" +
               clipTextForPrompt(contextPrefix) +
@@ -31543,7 +31780,11 @@ window.addEventListener("error", function (e) {
             sendBtn.disabled = false;
             if (looksBroken(t))
               pushMsg("sys", "Clipy's answer didn't come through properly. Press Try again, or ask a different way.");
-            else pushMsg("assistant", t);
+            else {
+              var ex = extractClipyActions(t);
+              pushMsg("assistant", ex.text || (ex.actions.length ? "Okay, here's what I'd add." : t));
+              if (ex.actions.length) offerClipyActions(ex.actions);
+            }
           },
           function (e) {
             typing = null;
@@ -34063,6 +34304,18 @@ window.addEventListener("error", function (e) {
           applyBg();
         } catch (e) {}
         document.title = (APPS[POP] ? APPS[POP].title : "FocusDesk 96") + " - FocusDesk 96";
+        /* Windows merged title bar: say which app this is (the bar is drawn a moment after the page starts) */
+        var setSlimTitle = function () {
+          var t = document.querySelector("#dt-titlebar .dt-title");
+          if (t) t.textContent = APPS[POP] ? APPS[POP].title : "FocusDesk 96";
+          return !!t;
+        };
+        if (!setSlimTitle()) {
+          var slimTries = 0,
+            slimIv = setInterval(function () {
+              if (setSlimTitle() || ++slimTries > 60) clearInterval(slimIv);
+            }, 50);
+        }
         if (APPS[POP]) {
           openApp(POP);
           if (wins[POP]) toggleMax(wins[POP]);

@@ -789,6 +789,7 @@ function buildTrayMenu() {
     { label: "Add quick task\u2026", click: () => openCapture("task") },
     { label: "New flash card from clipboard\u2026", click: () => openCapture("card") },
     { label: "Ask Clipy\u2026", click: () => openClipyChat("") },
+    { label: "Pop out an app", submenu: POPOUT_MENU.map(([id, title]) => ({ label: title, click: () => sendCmd("popout:" + id, false) })) },
     { type: "separator" },
     {
       label: "Quit FocusDesk 96",
@@ -1579,7 +1580,33 @@ function askRendererToFlush(win) {
 
 /* ---- pop-out windows: an app in its own real window (same data, kept in step with the main window) ---- */
 const popouts = new Set();
-const POPOUT_APPS = ["notepad", "cards", "tasks", "calendar", "reminders", "grades", "planner", "schedule", "weekly", "cite", "paint", "folders", "periodic", "formula", "habits", "calc", "grapher", "equation", "convert", "dict", "links", "find", "research"];
+// the apps that can be popped out, with their names (checked against the app by scripts/check-menu-apps.js)
+const POPOUT_MENU = [
+  ["planner", "Assignment Planner"],
+  ["calc", "Calculator"],
+  ["calendar", "Calendar"],
+  ["cite", "Citation Maker"],
+  ["schedule", "Class Schedule"],
+  ["dict", "Dictionary / Thesaurus"],
+  ["equation", "Equation Solver"],
+  ["links", "Favorites"],
+  ["find", "Find"],
+  ["cards", "Flash Cards"],
+  ["folders", "Folders"],
+  ["formula", "Formula Sheet"],
+  ["grades", "Grade Calculator"],
+  ["habits", "Habit Tracker"],
+  ["grapher", "Math Grapher"],
+  ["notepad", "Notepad"],
+  ["periodic", "Periodic Table"],
+  ["reminders", "Reminders"],
+  ["research", "Research"],
+  ["paint", "Sketch Pad"],
+  ["tasks", "Tasks"],
+  ["convert", "Unit Converter"],
+  ["weekly", "Weekly Review"],
+];
+const POPOUT_APPS = POPOUT_MENU.map((x) => x[0]);
 function openPopout(id, near) {
   if (POPOUT_APPS.indexOf(id) < 0) return { ok: false };
   for (const p of popouts) if (!p.isDestroyed() && p.__appId === id) {
@@ -1600,6 +1627,8 @@ function openPopout(id, near) {
     backgroundColor: "#c0c0c0",
     title: APP_TITLE,
     autoHideMenuBar: true,
+    // Windows with the slim title bar: the same merged title bar as the main window (otherwise there would be two)
+    ...(process.platform === "win32" && compactActive ? { titleBarStyle: "hidden", titleBarOverlay: { color: "#000080", symbolColor: "#ffffff", height: 32 } } : {}),
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
@@ -1795,6 +1824,7 @@ function buildMenu() {
       { label: "Quick Capture\u2026", click: () => openCapture("task") },
       { label: "New Flash Card from Clipboard\u2026", click: () => openCapture("card") },
       { label: "Ask Clipy\u2026", click: () => openClipyChat("") },
+      { label: "Pop Out App", submenu: POPOUT_MENU.map(([id, title]) => ({ label: title, click: () => sendCmd("popout:" + id, false) })) },
       { type: "separator" },
       { label: "Save Backup Now", click: () => sendCmd("backup-now", true) },
       { label: "Open Backups Folder", click: () => shell.openPath(backupDir()) },

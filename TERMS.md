@@ -4,7 +4,7 @@
 **Publisher:** Apoji Delegraphics
 **Designed by:** Apoji Studios
 
-This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.3.0), the Browser Edition (Version 2.8), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
+This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.3.1), the Browser Edition (Version 2.8), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
 
 ---
 
@@ -16,7 +16,7 @@ This document governs the use, development, and distribution of Apoji Delegraphi
 
 These General Terms and Conditions ("T&C") apply to all users accessing or utilizing the following products (collectively, the "Products"):
 
-* a. **FocusDesk 96 Desktop Edition, Version 1.3.0**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
+* a. **FocusDesk 96 Desktop Edition, Version 1.3.1**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
 * b. **FocusDesk 96 Browser Edition, Version 2.8**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
 * c. **The FocusDesk 96 feature set**, consisting of: Habit Breaker, Achievements, the focus session log, LaTeX and image support in notes and flash cards, cloze and image-occlusion flash cards, the grade what-if projection, and the other apps in the Start menu.
 
@@ -73,7 +73,7 @@ The grade calculator, GPA projection, and study statistics are planning aids. Th
 
 ## PART II: DESKTOP EDITION AGREEMENT
 
-This Part applies to the Desktop Edition (Version 1.3.0).
+This Part applies to the Desktop Edition (Version 1.3.1).
 
 ### 4. Installation, Builds, and Data Location
 
@@ -107,6 +107,7 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * p. **Cover lookup for Now Playing (off by default).** If You turn it on and Your music player gives no cover picture, FocusDesk sends the song title and artist to Apple's public music search to find one. Nothing is sent while it is off.
 * q. **Apple's on-device model (Mac).** If You choose it for M.X.E.S., Your messages are answered by the model built into Your Mac. They are not sent over the internet.
 * r. **Backup copies and the browser's folder access.** If You turn on "keep a copy of Your newest data in the backup folder", the Desktop Edition writes a file called focusdesk-latest.json there. If that folder is in iCloud Drive, Dropbox or similar, that service syncs it under its own terms. The browser version, if You choose a folder, only reads from it, and only the folder You pick.
+* s. **Clipy adding items.** When You ask Clipy to add an event, reminder, task or assignment, the words You type go to the assistant You chose in Control Panel, exactly as with any Clipy chat, and Clipy's answer may include the item. Nothing is added until You press Add, unless You turn on "Add things without asking" in Clipy's menu. Items Clipy adds stay in FocusDesk; they are written to Apple Calendar and Reminders only if You have turned on writing (item o above) and also turned on "Also write what Clipy adds for me".
 
 **4.4. Data Location**
 

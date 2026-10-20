@@ -1,7 +1,7 @@
 {
   "name": "focusdesk-96",
   "productName": "FocusDesk 96",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "FocusDesk 96 — a Windows 95-style study and productivity desktop, as a native app for macOS, Windows and Linux.",
   "main": "main.js",
   "author": {
@@ -23,18 +23,19 @@
   ],
   "scripts": {
     "start": "electron .",
-    "prebuild": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/build-icon.js && node scripts/vendor-katex.js",
+    "prebuild": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/check-menu-apps.js && node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build": "electron-builder",
-    "prebuild:mac": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/build-icon.js && node scripts/vendor-katex.js && node scripts/build-mac-helper.js",
+    "prebuild:mac": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/check-menu-apps.js && node scripts/build-icon.js && node scripts/vendor-katex.js && node scripts/build-mac-helper.js",
     "build:mac": "electron-builder --mac dmg --x64 --arm64",
-    "prebuild:win": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/build-icon.js && node scripts/vendor-katex.js",
+    "prebuild:win": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/check-menu-apps.js && node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build:win": "electron-builder --win nsis",
-    "prebuild:linux": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/build-icon.js && node scripts/vendor-katex.js",
+    "prebuild:linux": "node scripts/check-ascii.js && node scripts/check-load-order.js && node scripts/check-menu-apps.js && node scripts/build-icon.js && node scripts/vendor-katex.js",
     "build:linux": "electron-builder --linux AppImage",
     "postinstall": "node scripts/vendor-katex.js",
     "check:ascii": "node scripts/check-ascii.js",
     "check:order": "node scripts/check-load-order.js",
-    "roadmap": "node scripts/build-roadmap.js"
+    "roadmap": "node scripts/build-roadmap.js",
+    "check:menu": "node scripts/check-menu-apps.js"
   },
   "devDependencies": {
     "electron": "^44.7.2",

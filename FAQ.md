@@ -84,6 +84,21 @@ No. FocusDesk has no servers and no accounts. It only goes online for things you
 ### My reminder or timer notifications don't show up
 Check your system's notification settings for FocusDesk 96 (and that Do Not Disturb or Focus mode isn't on). In the desktop app, Control Panel → Desktop has a button that sends a test notification and tells you what it found.
 
+### Can Clipy add things for me?
+Yes. Ask in the chat, like "remind me to call mum tomorrow at 9", "add a study group on Friday at 3" or "my lab report is due on the 14th". Clipy shows what it wants to add, and you press **Add** or **Skip**. If Clipy needs a date or time, it asks. Clipy's menu has **Add things without asking** if you'd rather skip the question. What Clipy adds shows up in the Calendar, Tasks, Reminders and Assignment Planner like anything else. On a Mac, Calendar Link has **Also write what Clipy adds for me** to send those to Apple Calendar and Reminders too (it's off until you turn it on, and Apple writing itself has to be on).
+
+### Clipy keeps adding things I didn't ask for
+Clipy only adds something when you clearly ask. If you'd like to be sure, leave **Add things without asking** off (it is by default), so every item waits for your Add.
+
+### Clipy gave me a lot of tips one after another
+That was a mistake in 1.3.0 when a pop-out window was open. It's fixed in 1.3.1. Tips are now at least a few minutes apart, and you can turn them off in Clipy's menu.
+
+### How do I open an app in its own window?
+Use **File > Pop Out App** in the menu bar (or **Pop out an app** from the tray icon), or press the small arrow in an app's title bar. On Windows with the slim title bar, the menu is behind the three dots at the top left.
+
+### The storage bar in the browser looked wrong
+Browsers allow different amounts and count them differently, so the bar used to guess. From version 2.9 it measures how much your browser really allows, and shows "at least" when there's more than it needs to check. Measuring takes a moment when you open Control Panel.
+
 ### How do I get FocusDesk items into Apple Calendar and Reminders? (Mac)
 Open **Calendar Link**, then the Apple Calendar and Reminders section, and tick **Write FocusDesk items to Apple Calendar and Reminders**. macOS asks for permission. FocusDesk makes a calendar and a Reminders list called "FocusDesk" and changes only those. You choose what goes in: events, assignments (as due dates), reminders, and tasks with a due date. Things that came from Apple, Canvas or a calendar feed are never sent back. Tick a reminder off on your iPhone and it ticks off in FocusDesk. If you delete something in Apple, FocusDesk puts it back, because FocusDesk keeps the master copy. Turning a kind off stops updating it; what's already in Apple stays.
 

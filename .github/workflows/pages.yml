@@ -12,8 +12,13 @@ on:
       - focusdesk.css
       - apojilogo.js
       - pwa/**
+      - schedule.json
+      - roadmap.html
+      - ROADMAP.md
+      - scripts/build-roadmap.js
       - scripts/check-ascii.js
       - scripts/check-load-order.js
+      - scripts/check-menu-apps.js
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -40,8 +45,11 @@ jobs:
         run: |
           node scripts/check-ascii.js
           node scripts/check-load-order.js
+          node scripts/check-menu-apps.js
+          node scripts/build-roadmap.js --check
           mkdir site
           cp focusdesk.js focusdesk.css apojilogo.js site/
+          cp roadmap.html site/
           cp pwa/* site/
           # the same page as the browser zip (no desktop-only script), plus the install manifest and offline helper
           grep -v 'focusdesk-desk.js\|Desktop edition only' index.html \

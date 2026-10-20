@@ -7,7 +7,7 @@
   <key>CFBundleName</key>
   <string>FocusDesk 96 Mac Helper</string>
   <key>CFBundleVersion</key>
-  <string>1.3.0</string>
+  <string>1.3.1</string>
   <key>NSCalendarsUsageDescription</key>
   <string>FocusDesk 96 shows your Apple Calendar events in its own calendar. If you turn on writing, it also adds your FocusDesk events and assignments to a calendar called FocusDesk, and changes only that calendar.</string>
   <key>NSCalendarsFullAccessUsageDescription</key>
