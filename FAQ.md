@@ -84,6 +84,24 @@ No. FocusDesk has no servers and no accounts. It only goes online for things you
 ### My reminder or timer notifications don't show up
 Check your system's notification settings for FocusDesk 96 (and that Do Not Disturb or Focus mode isn't on). In the desktop app, Control Panel → Desktop has a button that sends a test notification and tells you what it found.
 
+### How do I get FocusDesk items into Apple Calendar and Reminders? (Mac)
+Open **Calendar Link**, then the Apple Calendar and Reminders section, and tick **Write FocusDesk items to Apple Calendar and Reminders**. macOS asks for permission. FocusDesk makes a calendar and a Reminders list called "FocusDesk" and changes only those. You choose what goes in: events, assignments (as due dates), reminders, and tasks with a due date. Things that came from Apple, Canvas or a calendar feed are never sent back. Tick a reminder off on your iPhone and it ticks off in FocusDesk. If you delete something in Apple, FocusDesk puts it back, because FocusDesk keeps the master copy. Turning a kind off stops updating it; what's already in Apple stays.
+
+### It says the Apple Calendar helper didn't build
+The Mac helper programs are built when the app is built. If one fails, the app shows the reason in that feature's message instead of silently doing nothing, and the other helpers still work. Send us that message with your feedback.
+
+### What is the Apple model option in M.X.E.S.?
+On a Mac with Apple Intelligence and macOS 26 or newer, Control Panel → Assistant → M.X.E.S. engine lets you use Apple's on-device model. Nothing leaves your Mac and you don't need a server. Press Check to see whether it's ready.
+
+### How do I pop an app out into its own window?
+Press the small arrow button in the app's title bar (in the desktop app). The app moves into a real window you can drag to another screen. Changes in either window show up in the other, and if you change the same thing in both at once, the newer change wins. Closing the main window closes the pop-outs.
+
+### Can the browser version load my desktop backups?
+In Chrome, Edge or Brave: set the desktop app's backup folder to one in iCloud Drive (Control Panel → Desktop), turn on "Keep a copy of your newest data in the backup folder", then in the browser version open Control Panel → Desktop backups folder → Choose folder. It offers the newest copy when the page opens, and asks first if you've changed things in the browser. Safari and Firefox can't open folders this way; use Restore from file instead.
+
+### Why does Now Playing sometimes have no cover picture?
+Some players and browser tabs don't give one. In Control Panel → Desktop you can turn on a lookup that finds a cover by song and artist from Apple's public music search. It's off by default because it sends the title and artist to Apple.
+
 ### It says my saved data couldn't be read, or my theme and notes are gone after updating
 This was a mistake in browser versions 2.7.5 and 2.8 and desktop versions 1.2.5 and 1.2.6, fixed in 2.8.1 and 1.2.7. Your data wasn't deleted. Update first, then:
 

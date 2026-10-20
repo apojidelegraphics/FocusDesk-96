@@ -27,8 +27,17 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.8.1";
-  var VERSION_DESKTOP = "1.2.7";
+  var VERSION_BROWSER = "2.8.2";
+  var VERSION_DESKTOP = "1.3.0";
+  /* set when this window is an app popped out of the main window (the desktop app) */
+  var POP = (function () {
+    try {
+      var v = new URLSearchParams(location.search).get("popout") || "";
+      return /^[a-z]{2,20}$/.test(v) ? v : "";
+    } catch (e) {
+      return "";
+    }
+  })();
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -43,6 +52,28 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "2.8.2",
+      date: "October 2026",
+      title: "Load your desktop backup in the browser",
+      apps: [],
+      notes: [
+        "In browsers that can open folders (Chrome, Edge, Brave), Control Panel > Desktop backups folder lets you choose the folder your desktop app backs up to (like one in iCloud Drive). FocusDesk then offers the newest copy when the page opens, asks first if you've made changes here, and keeps what was here as a restore point.",
+      ],
+    },
+    {
+      v: "1.3.0",
+      date: "October 2026",
+      title: "Desktop 1.3.0: Apple Calendar writing, pop-out windows, Apple's on-device model",
+      apps: [],
+      notes: [
+        "Apple Calendar and Reminders can now be written to (Mac): Calendar Link > Write FocusDesk items to Apple Calendar and Reminders. It makes a calendar and a Reminders list called FocusDesk and changes only those two. Events, assignments, reminders and tasks with a due date can each be switched on or off. Tick a reminder off on your iPhone and it ticks off here too.",
+        "Pop out an app into its own window: press the arrow button in an app's title bar. Put Notepad on one screen and your reading on the other. Changes in either window show up in the other.",
+        "M.X.E.S. can use Apple's on-device model (Mac with Apple Intelligence and macOS 26 or newer): Control Panel > Assistant > M.X.E.S. engine.",
+        "Now Playing can look up a missing cover picture online (Control Panel > Desktop, off by default).",
+        "The desktop app can keep a current copy of your data in the backup folder (Control Panel > Desktop) for the browser version to load.",
       ],
     },
     {
@@ -538,6 +569,9 @@ window.addEventListener("error", function (e) {
       "### Command palette",
       "Press **Ctrl+K** (Cmd+K on a Mac) anywhere to search everything and open any app or action. Type `#tag` for everything with that tag, `@course` for everything in a course, or `>` for actions only. Tags work everywhere: type `#biology` in a note, a task or a flash card.",
       "",
+      "### Pop out an app (desktop app)",
+      "Press the small arrow button in an app's title bar to move it into its own window, for example Notepad on one screen and your reading on the other. Changes in either window appear in the other. Closing the main window closes the pop-outs.",
+      "",
       "### Habit Tracker",
       "Daily habits with 7, 14, 30 or 90-day views. **Right-click any day cell** to attach a note. Shows current and best streaks.",
       "",
@@ -910,6 +944,18 @@ window.addEventListener("error", function (e) {
         appleLists: [],
         appleAuto: false,
         appleRemAuto: false,
+        appleWrite: false,
+        appleKinds: { events: true, assign: true, reminders: true, tasks: true },
+        appleCalId: "",
+        appleListId: "",
+        appleWriteMsg: "",
+        appleWriteLast: 0,
+        mxesEngine: "server",
+        bakFolderAuto: false,
+        bakFolderName: "",
+        bakFolderLoaded: 0,
+        bakFolderHash: "",
+        bakFolderMsg: "",
         npTaskbar: false,
         updMsg: "",
         appleLast: 0,
@@ -1565,6 +1611,21 @@ window.addEventListener("error", function (e) {
     o.prefs.appleLists = idList(pp.appleLists);
     o.prefs.appleAuto = pp.appleAuto === true;
     o.prefs.appleRemAuto = pp.appleRemAuto === true;
+    o.prefs.appleWrite = pp.appleWrite === true;
+    o.prefs.appleKinds = {};
+    ["events", "assign", "reminders", "tasks"].forEach(function (k) {
+      o.prefs.appleKinds[k] = !isObj(pp.appleKinds) || pp.appleKinds[k] !== false;
+    });
+    o.prefs.appleCalId = isStr(pp.appleCalId) && /^[A-Za-z0-9:_.\-\/+=]{1,250}$/.test(pp.appleCalId) ? pp.appleCalId : "";
+    o.prefs.appleListId = isStr(pp.appleListId) && /^[A-Za-z0-9:_.\-\/+=]{1,250}$/.test(pp.appleListId) ? pp.appleListId : "";
+    o.prefs.appleWriteMsg = isStr(pp.appleWriteMsg) ? clip(pp.appleWriteMsg, 160) : "";
+    o.prefs.appleWriteLast = isNum(pp.appleWriteLast) ? pp.appleWriteLast : 0;
+    o.prefs.mxesEngine = pp.mxesEngine === "apple" ? "apple" : "server";
+    o.prefs.bakFolderAuto = pp.bakFolderAuto === true;
+    o.prefs.bakFolderName = isStr(pp.bakFolderName) ? clip(pp.bakFolderName, 80) : "";
+    o.prefs.bakFolderLoaded = isNum(pp.bakFolderLoaded) ? pp.bakFolderLoaded : 0;
+    o.prefs.bakFolderHash = isStr(pp.bakFolderHash) ? clip(pp.bakFolderHash, 20) : "";
+    o.prefs.bakFolderMsg = isStr(pp.bakFolderMsg) ? clip(pp.bakFolderMsg, 160) : "";
     o.prefs.npTaskbar = pp.npTaskbar === true;
     o.prefs.updMsg = isStr(pp.updMsg) ? clip(pp.updMsg, 160) : "";
     o.prefs.appleLast = isNum(pp.appleLast) ? pp.appleLast : 0;
@@ -1726,6 +1787,15 @@ window.addEventListener("error", function (e) {
         .forEach(function (k) {
           if (isNum(p.ach[k])) o.ach[k] = p.ach[k];
         });
+    /* what was written to Apple Calendar and Reminders: { "ev:ID": { a: Apple's id, h: what was sent, d: ticked off or not } } */
+    o.appleMap = {};
+    if (isObj(p.appleMap))
+      Object.keys(p.appleMap)
+        .slice(0, 3000)
+        .forEach(function (k) {
+          var v = p.appleMap[k];
+          if (/^[a-z]{2}:[A-Za-z0-9_\-]{1,60}$/.test(k) && isObj(v) && isStr(v.a) && /^[A-Za-z0-9:_.\-\/+=]{0,250}$/.test(v.a) && isStr(v.h) && v.h.length <= 20) o.appleMap[k] = { a: v.a, h: v.h, d: v.d ? 1 : 0 };
+        });
     return o;
   }
 
@@ -1773,7 +1843,127 @@ window.addEventListener("error", function (e) {
     var w = document.getElementById("saveWarn");
     if (w) w.hidden = storageOK;
   }
+  var unsaved = false; /* true while something changed here hasn't been sent to be saved yet */
+  /* ---- several FocusDesk windows (a popped-out app next to the main window) ----
+     Each window remembers the last state it received from the other (syncBase), which is what the other one is known to have. When another window saves, the two are
+     merged item by item: a change made in only one place wins, a delete in one place is respected if the other
+     place didn't touch that item, and if both changed the same item the newer one wins. */
+  var multiOn = false,
+    syncBase = null;
+  function syncSnap(st) {
+    var o = {};
+    Object.keys(st).forEach(function (k) {
+      var v = st[k];
+      if (k === "images") {
+        o[k] = { __v: Object.keys(v || {}).join(",") };
+        return;
+      }
+      if (
+        Array.isArray(v) &&
+        v.every(function (x) {
+          return x && typeof x === "object" && x.id != null;
+        })
+      ) {
+        var m = {};
+        v.forEach(function (x) {
+          m[x.id] = JSON.stringify(x);
+        });
+        o[k] = { __ids: m };
+      } else o[k] = { __v: JSON.stringify(v) };
+    });
+    return o;
+  }
+  function merge3(local, inc, bs) {
+    var out = {},
+      keys = {};
+    Object.keys(local)
+      .concat(Object.keys(inc))
+      .forEach(function (k) {
+        keys[k] = 1;
+      });
+    Object.keys(keys).forEach(function (k) {
+      var a = local[k],
+        b = inc[k],
+        kb = bs && bs[k];
+      if (k === "images") {
+        out[k] = Object.assign({}, b || {}, a || {}); /* pictures are only added or cleaned up, so keep both sides' */
+        return;
+      }
+      if (Array.isArray(a) && Array.isArray(b) && kb && kb.__ids) {
+        var la = {},
+          ib = {},
+          ids = [],
+          res = [];
+        a.forEach(function (x) {
+          la[x.id] = x;
+        });
+        b.forEach(function (x) {
+          ib[x.id] = x;
+          ids.push(x.id);
+        });
+        a.forEach(function (x) {
+          if (!(x.id in ib)) ids.push(x.id);
+        });
+        ids.forEach(function (id) {
+          var x = la[id],
+            y = ib[id],
+            b0 = kb.__ids[id],
+            sx = x && JSON.stringify(x),
+            sy = y && JSON.stringify(y),
+            item;
+          if (x && y) item = sx === sy ? x : b0 === sx ? y : b0 === sy ? x : isNum(x.updated) && isNum(y.updated) && y.updated > x.updated ? y : x;
+          else if (x) item = b0 === undefined ? x : b0 === sx ? null : x; /* new here, or deleted over there (dropped unless I changed it) */
+          else item = b0 === undefined ? y : b0 === sy ? null : y; /* new over there, or deleted here (dropped unless they changed it) */
+          if (item) res.push(item);
+        });
+        out[k] = res;
+        return;
+      }
+      if (a === undefined) {
+        out[k] = b;
+        return;
+      }
+      if (b === undefined) {
+        out[k] = a;
+        return;
+      }
+      var sa = JSON.stringify(a),
+        sb = JSON.stringify(b),
+        s0 = kb && kb.__v;
+      if (sa === sb) out[k] = a;
+      else if (s0 === sa) out[k] = b;
+      else if (s0 === sb) out[k] = a;
+      else out[k] = isObj(a) && isObj(b) && !Array.isArray(a) ? Object.assign({}, b, a) : a;
+    });
+    return out;
+  }
+  function startMulti() {
+    multiOn = true;
+    syncBase = syncSnap(S);
+  }
+  function applyExternal(data) {
+    var inc;
+    try {
+      inc = sanitize(data);
+    } catch (e) {
+      return;
+    }
+    var changedHere = false;
+    if (multiOn && syncBase) {
+      S = sanitize(merge3(S, inc, syncBase));
+      changedHere = JSON.stringify(S) !== JSON.stringify(inc); /* this window has something the other one doesn't yet */
+    } else S = inc;
+    if (multiOn) syncBase = syncSnap(inc); /* what the other window is now known to have (not what I just sent) */
+    try {
+      applyBg();
+    } catch (e) {}
+    refreshAll();
+    if (S.prefs.showClipy && !POP) mountClipy();
+    if (changedHere) save();
+  }
+  window.__focusdeskExternal = applyExternal;
   function flush() {
+    unsaved = false;
     if (window.__focusdeskWrite) {
       /* Desktop: debounced, queued write to data.json via the shim. */
       window.__focusdeskWrite(S, wallData);
@@ -1795,6 +1985,8 @@ window.addEventListener("error", function (e) {
   function save() {
     clearTimeout(saveT);
     saveT = setTimeout(flush, 200);
+    unsaved = true;
+    if (S.prefs && S.prefs.appleWrite) appleWriteSoon();
     checkAchSoon();
     if (window.__focusdeskScheduleDue) window.__focusdeskScheduleDue();
   }
@@ -3514,6 +3706,10 @@ window.addEventListener("error", function (e) {
         return opts.json ? parseJsonLoose(r.text) : r;
       });
     if (p.kind === "ollama") {
+      if (S.prefs.mxesEngine === "apple")
+        return appleAiChat(prompt, opts).then(function (r) {
+          return opts.json ? parseJsonLoose(r.text) : r;
+        });
       var mdl = aiModel("ollama");
       if (!mdl) return Promise.reject({ code: "no_model" });
       var ep = { url: localBase() + "/v1/chat/completions", model: mdl };
@@ -3634,6 +3830,7 @@ window.addEventListener("error", function (e) {
     if (c === "refused")
       return "The assistant couldn't help with that request.";
     if (c === "prompt_too_large") return "That note is too long.";
+    if (c === "apple_unavailable") return "Apple's on-device model can't answer right now: " + String((e && e.detail) || "it isn't available").replace(/\.+$/, "") + ".";
     if (c === "no_model")
       return "M.X.E.S. needs a model name. Open Control Panel \u2192 Assistant, click \u201cFetch models\u201d next to M.X.E.S., then pick one from the list.";
     return (
@@ -5609,6 +5806,7 @@ window.addEventListener("error", function (e) {
       handle.addEventListener("pointercancel", up);
     });
   }
+  var POPOUT_OK = ["notepad", "cards", "tasks", "calendar", "reminders", "grades", "planner", "schedule", "weekly", "cite", "paint", "folders", "periodic", "formula", "habits", "calc", "grapher", "equation", "convert", "dict", "links", "find", "research"];
   function makeWin(app) {
     var dr = desk.getBoundingClientRect();
     var n = Object.keys(wins).length;
@@ -5624,6 +5822,24 @@ window.addEventListener("error", function (e) {
       top = Math.max(0, Math.min(dr.height - 24, sv.y));
     }
     var w = { app: app, id: app.id, min: false, max: false, refresh: null };
+    var bPop =
+      window.__focusdeskIsDesktop && !POP && window.focusdesk && window.focusdesk.popOut && POPOUT_OK.indexOf(app.id) >= 0
+        ? el("button", {
+            class: "bpop",
+            "aria-label": "Pop out into its own window",
+            title: "Pop out into its own window",
+            onclick: function () {
+              /* save what's here first, so the new window starts from it, and from then on keep the two in step */
+              flush();
+              startMulti();
+              setTimeout(function () {
+                window.focusdesk.popOut({ app: app.id }).then(function (r) {
+                  if (r && r.ok) closeWin(w);
+                });
+              }, 450);
+            },
+          })
+        : null;
     var bMin = el("button", {
       class: "bmin",
       "aria-label": "Minimize",
@@ -5659,7 +5875,7 @@ window.addEventListener("error", function (e) {
       },
       el("span", { class: "ti" }, pix(app.icon, 16)),
       el("span", { class: "tt" }, app.title),
-      el("span", { class: "tb" }, bMin, bMax, bX)
+      el("span", { class: "tb" }, bPop, bMin, bMax, bX)
     );
     var menubar = el("div", { class: "menubar", hidden: true });
     var body = el("div", { class: "wbody" });
@@ -8155,6 +8371,7 @@ window.addEventListener("error", function (e) {
     draw();
   }
   function checkReminders() {
+    if (POP) return;
     var now = Date.now();
     for (var i = 0; i < S.reminders.length; i++) {
       var r = S.reminders[i];
@@ -8685,6 +8902,7 @@ window.addEventListener("error", function (e) {
       upd = 0,
       gone = 0;
     list.forEach(function (x) {
+      if (x.calendar === APPLE_OURS) return; /* FocusDesk's own calendar: it wrote those, so it doesn't read them back */
       var d = new Date(x.start),
         key = "apple:" + x.uid,
         title = clip(x.title || "(no title)", 200),
@@ -8727,6 +8945,7 @@ window.addEventListener("error", function (e) {
       upd = 0,
       gone = 0;
     list.forEach(function (r) {
+      if (r.list === APPLE_OURS) return; /* FocusDesk's own list: it wrote those, so it doesn't read them back */
       var key = "apple-rem:" + r.id,
         ex = S.tasks.filter(function (t) {
           return t.uid === key;
@@ -8752,6 +8971,604 @@ window.addEventListener("error", function (e) {
       return false;
     });
     return { added: added, upd: upd, gone: gone };
+  }
+  /* ===== Apple write: FocusDesk -> Apple Calendar and Reminders =====
+     FocusDesk works out what SHOULD exist in Apple (from its own events, assignments, reminders and tasks) and compares
+     that with what it wrote last time, then sends only the differences. So anything that creates an item in FocusDesk
+     (the Calendar, Tasks, Assignment Planner, Reminders, and Clipy later on) is written automatically.
+     Items that came FROM Apple, Canvas or a calendar feed are never sent back. Writing goes to a calendar and a
+     Reminders list called "FocusDesk" only. */
+  var APPLE_OURS = "FocusDesk";
+  function aHash(o) {
+    var s = JSON.stringify(o),
+      h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+  }
+  function aKey(prefix, id) {
+    return prefix + ":" + String(id).replace(/[^A-Za-z0-9_\-]/g, "_").slice(0, 60);
+  }
+  function appleKinds() {
+    var k = (S.prefs && S.prefs.appleKinds) || {};
+    return { events: k.events !== false, assign: k.assign !== false, reminders: k.reminders !== false, tasks: k.tasks !== false };
+  }
+  function appleKindOfKey(key) {
+    var p = key.slice(0, 2);
+    return p === "ev" ? "events" : p === "as" ? "assign" : p === "rm" ? "reminders" : "tasks";
+  }
+  /* what should exist in Apple right now: { key: fields } */
+  function appleDesired() {
+    var K = appleKinds(),
+      want = {};
+    if (K.events)
+      S.events.forEach(function (e) {
+        if (e.src) return; /* only events made here */
+        var start = new Date(e.date + "T" + (e.time || "00:00")).getTime();
+        if (!isFinite(start)) return;
+        var allDay = !e.time;
+        want[aKey("ev", e.id)] = { op: "upsertEvent", title: e.title, start: start, end: allDay ? start : start + (e.dur || 60) * 60000, allDay: allDay, repeat: e.repeat || "none" };
+      });
+    if (K.assign)
+      S.assign.forEach(function (a) {
+        if (a.src === "canvas" || a.done || !isFinite(a.due)) return; /* Canvas ones already live in Canvas; finished ones are done */
+        var d = new Date(a.due);
+        if (a.allDay) d.setHours(0, 0, 0, 0);
+        var start = a.allDay ? d.getTime() : a.due;
+        want[aKey("as", a.id)] = { op: "upsertEvent", title: "Due: " + (a.course ? a.course + " - " : "") + a.title, start: start, end: a.allDay ? start : start + 30 * 60000, allDay: !!a.allDay, repeat: "none" };
+      });
+    if (K.reminders)
+      S.reminders.forEach(function (r) {
+        want[aKey("rm", r.id)] = { op: "upsertReminder", title: r.text, due: r.at, hasTime: true, done: !!r.done, priority: "normal", repeat: r.repeat || "none" };
+      });
+    if (K.tasks)
+      S.tasks.forEach(function (t) {
+        if (t.src === "apple" || !isFinite(t.due) || t.due == null) return; /* from Apple, or no due date */
+        want[aKey("tk", t.id)] = { op: "upsertReminder", title: t.text, due: t.due, hasTime: false, done: !!t.done, priority: t.pri || "normal", repeat: t.repeat || "none" };
+      });
+    return want;
+  }
+  var appleWriteBusy = false,
+    appleLastCheck = 0,
+    appleWriteT = 0;
+  function appleWriteSoon() {
+    if (POP || !S.prefs.appleWrite || !appleOn()) return;
+    clearTimeout(appleWriteT);
+    appleWriteT = setTimeout(function () {
+      appleWriteNow(false);
+    }, 5000);
+  }
+  function appleWriteNote(msg) {
+    S.prefs.appleWriteMsg = clip(msg, 160);
+    S.prefs.appleWriteLast = Date.now();
+    save();
+    if (typeof window.__fdApplePaint === "function") window.__fdApplePaint();
+  }
+  function appleWriteNow(manual) {
+    if (!appleOn() || !S.prefs.appleWrite) return Promise.resolve({ ok: false, msg: "Writing to Apple Calendar is off." });
+    if (appleWriteBusy) {
+      appleWriteSoon();
+      return Promise.resolve({ ok: true, msg: "Still working on the last change." });
+    }
+    S.appleMap = S.appleMap || {};
+    var map = S.appleMap,
+      want = appleDesired(),
+      K = appleKinds(),
+      ops = [],
+      pending = {},
+      checks = [];
+    Object.keys(want).forEach(function (key) {
+      var f = want[key],
+        h = aHash(f),
+        m = map[key];
+      if (m && m.h === h) {
+        if (m.a) checks.push({ op: f.op === "upsertReminder" ? "checkReminder" : "checkEvent", local: key, aid: m.a });
+        return;
+      }
+      var op = { local: key, aid: m ? m.a : "" };
+      Object.keys(f).forEach(function (k) {
+        op[k] = f[k];
+      });
+      ops.push(op);
+      pending[key] = { h: h, done: !!f.done };
+    });
+    Object.keys(map).forEach(function (key) {
+      if (want[key] || !K[appleKindOfKey(key)]) return; /* still wanted, or that kind is switched off */
+      ops.push({ op: key.slice(0, 2) === "ev" || key.slice(0, 2) === "as" ? "deleteEvent" : "deleteReminder", local: key, aid: map[key].a });
+    });
+    /* looking for things changed over in Apple (ticked off, deleted) is only done now and then, not on every save */
+    var doChecks = manual || Date.now() - appleLastCheck > 600000;
+    var batch = ops.slice(0, 200).concat(doChecks ? checks.slice(0, 100) : []),
+      more = ops.length > 200;
+    if (!batch.length) {
+      if (manual) appleWriteNote("Apple Calendar is up to date.");
+      return Promise.resolve({ ok: true, msg: "Nothing to change." });
+    }
+    if (doChecks) appleLastCheck = Date.now();
+    appleWriteBusy = true;
+    return window.focusdesk
+      .apple("writeApply", { calendarId: S.prefs.appleCalId, listId: S.prefs.appleListId, ops: batch })
+      .then(
+        function (r) {
+          appleWriteBusy = false;
+          if (!r || !r.ok) {
+            var m0 = "Couldn't write to Apple Calendar: " + ((r && r.error) || "it didn't answer");
+            appleWriteNote(m0);
+            return { ok: false, msg: m0 };
+          }
+          if (r.calendarId) S.prefs.appleCalId = r.calendarId;
+          if (r.listId) S.prefs.appleListId = r.listId;
+          var added = 0,
+            changed = 0,
+            removed = 0,
+            back = 0,
+            errors = [],
+            localChange = false;
+          (r.results || []).forEach(function (x) {
+            var key = x.local,
+              was = map[key];
+            if (!x.ok) {
+              errors.push(x.error || "a change was refused");
+              if (/left alone/.test(x.error || "")) delete map[key]; /* it wasn't ours, so stop trying */
+              return;
+            }
+            var op = batch.filter(function (b) {
+              return b.local === key;
+            })[0];
+            if (!op) return;
+            if (op.op === "upsertEvent" || op.op === "upsertReminder") {
+              if (!was) added++;
+              else changed++;
+              map[key] = { a: x.aid || (was && was.a) || "", h: pending[key].h, d: pending[key].done ? 1 : 0 };
+            } else if (op.op === "deleteEvent" || op.op === "deleteReminder") {
+              delete map[key];
+              removed++;
+            } else if (op.op === "checkEvent") {
+              if (x.found === false) delete map[key]; /* deleted over in Apple: it's put back on the next pass */
+            } else if (op.op === "checkReminder") {
+              if (x.found === false) {
+                delete map[key]; /* deleted over in Apple: it's put back on the next pass, because FocusDesk is the master copy */
+                return;
+              }
+              if (was && !!x.done !== !!was.d) {
+                /* ticked off (or un-ticked) in Apple Reminders, so it changes here too */
+                var p = key.slice(0, 2),
+                  id = null;
+                (p === "rm" ? S.reminders : S.tasks).forEach(function (it) {
+                  if (aKey(p, it.id) === key) {
+                    it.done = !!x.done;
+                    id = it.id;
+                  }
+                });
+                was.d = x.done ? 1 : 0;
+                if (id) {
+                  back++;
+                  localChange = true;
+                }
+              }
+            }
+          });
+          var msg = "Apple Calendar: " + added + " added, " + changed + " updated, " + removed + " removed" + (back ? ", " + back + " ticked off in Reminders" : "") + (errors.length ? ". " + errors.length + " problem(s): " + errors[0] : ".");
+          if (manual || added || changed || removed || back || errors.length) appleWriteNote(msg);
+          if (localChange) refreshAll();
+          if (more || batch.some(function (b) { return !map[b.local] && want[b.local]; })) appleWriteSoon();
+          return { ok: !errors.length, msg: msg };
+        },
+        function () {
+          appleWriteBusy = false;
+          appleWriteNote("Couldn't write to Apple Calendar.");
+          return { ok: false, msg: "Couldn't write to Apple Calendar." };
+        }
+      );
+  }
+  /* the switches for it, shown in Calendar Link */
+  function appleWriteBox() {
+    var msg = el("div", { class: "dim", style: "padding:2px 0" });
+    var kindsRow = el("div", { class: "row", style: "gap:10px;flex-wrap:wrap" });
+    function paintMsg() {
+      msg.textContent = S.prefs.appleWrite ? (S.prefs.appleWriteMsg || "On.") + (S.prefs.appleWriteLast ? "  (" + new Date(S.prefs.appleWriteLast).toLocaleTimeString() + ")" : "") : "Off. Nothing is written to Apple Calendar or Reminders.";
+    }
+    window.__fdApplePaint = paintMsg;
+    var on = el("input", {
+      type: "checkbox",
+      checked: !!S.prefs.appleWrite,
+      onchange: function () {
+        var box = this;
+        if (!box.checked) {
+          S.prefs.appleWrite = false;
+          save();
+          paintMsg();
+          return;
+        }
+        box.checked = false;
+        msgBox({
+          title: "Write to Apple Calendar",
+          icon: "q",
+          width: 400,
+          text: "FocusDesk will add your events, assignments, reminders and tasks (the ones you choose below) to Apple Calendar and Reminders.\n\nIt makes its own calendar and its own Reminders list, both called \u201cFocusDesk\u201d, and changes ONLY those two. Everything else in Apple Calendar and Reminders is left alone.\n\nmacOS will ask for permission.",
+          buttons: [
+            {
+              label: "Turn it on",
+              fn: function () {
+                window.focusdesk.apple("writeEnsure", { calendarId: S.prefs.appleCalId, listId: S.prefs.appleListId, events: true, reminders: true }).then(function (r) {
+                  if (!r || !r.ok) {
+                    msgBox({ title: "Apple Calendar", icon: "warn", text: (r && r.error) || "It didn't answer." });
+                    return;
+                  }
+                  S.prefs.appleWrite = true;
+                  S.prefs.appleCalId = r.calendarId || S.prefs.appleCalId;
+                  S.prefs.appleListId = r.listId || S.prefs.appleListId;
+                  box.checked = true;
+                  appleWriteNote("Turned on. Made the FocusDesk calendar and list.");
+                  appleWriteNow(true);
+                });
+              },
+            },
+            { label: "Cancel" },
+          ],
+        });
+      },
+    });
+    [["events", "Events"], ["assign", "Assignments (as due dates)"], ["reminders", "Reminders"], ["tasks", "Tasks with a due date"]].forEach(function (k) {
+      kindsRow.append(
+        el(
+          "label",
+          { class: "row", style: "gap:4px;align-items:center" },
+          el("input", {
+            type: "checkbox",
+            checked: appleKinds()[k[0]],
+            onchange: function () {
+              S.prefs.appleKinds = S.prefs.appleKinds || {};
+              S.prefs.appleKinds[k[0]] = this.checked;
+              save();
+              if (this.checked) appleWriteSoon();
+            },
+          }),
+          k[1]
+        )
+      );
+    });
+    paintMsg();
+    return el(
+      "div",
+      { class: "col", style: "gap:4px;margin-top:8px;border-top:1px solid #dfdfdf;padding-top:6px" },
+      el("label", { class: "row", style: "gap:6px;align-items:center;font-weight:bold" }, on, "Write FocusDesk items to Apple Calendar and Reminders"),
+      el("div", { class: "dim", style: "padding:0" }, "Adds to a calendar and a Reminders list named \u201cFocusDesk\u201d, and changes only those. Tick off a reminder on your iPhone and it ticks off here too. If you delete one in Apple, FocusDesk puts it back, because FocusDesk keeps the master copy."),
+      kindsRow,
+      el("div", { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" }, el("button", { class: "btn sm", onclick: function () { appleWriteNow(true); } }, "Write now"), msg)
+    );
+  }
+  /* ===== M.X.E.S. engine: a local server, or Apple's on-device model (Mac) ===== */
+  function appleAiChat(prompt, opts) {
+    opts = opts || {};
+    if (!appleOn()) return Promise.reject({ code: "no_backend" });
+    var msgs = opts.messages || [{ role: "user", content: prompt }],
+      system = [],
+      convo = [];
+    msgs.forEach(function (m) {
+      if (m.role === "system") system.push(String(m.content));
+      else convo.push((m.role === "assistant" ? "Assistant: " : "User: ") + String(m.content));
+    });
+    if (opts.json) system.push("Reply with ONLY valid JSON. No other words and no code fences.");
+    var last = msgs.length ? String(msgs[msgs.length - 1].content) : String(prompt);
+    /* the model has a small memory: keep the newest part of a long conversation */
+    while (convo.join("\n\n").length > 9000 && convo.length > 1) convo.shift();
+    var text = convo.length > 1 ? "This is the conversation so far.\n\n" + convo.join("\n\n") + "\n\nWrite the assistant's next reply." : last;
+    return window.focusdesk.apple("aiChat", { system: system.join("\n\n"), prompt: text }).then(function (r) {
+      if (!r || !r.ok) throw { code: "apple_unavailable", detail: clip((r && r.error) || "no answer", 160) };
+      var t = String(r.text || "").trim();
+      if (!t) throw { code: "empty" };
+      if (opts.onText) opts.onText({ text: t });
+      return { text: t };
+    });
+  }
+  function mxesEngineRow() {
+    if (!appleOn()) return null;
+    var info = el("div", { class: "dim", style: "padding:0;min-height:14px" });
+    var sel = el(
+      "select",
+      {
+        class: "in",
+        "aria-label": "M.X.E.S. engine",
+        onchange: function () {
+          S.prefs.mxesEngine = this.value === "apple" ? "apple" : "server";
+          save();
+          if (S.prefs.mxesEngine === "apple") check();
+          else info.textContent = "";
+        },
+      },
+      el("option", { value: "server", selected: S.prefs.mxesEngine !== "apple" }, "A local server (Ollama or LM Studio)"),
+      el("option", { value: "apple", selected: S.prefs.mxesEngine === "apple" }, "Apple's on-device model (Apple Intelligence)")
+    );
+    function check() {
+      info.textContent = "Checking\u2026";
+      window.focusdesk.apple("aiStatus", {}).then(function (r) {
+        info.textContent = !r || !r.ok ? "Couldn't check: " + ((r && r.error) || "no answer") : r.available ? "Ready. Everything stays on this Mac." : r.reason || "Not available on this Mac.";
+      });
+    }
+    if (S.prefs.mxesEngine === "apple") check();
+    return el("div", { class: "col", style: "gap:3px" }, el("div", { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" }, "Engine:", sel, el("button", { class: "btn sm", onclick: check }, "Check")), info, el("div", { class: "dim", style: "padding:0" }, "With Apple's model you don't need a server or a model name. It needs a Mac with Apple Intelligence and macOS 26 or newer."));
+  }
+  /* ===== browser: load the newest desktop backup from a folder you choose (iCloud Drive, Dropbox, ...) =====
+     The desktop app can keep focusdesk-latest.json (and dated backups) in a folder. Browsers that can open folders
+     (Chrome, Edge, Brave...) remember the one you choose and offer the newest file when the page opens. */
+  var bakHandle = null;
+  function bakSupported() {
+    return !window.__focusdeskIsDesktop && typeof window.showDirectoryPicker === "function";
+  }
+  function bakDb() {
+    return new Promise(function (res, rej) {
+      var rq = indexedDB.open("focusdesk96-folder", 1);
+      rq.onupgradeneeded = function () {
+        rq.result.createObjectStore("h");
+      };
+      rq.onsuccess = function () {
+        res(rq.result);
+      };
+      rq.onerror = function () {
+        rej(rq.error);
+      };
+    });
+  }
+  function bakIdb(mode, fn) {
+    return bakDb().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction("h", mode),
+          rq = fn(tx.objectStore("h"));
+        tx.oncomplete = function () {
+          res(rq && rq.result);
+        };
+        tx.onerror = function () {
+          rej(tx.error);
+        };
+      });
+    });
+  }
+  function bakContentHash() {
+    /* only what the person made: not the built-in guide note, and not the course folders FocusDesk makes by itself */
+    return aHash({
+      n: S.notes.filter(function (x) {
+        return !x.locked;
+      }),
+      t: S.tasks,
+      c: S.cards,
+      e: S.events,
+      a: S.assign,
+      r: S.reminders,
+      f: S.folders.filter(function (x) {
+        return x.kind !== "course";
+      }),
+      b: S.bib,
+      g: S.grades,
+    });
+  }
+  function bakWhen(t) {
+    return new Date(t).toLocaleString();
+  }
+  /* newest valid backup in the folder (and in a "backups" folder inside it) */
+  function bakFindNewest(dir) {
+    var found = [];
+    function scan(d, depth) {
+      var it = d.values(),
+        list = [];
+      function next() {
+        return it.next().then(function (r) {
+          if (r.done) return;
+          list.push(r.value);
+          return next();
+        });
+      }
+      return next().then(function () {
+        return list.reduce(function (p, ent) {
+          return p.then(function () {
+            if (ent.kind === "file" && /\.json$/i.test(ent.name)) {
+              return ent.getFile().then(function (f) {
+                if (f.size > 0 && f.size < 150000000) found.push({ name: ent.name, file: f, t: f.lastModified });
+              });
+            }
+            if (ent.kind === "directory" && depth < 1 && /backup/i.test(ent.name)) return scan(ent, depth + 1);
+          });
+        }, Promise.resolve());
+      });
+    }
+    return scan(dir, 0).then(function () {
+      found.sort(function (a, b) {
+        return b.t - a.t;
+      });
+      /* take the newest one that really is a FocusDesk file */
+      function tryAt(i) {
+        if (i >= found.length) return null;
+        return found[i].file.text().then(
+          function (txt) {
+            try {
+              var obj = JSON.parse(txt),
+                data = obj && isObj(obj.data) ? obj.data : obj;
+              if (isObj(data) && (Array.isArray(data.notes) || isObj(data.prefs))) return { name: found[i].name, t: found[i].t, data: data };
+            } catch (e) {}
+            return tryAt(i + 1);
+          },
+          function () {
+            return tryAt(i + 1);
+          }
+        );
+      }
+      return tryAt(0);
+    });
+  }
+  function bakApply(pick) {
+    var clean = sanitize(pick.data),
+      keep = S.prefs;
+    try {
+      localStorage.setItem(KEY + ".bak", JSON.stringify(S)); /* what was here stays available as a restore point */
+      localStorage.setItem(KEY + ".baktime", String(Date.now()));
+    } catch (e) {}
+    S = clean;
+    S.prefs.bakFolderAuto = keep.bakFolderAuto;
+    S.prefs.bakFolderName = keep.bakFolderName;
+    S.prefs.bakFolderLoaded = pick.t;
+    S.prefs.bakFolderHash = bakContentHash();
+    flush();
+    location.reload();
+  }
+  /* manual: the person pressed a button (so asking for permission is allowed). Otherwise it runs quietly at start-up. */
+  function bakCheck(manual) {
+    if (!bakHandle) return Promise.resolve({ ok: false, msg: "No folder chosen yet." });
+    var h = bakHandle;
+    function go() {
+      return bakFindNewest(h).then(
+        function (pick) {
+          if (!pick) {
+            S.prefs.bakFolderMsg = "No FocusDesk backup was found in that folder.";
+            save();
+            if (manual) msgBox({ title: "Desktop Backups", icon: "info", text: S.prefs.bakFolderMsg });
+            return { ok: false, msg: S.prefs.bakFolderMsg };
+          }
+          var first = !S.prefs.bakFolderLoaded,
+            newer = pick.t > (S.prefs.bakFolderLoaded || 0),
+            edited = S.prefs.bakFolderHash && S.prefs.bakFolderHash !== bakContentHash();
+          if (!newer && !manual) return { ok: true, msg: "Already up to date." };
+          if (!newer) {
+            S.prefs.bakFolderMsg = "You already have the newest one (" + pick.name + ", " + bakWhen(pick.t) + ").";
+            save();
+            msgBox({ title: "Desktop Backups", icon: "info", text: S.prefs.bakFolderMsg, buttons: [{ label: "Load it again", fn: function () { bakApply(pick); } }, { label: "OK" }] });
+            return { ok: true, msg: S.prefs.bakFolderMsg };
+          }
+          if (!first && !edited) {
+            bakApply(pick); /* nothing here changed since the last load, so taking the newer one loses nothing */
+            return { ok: true, msg: "Loaded " + pick.name };
+          }
+          msgBox({
+            title: "Newer Desktop Backup",
+            icon: "q",
+            width: 420,
+            text: "A backup from your desktop FocusDesk is in the folder you chose:\n\n" + pick.name + "\n" + bakWhen(pick.t) + "\n\n" + (first ? "Loading it replaces what's in this browser." : "This browser has changes made since the last load. Loading it replaces them.") + "\nWhat's here now is kept as a restore point (Control Panel \u2192 Recover last restore point).",
+            buttons: [
+              { label: "Load it", fn: function () { bakApply(pick); } },
+              {
+                label: "Keep mine",
+                fn: function () {
+                  S.prefs.bakFolderLoaded = pick.t; /* don't ask again about this same file */
+                  save();
+                },
+              },
+            ],
+          });
+          return { ok: true, msg: "Waiting for your answer." };
+        },
+        function (e) {
+          var msg = "Couldn't read the folder: " + clip((e && e.message) || "no access", 100);
+          S.prefs.bakFolderMsg = msg;
+          save();
+          if (manual) msgBox({ title: "Desktop Backups", icon: "warn", text: msg });
+          return { ok: false, msg: msg };
+        }
+      );
+    }
+    var q = h.queryPermission ? h.queryPermission({ mode: "read" }) : Promise.resolve("granted");
+    return q.then(function (p) {
+      if (p === "granted") return go();
+      if (manual && h.requestPermission)
+        return h.requestPermission({ mode: "read" }).then(function (p2) {
+          return p2 === "granted" ? go() : { ok: false, msg: "Access to the folder wasn't allowed." };
+        });
+      /* start-up and the browser wants a click first: ask once, with a button */
+      msgBox({
+        title: "Desktop Backups",
+        icon: "q",
+        text: "Check your desktop backup folder (\u201c" + (S.prefs.bakFolderName || "folder") + "\u201d) for a newer copy?\n\nYour browser needs you to allow access to the folder again.",
+        buttons: [{ label: "Check now", fn: function () { bakCheck(true); } }, { label: "Not now" }],
+      });
+      return { ok: false, msg: "Needs a click." };
+    });
+  }
+  function bakStart() {
+    if (!bakSupported() || !S.prefs.bakFolderAuto) return;
+    bakIdb("readonly", function (st) {
+      return st.get("backupDir");
+    }).then(
+      function (h) {
+        if (!h) return;
+        bakHandle = h;
+        bakCheck(false);
+      },
+      function () {}
+    );
+  }
+  function bakFolderUI() {
+    if (window.__focusdeskIsDesktop) return null;
+    var msg = el("div", { class: "dim", style: "padding:2px 0" });
+    function paint() {
+      msg.textContent = S.prefs.bakFolderName ? "Folder: " + S.prefs.bakFolderName + (S.prefs.bakFolderLoaded ? ". Last loaded: " + bakWhen(S.prefs.bakFolderLoaded) + "." : ".") + (S.prefs.bakFolderMsg ? " " + S.prefs.bakFolderMsg : "") : "No folder chosen.";
+    }
+    paint();
+    if (!bakSupported())
+      return el("fieldset", null, el("legend", null, "Desktop backups folder"), el("div", { class: "dim", style: "padding:2px 0" }, "This needs a browser that can open folders, like Chrome, Edge or Brave. In this browser, use Restore from file instead."));
+    return el(
+      "fieldset",
+      null,
+      el("legend", null, "Desktop backups folder"),
+      el("div", { class: "dim", style: "padding:2px 0 6px" }, "If you use the desktop app, point it at a backup folder in iCloud Drive, Dropbox or similar (Control Panel \u2192 Desktop). Choose that same folder here and this browser can pick up the newest copy. It only reads the folder."),
+      el(
+        "div",
+        { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
+        el(
+          "button",
+          {
+            class: "btn sm",
+            onclick: function () {
+              window.showDirectoryPicker({ id: "focusdesk-backups", mode: "read" }).then(
+                function (h) {
+                  bakHandle = h;
+                  bakIdb("readwrite", function (st) {
+                    return st.put(h, "backupDir");
+                  }).catch(function () {});
+                  S.prefs.bakFolderName = clip(h.name, 80);
+                  S.prefs.bakFolderMsg = "";
+                  save();
+                  paint();
+                  bakCheck(true).then(paint);
+                },
+                function () {}
+              );
+            },
+          },
+          "Choose folder\u2026"
+        ),
+        el("button", { class: "btn sm", onclick: function () { bakCheck(true).then(paint); } }, "Load newest now"),
+        el(
+          "label",
+          { class: "row", style: "gap:4px;align-items:center" },
+          el("input", {
+            type: "checkbox",
+            checked: !!S.prefs.bakFolderAuto,
+            onchange: function () {
+              S.prefs.bakFolderAuto = this.checked;
+              save();
+            },
+          }),
+          "Look for a newer copy when this page opens"
+        ),
+        el(
+          "button",
+          {
+            class: "btn sm",
+            onclick: function () {
+              bakHandle = null;
+              bakIdb("readwrite", function (st) {
+                return st.delete("backupDir");
+              }).catch(function () {});
+              S.prefs.bakFolderName = "";
+              S.prefs.bakFolderLoaded = 0;
+              S.prefs.bakFolderHash = "";
+              S.prefs.bakFolderMsg = "";
+              save();
+              paint();
+            },
+          },
+          "Forget folder"
+        )
+      ),
+      msg
+    );
   }
   function appleStatus(msg) {
     S.prefs.appleLast = Date.now();
@@ -8811,7 +9628,9 @@ window.addEventListener("error", function (e) {
         msgBox({ title: isCal ? "Apple Calendar" : "Apple Reminders", icon: "warn", text: (r && r.error) || "It didn't answer." });
         return;
       }
-      var items = r[kind] || [],
+      var items = (r[kind] || []).filter(function (c) {
+          return c.title !== APPLE_OURS; /* the one FocusDesk writes to isn't read */
+        }),
         chosen = isCal ? S.prefs.appleCals : S.prefs.appleLists,
         boxes = {},
         wrap = el("div", { style: "text-align:left;max-height:240px;overflow:auto" });
@@ -8824,7 +9643,7 @@ window.addEventListener("error", function (e) {
         title: isCal ? "Choose Calendars" : "Choose Reminders Lists",
         icon: "q",
         width: 380,
-        text: "FocusDesk only reads these. It never changes anything in Apple " + (isCal ? "Calendar" : "Reminders") + ".",
+        text: "FocusDesk only reads these. It never changes anything in them" + (S.prefs.appleWrite ? " (what it writes goes to its own \u201cFocusDesk\u201d " + (isCal ? "calendar" : "list") + ")." : "."),
         extra: wrap,
         buttons: [
           {
@@ -9285,7 +10104,7 @@ window.addEventListener("error", function (e) {
             "details",
             { class: "pad", open: S.prefs.appleCals.length > 0 || S.prefs.appleLists.length > 0 },
             el("summary", { style: "cursor:default;font-weight:bold" }, "Apple Calendar and Reminders (Mac)"),
-            el("div", { class: "dim", style: "padding:4px 0" }, "FocusDesk reads your Apple Calendar events and Reminders and shows them here. It only reads; it never changes them. They stay up to date each time you sync, and macOS asks your permission the first time. If you finish a reminder here, it stays finished here."),
+            el("div", { class: "dim", style: "padding:4px 0" }, "FocusDesk reads your Apple Calendar events and Reminders and shows them here. Reading never changes them. They stay up to date each time you sync, and macOS asks your permission the first time. If you finish a reminder here, it stays finished here."),
             el(
               "div",
               { class: "row", style: "gap:6px;flex-wrap:wrap;align-items:center" },
@@ -9300,6 +10119,7 @@ window.addEventListener("error", function (e) {
               el("button", { class: "btn sm", onclick: function () { run(appleSyncReminders); } }, "Import Reminders now"),
               el("label", { class: "row", style: "gap:4px;align-items:center" }, el("input", { type: "checkbox", checked: S.prefs.appleRemAuto, onchange: function () { S.prefs.appleRemAuto = this.checked; save(); } }), "Update when FocusDesk starts")
             ),
+            appleWriteBox(),
             status
           );
         })()
@@ -10989,7 +11809,7 @@ window.addEventListener("error", function (e) {
       if (getKey("openai")) return "handunit";
       if (getKey("deepseek")) return "carnie";
       if (getKey("gemini")) return "mystic";
-      if (S.prefs.localUrl || aiModel("ollama")) return "ollama";
+      if (S.prefs.mxesEngine === "apple" || S.prefs.localUrl || aiModel("ollama")) return "ollama";
       return "off";
     }
     function backend() {
@@ -11515,6 +12335,7 @@ window.addEventListener("error", function (e) {
     return res.map(function (r) { return r.x; }).slice(0, 40);
   }
   function openPalette() {
+    if (POP) return;
     if (palEl) return closePalette();
     var index = paletteIndex(),
       results = [],
@@ -14658,7 +15479,8 @@ window.addEventListener("error", function (e) {
             style:
               "gap:4px;margin-top:6px;border-top:1px solid #dfdfdf;padding-top:6px",
           },
-          el("b", null, "M.X.E.S. \u2014 local server (Ollama / LM Studio)"),
+          el("b", null, "M.X.E.S. \u2014 local model"),
+          mxesEngineRow(),
           el(
             "div",
             {
@@ -15204,6 +16026,8 @@ window.addEventListener("error", function (e) {
                 testOut
               ),
               opt("dueOverdue", "Show overdue tasks and assignments in the " + tray + " menu, too", true),
+              opt("mirrorLatest", "Keep a copy of your newest data in the backup folder (focusdesk-latest.json), so the browser version can load it. Works well with a folder in iCloud Drive.", false),
+              opt("npCoverLookup", "Now Playing: if the player has no cover picture, look one up online (sends the song title and artist to Apple's music search)", false),
               opt("taskbarBadge", mac ? "Show a number on the Dock icon for what's due (Linux and Windows: on the taskbar icon)" : "Show a red number on the taskbar icon for what's due", false),
               el(
                 "div",
@@ -15308,6 +16132,7 @@ window.addEventListener("error", function (e) {
           );
         })()
       : null;
+    var bakFolderBox = bakFolderUI();
     var updInfo = el("div", { class: "dim", style: "padding:4px 0 0" });
     function paintUpd() {
       updInfo.textContent = S.prefs.updLast
@@ -15979,6 +16804,7 @@ window.addEventListener("error", function (e) {
             "Replace clears everything and loads the backup. Merge keeps your current data and adds anything new from the backup. Appearance exports carry your theme, icons, cursors and wallpaper."
           )
         ),
+        bakFolderBox,
         displayBox,
         aiBox,
         iconsBox,
@@ -22837,6 +23663,7 @@ window.addEventListener("error", function (e) {
       return cv.toDataURL("image/png");
     }
     window.__focusdeskDue = function () {
+      if (POP) return;
       if (!window.focusdesk || !window.focusdesk.setDueCounts) return;
       var now = Date.now(),
         sod = new Date(),
@@ -22888,6 +23715,7 @@ window.addEventListener("error", function (e) {
       if (appleOn()) {
         if (S.prefs.appleAuto && S.prefs.appleCals.length) appleSyncEvents().catch(function () {});
         if (S.prefs.appleRemAuto && S.prefs.appleLists.length) appleSyncReminders().catch(function () {});
+        if (S.prefs.appleWrite) appleWriteSoon();
       }
     }, 7000);
     window.__focusdeskNP = function (st) {
@@ -29891,7 +30719,7 @@ window.addEventListener("error", function (e) {
     if (getKey("openai")) return "handunit";
     if (getKey("deepseek")) return "carnie";
     if (getKey("gemini")) return "mystic";
-    if (S.prefs.localUrl || aiModel("ollama")) return "ollama";
+    if (S.prefs.mxesEngine === "apple" || S.prefs.localUrl || aiModel("ollama")) return "ollama";
     return "off";
   }
   var clipy = {
@@ -31576,6 +32404,7 @@ window.addEventListener("error", function (e) {
     }
   );
   setInterval(function () {
+    if (POP) return;
     if (
       !saverOn &&
       S.prefs.saver &&
@@ -32611,6 +33440,7 @@ window.addEventListener("error", function (e) {
 
   /* ================= CLOCK ================= */
   function tick() {
+    if (POP) return;
     var d = new Date();
     $("#clock").textContent = fmt12(d);
     $("#clock").title =
@@ -33225,6 +34055,20 @@ window.addEventListener("error", function (e) {
       window.__fdBootDone = true;
       clearInterval(iv);
       b.style.display = "none";
+      if (POP) {
+        /* a popped-out app: just the app, filling the window. None of the start-up chores run here. */
+        document.body.classList.add("popout");
+        startMulti();
+        try {
+          applyBg();
+        } catch (e) {}
+        document.title = (APPS[POP] ? APPS[POP].title : "FocusDesk 96") + " - FocusDesk 96";
+        if (APPS[POP]) {
+          openApp(POP);
+          if (wins[POP]) toggleMax(wins[POP]);
+        }
+        return;
+      }
       try {
         dailyBackup();
       } catch (e) {}
@@ -33264,7 +34108,12 @@ window.addEventListener("error", function (e) {
       checkBackupAge();
       pruneImages();
       autoUpdateCheck();
+      bakStart();
       checkAchSoon();
+    }
+    if (POP && APPS[POP]) {
+      finish();
+      return;
     }
     var hiddenTicks = 0;
     var iv = setInterval(function () {

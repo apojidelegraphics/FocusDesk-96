@@ -3948,3 +3948,9 @@ html.dt-tb.dt-tb-off #desktop { top: 0; }
 .pal-k { width: 86px; flex: none; font-size: 11px; opacity: 0.75; }
 .pal-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pal-hint { padding: 0; font-size: 11px; }
+
+/* ===== a popped-out app: only the app, filling its own window ===== */
+.tb .bpop::before { content: "\2197"; font-size: 11px; font-weight: bold; }
+body.popout #taskbar, body.popout #icons { display: none !important; }
+body.popout .win > .title, body.popout .win > .grip { display: none !important; }
+body.popout .win { border-width: 0; }

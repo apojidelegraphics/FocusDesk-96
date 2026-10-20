@@ -55,7 +55,15 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
-### Since 1.0
+### New in 1.3
+
+- 📅 **Write to Apple Calendar and Reminders (Mac).** Your events, assignments, reminders and tasks can go into a calendar and a Reminders list
+  called FocusDesk, and ticking off a reminder on your iPhone ticks it off here too. Off by default; changes only that calendar and list.
+- 🪟 **Pop out an app.** Move Notepad, Flash Cards or most other apps into their own window, for example Notes on one screen and your reading on the other.
+- 🍎 **Apple's on-device model for M.X.E.S.** (Mac with Apple Intelligence, macOS 26 or newer).
+- 🎵 **Cover lookup for Now Playing** (optional), and a **newest-copy file for the browser version** to load from an iCloud Drive folder (optional).
+
+### New in 1.2.x
 
 - 🪟 **Windows fixes (1.2.6).** Full screen works the same from the button, `Alt+Enter`, `F11` and the View menu, and FocusDesk no longer
   starts in full screen. Saving copes with antivirus and cloud-sync tools, and says exactly what went wrong if a save fails. The red
@@ -98,6 +106,9 @@ accounts and no cloud. Everything runs on your computer.
   an option to start hidden.
 - ⬆️ **Update checker.** FocusDesk tells you when a new version is out and links to the download. Silent
   auto-update isn't included yet.
+
+### Since 1.0
+
 - 📁 **Real files on your computer.** Your data lives in a plain, readable
   `data.json` in your OS's standard user-data folder. Back it up, sync it
   with Dropbox, or open it in a text editor.

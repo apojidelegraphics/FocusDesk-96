@@ -106,6 +106,9 @@
     window.__focusdeskFs = !!on;
     if (typeof window.__fdUpdFs === "function") window.__fdUpdFs();
   });
+  fd.onExternal(function (data) {
+    if (typeof window.__focusdeskExternal === "function") window.__focusdeskExternal(data);
+  });
   fd.onNowPlaying(function (st) {
     if (typeof window.__focusdeskNP === "function") window.__focusdeskNP(st);
   });

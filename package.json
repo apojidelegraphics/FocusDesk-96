@@ -1,7 +1,7 @@
 {
   "name": "focusdesk-96",
   "productName": "FocusDesk 96",
-  "version": "1.2.7",
+  "version": "1.3.0",
   "description": "FocusDesk 96 — a Windows 95-style study and productivity desktop, as a native app for macOS, Windows and Linux.",
   "main": "main.js",
   "author": {
@@ -84,15 +84,23 @@
       "artifactName": "FocusDesk-96-${version}-${arch}.${ext}",
       "extendInfo": {
         "NSAppleEventsUsageDescription": "FocusDesk 96 reads the current song and sends play, pause and skip to Spotify or Music for its Now Playing pill.",
-        "NSCalendarsUsageDescription": "FocusDesk 96 reads your Apple Calendar events so they can appear in its own calendar. It never changes them.",
-        "NSCalendarsFullAccessUsageDescription": "FocusDesk 96 reads your Apple Calendar events so they can appear in its own calendar. It never changes them.",
-        "NSRemindersUsageDescription": "FocusDesk 96 reads your Apple Reminders so they can appear in its Tasks. It never changes them.",
-        "NSRemindersFullAccessUsageDescription": "FocusDesk 96 reads your Apple Reminders so they can appear in its Tasks. It never changes them."
+        "NSCalendarsUsageDescription": "FocusDesk 96 shows your Apple Calendar events in its own calendar. If you turn on writing, it also adds your FocusDesk events and assignments to a calendar called FocusDesk, and changes only that calendar.",
+        "NSCalendarsFullAccessUsageDescription": "FocusDesk 96 shows your Apple Calendar events in its own calendar. If you turn on writing, it also adds your FocusDesk events and assignments to a calendar called FocusDesk, and changes only that calendar.",
+        "NSRemindersUsageDescription": "FocusDesk 96 shows your Apple Reminders in its Tasks. If you turn on writing, it also adds your reminders and tasks to a Reminders list called FocusDesk, and changes only that list.",
+        "NSRemindersFullAccessUsageDescription": "FocusDesk 96 shows your Apple Reminders in its Tasks. If you turn on writing, it also adds your reminders and tasks to a Reminders list called FocusDesk, and changes only that list."
       },
       "extraResources": [
         {
           "from": "helper/macos/focusdesk-mac",
           "to": "focusdesk-mac"
+        },
+        {
+          "from": "helper/macos/focusdesk-mac-write",
+          "to": "focusdesk-mac-write"
+        },
+        {
+          "from": "helper/macos/focusdesk-mac-ai",
+          "to": "focusdesk-mac-ai"
         }
       ]
     },

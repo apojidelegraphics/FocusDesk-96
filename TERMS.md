@@ -4,7 +4,7 @@
 **Publisher:** Apoji Delegraphics
 **Designed by:** Apoji Studios
 
-This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.2.7), the Browser Edition (Version 2.8), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
+This document governs the use, development, and distribution of Apoji Delegraphics' FocusDesk 96 study and productivity software, including the Desktop Edition (Version 1.3.0), the Browser Edition (Version 2.8), and the downloadable Browser zip. The source code is licensed separately under the MIT License (see the `LICENSE` file); where this document and `LICENSE` differ about the source code, `LICENSE` controls.
 
 ---
 
@@ -16,7 +16,7 @@ This document governs the use, development, and distribution of Apoji Delegraphi
 
 These General Terms and Conditions ("T&C") apply to all users accessing or utilizing the following products (collectively, the "Products"):
 
-* a. **FocusDesk 96 Desktop Edition, Version 1.2.7**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
+* a. **FocusDesk 96 Desktop Edition, Version 1.3.0**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
 * b. **FocusDesk 96 Browser Edition, Version 2.8**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
 * c. **The FocusDesk 96 feature set**, consisting of: Habit Breaker, Achievements, the focus session log, LaTeX and image support in notes and flash cards, cloze and image-occlusion flash cards, the grade what-if projection, and the other apps in the Start menu.
 
@@ -73,7 +73,7 @@ The grade calculator, GPA projection, and study statistics are planning aids. Th
 
 ## PART II: DESKTOP EDITION AGREEMENT
 
-This Part applies to the Desktop Edition (Version 1.2.7).
+This Part applies to the Desktop Edition (Version 1.3.0).
 
 ### 4. Installation, Builds, and Data Location
 
@@ -103,6 +103,10 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * l. **Update checks.** When You check for updates (or leave automatic checks on), the Desktop Edition asks GitHub for the newest release number, first through GitHub's programming interface and then through its public release feed. Browsers ask GitHub's interface and, if it is busy, read a small file on the FocusDesk website. Only the version number is looked at. Nothing about You is sent beyond what any web request includes, such as Your network address.
 * m. **Shared folder files.** A shared folder file contains only the notes and flash cards You chose to put in it, plus the pictures those notes use. It does not contain Your grades, assignments' progress or settings. FocusDesk creates the file on Your device and does not send it anywhere; whoever You give it to can open it with Import shared.
 * n. **Log file (Desktop Edition).** FocusDesk keeps a small text log called `focusdesk.log` in its data folder, noting problems such as a file that could not be saved. It stays on Your computer and is never sent anywhere; You can read or delete it. Please check it for anything private before sharing it with a bug report.
+* o. **Writing to Apple Calendar and Reminders (Mac, off by default).** If You turn it on, FocusDesk adds Your events, assignments, reminders and tasks (the kinds You choose) to a calendar and a Reminders list that it creates, both called "FocusDesk", using Your Mac's calendar and reminders features. It changes only those two. macOS asks for Your permission first. Those items then live in Your Apple account (for example iCloud) under Apple's terms, and may appear on Your other Apple devices. FocusDesk does not send them anywhere else.
+* p. **Cover lookup for Now Playing (off by default).** If You turn it on and Your music player gives no cover picture, FocusDesk sends the song title and artist to Apple's public music search to find one. Nothing is sent while it is off.
+* q. **Apple's on-device model (Mac).** If You choose it for M.X.E.S., Your messages are answered by the model built into Your Mac. They are not sent over the internet.
+* r. **Backup copies and the browser's folder access.** If You turn on "keep a copy of Your newest data in the backup folder", the Desktop Edition writes a file called focusdesk-latest.json there. If that folder is in iCloud Drive, Dropbox or similar, that service syncs it under its own terms. The browser version, if You choose a folder, only reads from it, and only the folder You pick.
 
 **4.4. Data Location**
 

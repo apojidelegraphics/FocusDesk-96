@@ -24,6 +24,8 @@ const { fileURLToPath } = require("url");
 // Mac helper for Apple Calendar and Reminders (read-only). Packaged builds carry it in Resources.
 const apple = require("./apple")({
   helper: app.isPackaged ? path.join(process.resourcesPath, "focusdesk-mac") : path.join(__dirname, "helper", "macos", "focusdesk-mac"),
+  writeHelper: app.isPackaged ? path.join(process.resourcesPath, "focusdesk-mac-write") : path.join(__dirname, "helper", "macos", "focusdesk-mac-write"),
+  aiHelper: app.isPackaged ? path.join(process.resourcesPath, "focusdesk-mac-ai") : path.join(__dirname, "helper", "macos", "focusdesk-mac-ai"),
 });
 
 // Windows only shows toast notifications for apps with a stable identity; this matches the installer's appId.
@@ -94,6 +96,20 @@ function logLine(msg) {
     fs.writeFileSync(f, old + new Date().toISOString() + "  " + String(msg).replace(/\s+/g, " ").slice(0, 400) + "\n");
   } catch (_) {}
 }
+let lastMirror = 0;
+/* A current copy of the data in the backup folder (the dated backups are snapshots from the start of each day). */
+async function mirrorLatest(force) {
+  if (!dprefs.mirrorLatest || !mem.data) return;
+  if (!force && Date.now() - lastMirror < 60000) return;
+  lastMirror = Date.now();
+  try {
+    const dir = backupDir();
+    await fsp.mkdir(dir, { recursive: true });
+    await atomicWrite(path.join(dir, "focusdesk-latest.json"), JSON.stringify({ app: "FocusDesk 96", version: app.getVersion(), saved: new Date().toISOString(), data: mem.data }));
+  } catch (e) {
+    logLine("couldn't update focusdesk-latest.json: " + ((e && e.code) || "") + " " + String((e && e.message) || e).slice(0, 120));
+  }
+}
 let lastSaveError = null; // what the last failed save was, so the app can say so instead of a vague warning
 const { atomicWrite } = makeSafeWrite({ log: (m) => logLine(m) });
 
@@ -162,6 +178,7 @@ function flushDirty() {
         if (kind === "data") await ensureDailyBackup(); // snapshot the old file before replacing it
         await writeKind(kind);
         if (lastSaveError && lastSaveError.kind === kind) lastSaveError = null;
+        if (kind === "data") mirrorLatest(false);
       } catch (e) {
         dirty[kind] = true; // retry on the next flush
         console.error("[focusdesk] write failed:", kind, e);
@@ -424,7 +441,12 @@ function registerIpc() {
 
   ipcMain.handle("focusdesk:writeData", (e, p) => {
     assertTrusted(e);
+    if (p && p.data !== undefined && isPlainObject(p.data)) broadcastExternal(e.sender, p.data);
     return applyWrite({ data: p && p.data, wall: p && p.wall });
+  });
+  ipcMain.handle("focusdesk:popOut", (e, p) => {
+    assertTrusted(e);
+    return openPopout(String((p && p.app) || ""), BrowserWindow.fromWebContents(e.sender));
   });
 
   ipcMain.handle("focusdesk:writeSettings", (e, p) => {
@@ -504,6 +526,8 @@ const DEFAULT_DPREFS = {
   notifyAlways: true, // show native notifications even while FocusDesk is the front window
   dueOverdue: true, // include overdue tasks and assignments in the tray / menu bar list
   hotkey: true,
+  mirrorLatest: false, // keep focusdesk-latest.json (your newest data) in the backup folder, for the browser version to pick up
+  npCoverLookup: false, // when the player gives no cover picture, look one up online by song and artist (off unless you want it)
   taskbarBadge: false, // a red number on the taskbar icon for what is due (off unless you want it)
   cardHotkey: true, // Ctrl/Cmd+Shift+Y sends the text on your clipboard to a new flash card
   closeToTray: false,
@@ -901,6 +925,41 @@ function toDataUrl(buf) {
   const mime = sniffImage(buf);
   return mime ? "data:" + mime + ";base64," + buf.toString("base64") : null;
 }
+/* Optional: the player gave no picture, so ask Apple's public music search for the cover. Only an exact song-and-artist match counts. */
+const coverCache = new Map();
+const normTitle = (t) => String(t || "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+async function lookupCover(s) {
+  const title = normTitle(s.title),
+    artist = normTitle(s.artist);
+  if (title.length < 2 || !artist) return null; // a video or tab with no artist: don't guess
+  const key = title + "|" + artist;
+  if (coverCache.has(key)) return coverCache.get(key) || null;
+  let out = "";
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const q = encodeURIComponent((String(s.title) + " " + String(s.artist)).slice(0, 120));
+    const res = await net.fetch("https://itunes.apple.com/search?media=music&entity=song&limit=5&term=" + q, { signal: ctl.signal });
+    if (res.ok) {
+      const j = await res.json();
+      const hit = ((j && j.results) || []).find((r) => {
+        const t = normTitle(r.trackName),
+          a = normTitle(r.artistName);
+        return t && a && (t === title || title.indexOf(t) === 0 || t.indexOf(title) === 0) && (a === artist || artist.indexOf(a) >= 0 || a.indexOf(artist) >= 0);
+      });
+      if (hit && /^https:\/\/[a-z0-9.-]+\.mzstatic\.com\//i.test(hit.artworkUrl100 || "")) {
+        const img = await net.fetch(String(hit.artworkUrl100).replace(/\/\d+x\d+bb\.(jpg|png)$/i, "/600x600bb.$1"), { signal: ctl.signal });
+        if (img.ok) out = toDataUrl(Buffer.from(await img.arrayBuffer())) || "";
+      }
+    }
+  } catch (_) {
+  } finally {
+    clearTimeout(timer);
+  }
+  coverCache.set(key, out);
+  if (coverCache.size > 60) coverCache.delete(coverCache.keys().next().value);
+  return out || null;
+}
 async function resolveArt(s) {
   try {
     if (s.artUrl) {
@@ -930,6 +989,7 @@ async function resolveArt(s) {
         fs.unlink(a.file, () => {});
       }
     }
+    if (dprefs.npCoverLookup) return await lookupCover(s);
   } catch (_) {}
   return null;
 }
@@ -1260,7 +1320,7 @@ function registerDesktopIpc() {
     return nowPlaying.diag();
   });
 
-  /* Apple Calendar and Reminders (Mac only, read-only). */
+  /* Apple Calendar and Reminders (Mac only): reading, and writing to a calendar and list named FocusDesk. */
   ipcMain.handle("focusdesk:apple", (e, p) => {
     assertTrusted(e);
     return apple.call(String((p && p.action) || ""), (p && p.args) || {});
@@ -1517,6 +1577,56 @@ function askRendererToFlush(win) {
   });
 }
 
+/* ---- pop-out windows: an app in its own real window (same data, kept in step with the main window) ---- */
+const popouts = new Set();
+const POPOUT_APPS = ["notepad", "cards", "tasks", "calendar", "reminders", "grades", "planner", "schedule", "weekly", "cite", "paint", "folders", "periodic", "formula", "habits", "calc", "grapher", "equation", "convert", "dict", "links", "find", "research"];
+function openPopout(id, near) {
+  if (POPOUT_APPS.indexOf(id) < 0) return { ok: false };
+  for (const p of popouts) if (!p.isDestroyed() && p.__appId === id) {
+    if (p.isMinimized()) p.restore();
+    p.show();
+    p.focus();
+    return { ok: true, existing: true };
+  }
+  const iconPath = path.join(__dirname, "build", "icon.png");
+  const at = near && !near.isDestroyed() ? near.getBounds() : null;
+  const win = new BrowserWindow({
+    width: 900,
+    height: 720,
+    ...(at ? { x: Math.max(0, at.x + 60 + popouts.size * 28), y: Math.max(0, at.y + 50 + popouts.size * 28) } : {}),
+    minWidth: 420,
+    minHeight: 320,
+    show: false,
+    backgroundColor: "#c0c0c0",
+    title: APP_TITLE,
+    autoHideMenuBar: true,
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  win.__appId = id;
+  popouts.add(win);
+  win.setMenuBarVisibility(false);
+  win.once("ready-to-show", () => win.show());
+  win.on("closed", () => popouts.delete(win));
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    return { action: "deny" };
+  });
+  win.webContents.on("will-navigate", (ev, url) => {
+    if (!isAppUrl(url)) {
+      ev.preventDefault();
+      if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    }
+  });
+  win.loadFile(INDEX_FILE, { query: { popout: id } });
+  return { ok: true };
+}
+/* when one window saves, the other FocusDesk windows get the new data */
+function broadcastExternal(sender, data) {
+  const all = [mainWindow, ...popouts].filter((w) => w && !w.isDestroyed());
+  if (all.length < 2) return;
+  for (const w of all) if (w.webContents !== sender) w.webContents.send("focusdesk:external", data);
+}
 function createWindow(hidden) {
   const st = loadWindowState();
   const keepHidden = !!hidden || (firstWindow && launchedHidden());
@@ -1547,6 +1657,9 @@ function createWindow(hidden) {
     },
   });
   mainWindow = win;
+  win.on("closed", () => {
+    for (const p of [...popouts]) if (!p.isDestroyed()) p.close(); // pop-outs belong to this window
+  });
   if (compact) win.setMenuBarVisibility(false);
   win.on("enter-full-screen", () => win.webContents.send("focusdesk:fs", true));
   win.on("leave-full-screen", () => win.webContents.send("focusdesk:fs", false));
@@ -1782,9 +1895,9 @@ if (!app.requestSingleInstanceLock()) {
   app.on("will-quit", (e) => {
     globalShortcut.unregisterAll();
     // The page's last save can land just as the final window closes: let it finish.
-    if (writing > 0 || Object.keys(dirty).some((k) => dirty[k])) {
+    if (writing > 0 || Object.keys(dirty).some((k) => dirty[k]) || (dprefs.mirrorLatest && Date.now() - lastMirror > 5000)) {
       e.preventDefault();
-      flushDirty().catch(() => {}).then(() => app.exit(0));
+      flushDirty().catch(() => {}).then(() => mirrorLatest(true)).catch(() => {}).then(() => app.exit(0));
     }
   });
 

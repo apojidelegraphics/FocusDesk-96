@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld("focusdesk", {
   watchNowPlaying: (on) => ipcRenderer.invoke("focusdesk:npWatch", { on: !!on }),
   nowPlayingCmd: (msg) => ipcRenderer.invoke("focusdesk:npCmd", msg),
   onNowPlaying: (cb) => ipcRenderer.on("focusdesk:np", (e, p) => cb(p)),
+  popOut: (p) => ipcRenderer.invoke("focusdesk:popOut", p),
+  onExternal: (cb) => ipcRenderer.on("focusdesk:external", (_e, d) => cb(d)),
   toggleFullscreen: () => ipcRenderer.invoke("focusdesk:toggleFullscreen"),
   openDataFolder: () => ipcRenderer.invoke("focusdesk:openDataFolder"),
   npDiag: () => ipcRenderer.invoke("focusdesk:npDiag"),

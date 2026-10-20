@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>studio.apoji.focusdesk96.mac-write-helper</string>
+  <key>CFBundleName</key>
+  <string>FocusDesk 96 Mac Write Helper</string>
+  <key>CFBundleVersion</key>
+  <string>1.3.0</string>
+  <key>NSCalendarsUsageDescription</key>
+  <string>When you turn on writing, FocusDesk 96 adds your events and assignments to a calendar called FocusDesk. It changes only that calendar.</string>
+  <key>NSCalendarsFullAccessUsageDescription</key>
+  <string>When you turn on writing, FocusDesk 96 adds your events and assignments to a calendar called FocusDesk. It changes only that calendar.</string>
+  <key>NSRemindersUsageDescription</key>
+  <string>When you turn on writing, FocusDesk 96 adds your reminders and tasks to a Reminders list called FocusDesk. It changes only that list.</string>
+  <key>NSRemindersFullAccessUsageDescription</key>
+  <string>When you turn on writing, FocusDesk 96 adds your reminders and tasks to a Reminders list called FocusDesk. It changes only that list.</string>
+</dict>
+</plist>
