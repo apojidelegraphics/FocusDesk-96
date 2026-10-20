@@ -46,6 +46,13 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "false" # builds are intentionally unsigned
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check both Mac installers were built
+        if: matrix.name == 'macOS'
+        shell: bash
+        run: |
+          ls -la dist/*.dmg
+          ls dist/*-arm64.dmg dist/*-x64.dmg
+
       - uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.name }}
@@ -93,7 +100,7 @@ jobs:
         shell: bash
         run: |
           ls -la dist || true
-          for pat in "*.dmg" "*.exe" "*.AppImage" "*.zip"; do
+          for pat in "*-arm64.dmg" "*-x64.dmg" "*.exe" "*.AppImage" "*.zip"; do
             if ! ls dist/$pat >/dev/null 2>&1; then
               echo "::warning::No $pat file was built, so it is missing from this draft release. Open the failed job to see why."
             fi
