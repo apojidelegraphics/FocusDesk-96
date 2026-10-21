@@ -7,7 +7,7 @@
   <key>CFBundleName</key>
   <string>FocusDesk 96 Mac Write Helper</string>
   <key>CFBundleVersion</key>
-  <string>1.3.2</string>
+  <string>1.4.0</string>
   <key>NSCalendarsUsageDescription</key>
   <string>When you turn on writing, FocusDesk 96 adds your events and assignments to a calendar called FocusDesk. It changes only that calendar.</string>
   <key>NSCalendarsFullAccessUsageDescription</key>

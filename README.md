@@ -57,6 +57,13 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
+### New in 1.4 (stability)
+
+- 🔒 **Security fixes** in how notes are shown, a safer graphing calculator, and web lookups that can't reach your own network.
+- 🛡️ **Safer with several tabs and windows**: changes merge instead of overwriting each other, and one app having a problem can't stop the others.
+- ⚡ **Quicker start-up** (any key skips it), easier-to-read hint text, a **Jump to** row in Control Panel, and counts that read properly.
+- ✅ **Automatic safety checks** run in every build.
+
 ### New in 1.3.2
 
 - 🔄 **Silent updates** for Windows and Linux (you choose: automatic, ask first, or just tell me). A Mac still tells you and links to the download.

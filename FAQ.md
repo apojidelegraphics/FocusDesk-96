@@ -84,6 +84,15 @@ No. FocusDesk has no servers and no accounts. It only goes online for things you
 ### My reminder or timer notifications don't show up
 Check your system's notification settings for FocusDesk 96 (and that Do Not Disturb or Focus mode isn't on). In the desktop app, Control Panel → Desktop has a button that sends a test notification and tells you what it found.
 
+### Why is the start-up screen silver in version 3?
+Version 3 of the browser version comes with a silver start-up screen. Everything else works the same. You can press any key (or click) to skip the start-up screen.
+
+### I use FocusDesk in two browser tabs. Is that safe?
+Yes, from version 3.0. Changes made in either tab are merged, so one tab no longer overwrites the other. (If you change the very same item in both at once, the newer change wins.)
+
+### Citation Maker says an address "is on your own network"
+Looking up a web page is only allowed for public websites. Addresses that point at your own computer or network (like `localhost` or `192.168.x.x`) are blocked on purpose, so a link can never be used to reach your private devices. Type the details in by hand for pages like that.
+
 ### Does FocusDesk update itself?
 On **Windows and Linux**, yes, from version 1.3.2. In Control Panel → Updates you choose: **install it automatically**, **ask me first**, or **just tell me**. Automatic updates download in the background and install when you close FocusDesk (or when you press Restart now). If an update ever fails, FocusDesk falls back to telling you and linking to the download. Version 1.3.1 and older can't update themselves, so install 1.3.2 by hand once. On a **Mac**, FocusDesk tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.
 

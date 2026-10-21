@@ -151,7 +151,7 @@ legend {
   flex-direction: column;
 }
 .dim {
-  color: #808080;
+  color: #4d4d4d; /* dark enough to read on the grey window (was #808080, which was too faint) */
   padding: 6px;
 }
 #wall {
@@ -3960,3 +3960,7 @@ body.popout #desktop { bottom: 0 !important; }
 
 /* ===== "a new version is ready" bar (the website) ===== */
 .fd-newver { position: fixed; left: 8px; bottom: 38px; z-index: 99985; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 6px 8px; background: #ffffe1; color: #000; border: 2px solid; border-color: #fff #404040 #404040 #fff; outline: 1px solid #000; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35); font-size: 12px; }
+
+/* ===== Control Panel: jump-to row ===== */
+.cp-jump { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; padding: 4px 2px; margin: 0 0 4px; background: var(--face, #c0c0c0); border-bottom: 1px solid #808080; font-size: 11px; }
+.cp-jump ~ fieldset { scroll-margin-top: 38px; }

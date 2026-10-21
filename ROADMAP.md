@@ -21,11 +21,14 @@ The same schedule is on the website: https://apojidelegraphics.github.io/FocusDe
 
 ### Version 1.4: Stability release
 
-- **When:** This week (planned)
+- **When:** This week (in progress)
 - **Versions:** desktop 1.4.0, browser 3.0.0
-- No new features: fixes, testing and making things more reliable
-- Testing on Mac, Windows and Linux
-- *This will be the first update that Windows and Linux copies of 1.3.2 can install by themselves.*
+- No new features. Two security fixes in how notes are shown, a safer graphing calculator, and web lookups that can't reach your own network
+- Changes in two browser tabs now merge instead of overwriting each other
+- One app having a problem can't stop other windows updating
+- Quicker start-up, easier-to-read text, a Jump to row in Control Panel, and counts that read properly
+- Automatic safety checks now run in every build
+- *This is the first update that Windows and Linux copies of 1.3.2 can install by themselves.*
 
 ### Version 1.4.1: Clipy edits and completes things
 

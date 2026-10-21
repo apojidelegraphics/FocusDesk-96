@@ -19,6 +19,7 @@ on:
       - scripts/check-ascii.js
       - scripts/check-load-order.js
       - scripts/check-menu-apps.js
+      - scripts/selftest.js
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -46,6 +47,7 @@ jobs:
           node scripts/check-ascii.js
           node scripts/check-load-order.js
           node scripts/check-menu-apps.js
+          node scripts/selftest.js
           node scripts/build-roadmap.js --check
           mkdir site
           cp focusdesk.js focusdesk.css apojilogo.js site/

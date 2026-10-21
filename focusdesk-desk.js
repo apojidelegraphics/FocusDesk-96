@@ -157,7 +157,6 @@
   var dirty = {};
   var timer = null;
   var inflight = false;
-  var lastSend = 0;
   var unloading = false;
   var outstanding = Promise.resolve();
 
@@ -335,7 +334,6 @@
       jobs.push(fd.writeSettings(d.settings ? bucket("settings") : undefined, d.keys ? bucket("keys") : undefined));
     if (!jobs.length) return;
     inflight = true;
-    lastSend = Date.now();
     var job = Promise.all(jobs).then(
       function (rs) {
         var bad = rs.filter(function (r) {

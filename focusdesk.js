@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "2.9.1";
-  var VERSION_DESKTOP = "1.3.2";
+  var VERSION_BROWSER = "3.0.0";
+  var VERSION_DESKTOP = "1.4.0";
   /* set when this window is an app popped out of the main window (the desktop app) */
   var POP = (function () {
     try {
@@ -52,6 +52,32 @@ window.addEventListener("error", function (e) {
         "LaTeX: multi-line equations (aligned, align, gather, split), \\substack, and cleaner limits on integrals.",
         "Habit Breaker: change a quit date, keep a note for each habit, and see which weekdays you slip on.",
         "Control Panel: About now describes where you're running FocusDesk correctly and sits just above the Danger zone. Optional update check when FocusDesk starts (off by default in the browser).",
+      ],
+    },
+    {
+      v: "3.0.0",
+      date: "October 2026",
+      title: "Stability release: security fixes, safer saving, faster start-up",
+      apps: [],
+      notes: [
+        "Fixed two security holes in how notes are shown: a crafted link or [[note link]] in a note (for example one that came in a shared-folder file) could add hidden code. Quote marks inside links are now handled safely.",
+        "The graphing calculator now refuses anything that isn't plain maths.",
+        "Changes made in two browser tabs now merge instead of one tab overwriting the other, and a stray or broken save from another tab can't replace your data.",
+        "One app having a problem can no longer stop other windows from updating, and minimized windows catch up when you bring them back.",
+        "Start-up is about half a second quicker (press any key to skip it), hint text is easier to read, Control Panel has a Jump to row, and counts read properly (1 card, not 1 card(s)).",
+        "Version 3 brings a silver start-up screen.",
+      ],
+    },
+    {
+      v: "1.4.0",
+      date: "October 2026",
+      title: "Desktop 1.4.0: stability release",
+      apps: [],
+      notes: [
+        "Fixed two security holes in how notes are shown, made the graphing calculator refuse anything that isn't plain maths, and stopped web page lookups (Citation Maker) from reaching addresses on your own network.",
+        "One app having a problem can no longer stop other windows from updating, and minimized windows catch up when you bring them back.",
+        "Quicker start-up (press any key to skip it), easier-to-read hint text, a Jump to row in Control Panel, and counts that read properly.",
+        "Includes browser version 3.0.0.",
       ],
     },
     {
@@ -1909,7 +1935,7 @@ window.addEventListener("error", function (e) {
     var w = document.getElementById("saveWarn");
     if (w) w.hidden = storageOK;
   }
-  var unsaved = false; /* true while something changed here hasn't been sent to be saved yet */
+  var dirtySince = false; /* true if something was changed here since the last time another window's (or tab's) saved state was taken in */
   /* ---- several FocusDesk windows (a popped-out app next to the main window) ----
      Each window remembers the last state it received from the other (syncBase), which is what the other one is known to have. When another window saves, the two are
      merged item by item: a change made in only one place wins, a delete in one place is respected if the other
@@ -2008,6 +2034,8 @@ window.addEventListener("error", function (e) {
     syncBase = syncSnap(S);
   }
   function applyExternal(data) {
+    /* only something that really looks like FocusDesk data is taken in: never a stray list, number or empty object */
+    if (!isObj(data) || Array.isArray(data) || !(Array.isArray(data.notes) || isObj(data.prefs))) return;
     var inc;
     try {
       inc = sanitize(data);
@@ -2015,10 +2043,11 @@ window.addEventListener("error", function (e) {
       return;
     }
     var changedHere = false;
-    if (multiOn && syncBase) {
+    if (multiOn && syncBase && dirtySince) {
       S = sanitize(merge3(S, inc, syncBase));
       changedHere = JSON.stringify(S) !== JSON.stringify(inc); /* this window has something the other one doesn't yet */
     } else S = inc;
+    dirtySince = false;
     if (multiOn) syncBase = syncSnap(inc); /* what the other window is now known to have (not what I just sent) */
     try {
       applyBg();
@@ -2033,7 +2062,6 @@ window.addEventListener("error", function (e) {
   }
   window.__focusdeskExternal = applyExternal;
   function flush() {
-    unsaved = false;
     if (window.__focusdeskWrite) {
       /* Desktop: debounced, queued write to data.json via the shim. */
       window.__focusdeskWrite(S, wallData);
@@ -2055,7 +2083,7 @@ window.addEventListener("error", function (e) {
   function save() {
     clearTimeout(saveT);
     saveT = setTimeout(flush, 200);
-    unsaved = true;
+    dirtySince = true;
     if (S.prefs && S.prefs.appleWrite) appleWriteSoon();
     checkAchSoon();
     if (window.__focusdeskScheduleDue) window.__focusdeskScheduleDue();
@@ -2258,11 +2286,19 @@ window.addEventListener("error", function (e) {
     }
     return diff < 0 ? s + " overdue" : "in " + s;
   }
+  /* "1 card(s)" becomes "1 card" and "3 card(s)" becomes "3 cards" (also "1 box(es)"), wherever the app writes text */
+  function fixPlurals(t) {
+    t = String(t);
+    if (t.indexOf("(s)") < 0 && t.indexOf("(es)") < 0) return t;
+    return t.replace(/(\b\d+)((?:\s+[A-Za-z]+){0,2})\((es|s)\)/g, function (m, num, words, suf) {
+      return num + words + (num === "1" ? "" : suf);
+    });
+  }
   function add(p, kids) {
     kids.forEach(function (c) {
       if (Array.isArray(c)) add(p, c);
       else if (c == null || c === false) return;
-      else p.append(c.nodeType ? c : document.createTextNode(String(c)));
+      else p.append(c.nodeType ? c : document.createTextNode(fixPlurals(c)));
     });
   }
   function el(tag, props) {
@@ -2379,6 +2415,10 @@ window.addEventListener("error", function (e) {
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+  }
+  /* for text that goes INSIDE a quoted HTML attribute: a quote mark must never be able to close it early */
+  function qEsc(t) {
+    return String(t).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   /* ================= 2.7: IMAGES, LaTeX, RICH CARD FACES ================= */
   function escAttr(t) {
@@ -2981,14 +3021,12 @@ window.addEventListener("error", function (e) {
           /==([^=\n]+)==/g,
           '<mark style="background:#ffff99;padding:0 2px">$1</mark>'
         )
-        .replace(
-          /\[\[([^\]\n]+)\]\]/g,
-          '<a href="#" class="wikilink" data-note="$1">$1</a>'
-        )
-        .replace(
-          /\[([^\]]+)\]\((https?:[^)]+)\)/g,
-          '<a href="$2" target="_blank" rel="noopener" style="color:#0000c0">$1</a>'
-        )
+        .replace(/\[\[([^\]\n]+)\]\]/g, function (m, name) {
+          return '<a href="#" class="wikilink" data-note="' + qEsc(name) + '">' + name + "</a>";
+        })
+        .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, function (m, label, url) {
+          return '<a href="' + qEsc(url) + '" target="_blank" rel="noopener noreferrer" style="color:#0000c0">' + label + "</a>";
+        })
         .replace(
           /(^|\s)#(\w[\w\-]*)/g,
           '$1<span style="background:#e0e0ff;border:1px solid #8080c0;padding:0 4px;font-size:11px;border-radius:2px">#$2</span>'
@@ -6047,7 +6085,7 @@ window.addEventListener("error", function (e) {
     w.titleEl = title;
     w.status = function (t) {
       status.hidden = false;
-      status.textContent = t;
+      status.textContent = fixPlurals(t);
     };
     w.menus = function (defs) {
       menubar.hidden = false;
@@ -6095,6 +6133,12 @@ window.addEventListener("error", function (e) {
   function restoreWin(w) {
     w.min = false;
     w.el.hidden = false;
+    if (w.stale && w.refresh) {
+      w.stale = false;
+      try {
+        w.refresh();
+      } catch (e) {}
+    }
     saveSession();
   }
   function toggleMax(w) {
@@ -6193,7 +6237,19 @@ window.addEventListener("error", function (e) {
   function refreshAll() {
     for (var k in wins) {
       var w = wins[k];
-      if (w.refresh) w.refresh();
+      if (!w || !w.refresh) continue;
+      if (w.min) {
+        w.stale = true; /* a minimized window is redrawn when it comes back, not while it's out of sight */
+        continue;
+      }
+      try {
+        w.refresh();
+      } catch (e) {
+        /* one app having a problem must not stop the others from updating, or cut the action short */
+        try {
+          reportErr("Couldn't redraw " + k + ": " + ((e && e.message) || e));
+        } catch (x) {}
+      }
     }
   }
   function openApp(id) {
@@ -13216,8 +13272,7 @@ window.addEventListener("error", function (e) {
       return { ok: false, msg: "That file isn't a FocusDesk shared folder." };
     }
     if (!isObj(j) || j.kind !== "shared-folder" || !Array.isArray(j.notes)) return { ok: false, msg: "That file isn't a FocusDesk shared folder." };
-    var idMap = {},
-      nn = 0,
+    var nn = 0,
       nc = 0,
       ids = [];
     Object.keys(isObj(j.images) ? j.images : {})
@@ -13367,44 +13422,6 @@ window.addEventListener("error", function (e) {
       { class: "btn sm", onclick: newFolder },
       "+ New Folder"
     );
-
-    function paintLeftOld() {
-      listLeft.textContent = "";
-      if (!S.folders.length) {
-        listLeft.append(
-          el(
-            "div",
-            { class: "dim", style: "padding:14px 12px;text-align:center" },
-            "No folders yet.\n\nClick \u201c+ New Folder\u201d to create one."
-          )
-        );
-        return;
-      }
-      S.folders.forEach(function (f) {
-        var count = (f.assign || []).length + (f.note || []).length;
-        listLeft.append(
-          el(
-            "div",
-            {
-              class: "fl-fl" + (f.id === curId ? " sel" : ""),
-              onclick: function () {
-                curId = f.id;
-                query = "";
-                classFilter = "";
-                draw();
-              },
-            },
-            el("span", {
-              class: "fl-dot",
-              style:
-                "background:" + FOLDER_COLORS[f.color % FOLDER_COLORS.length],
-            }),
-            el("span", { class: "fl-nm" }, f.name),
-            el("span", { class: "fl-ct" }, String(count))
-          )
-        );
-      });
-    }
 
     function addItemsPicker() {
       var f = folderById(curId);
@@ -17079,6 +17096,34 @@ window.addEventListener("error", function (e) {
         )
       )
     );
+    /* this screen is long, so a row at the top jumps straight to each section */
+    (function () {
+      var secs = Array.prototype.slice.call(w.body.querySelectorAll("fieldset")).filter(function (f) {
+        return f.querySelector("legend");
+      });
+      if (secs.length < 4) return;
+      var parent = secs[0].parentNode,
+        bar = el("div", { class: "cp-jump", role: "navigation", "aria-label": "Jump to a section" }, "Jump to: ");
+      secs
+        .filter(function (f) {
+          return f.parentNode === parent;
+        })
+        .forEach(function (f) {
+          bar.append(
+            el(
+              "button",
+              {
+                class: "btn xs",
+                onclick: function () {
+                  f.scrollIntoView({ block: "start" });
+                },
+              },
+              f.querySelector("legend").textContent
+            )
+          );
+        });
+      parent.insertBefore(bar, secs[0]);
+    })();
     w.refresh = draw;
     draw();
   }
@@ -25627,6 +25672,11 @@ window.addEventListener("error", function (e) {
           return "Math." + lower + "(";
         }
       );
+      /* the only dots allowed are decimal points and Math.<function>: no property chains such as x.constructor */
+      var probe = s
+        .replace(/Math\.(PI|abs|acos|asin|atan|ceil|cos|cosh|exp|floor|log|log10|max|min|pow|round|sign|sin|sinh|sqrt|tan|tanh)\b/g, "M")
+        .replace(/(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/g, "0");
+      if (/\./.test(probe) || /\bMath\b/.test(probe) || s.length > 600) return null;
       var names = ["x"];
       Object.keys(paramVals || {}).forEach(function (k) {
         names.push(k);
@@ -26942,7 +26992,6 @@ window.addEventListener("error", function (e) {
       function question() {
         var E = pool[Math.floor(Math.random() * pool.length)],
           kind = Math.floor(Math.random() * 6),
-          wrong,
           q,
           right,
           opts;
@@ -34569,6 +34618,9 @@ window.addEventListener("error", function (e) {
     });
   }
   function boot() {
+    try {
+      localStorage.removeItem(KEY + ".probe"); /* left behind only if the page was killed mid-measurement */
+    } catch (e) {}
     var b = $("#boot"),
       bar = $("#bootbar");
     var lg = $("#bootlogo");
@@ -34669,6 +34721,7 @@ window.addEventListener("error", function (e) {
       checkBackupAge();
       pruneImages();
       autoUpdateCheck();
+      if (!window.__focusdeskIsDesktop) startMulti(); /* several browser tabs share one saved state */
       bakStart();
       setTimeout(storageStartWarn, 9000);
       setTimeout(siteVersionCheck, 20000);
@@ -34685,8 +34738,9 @@ window.addEventListener("error", function (e) {
       if (window.__focusdeskIsDesktop && document.hidden && hiddenTicks++ < 90) return;
       if (n < segs.length) segs[n++].style.opacity = 1;
       else finish();
-    }, 90);
+    }, 55);
     b.onclick = finish;
+    window.addEventListener("keydown", finish, { once: true }); /* any key skips it */
   }
   var lastErr = 0;
   function reportErr(msg) {
@@ -34714,15 +34768,15 @@ window.addEventListener("error", function (e) {
     reportErr(r && r.message ? r.message : "a background task failed");
   });
   window.addEventListener("storage", function (e) {
+    /* another tab saved: take its changes in, keeping anything changed here (see applyExternal) */
     if (e.key !== KEY || !e.newValue) return;
+    var data;
     try {
-      S = sanitize(JSON.parse(e.newValue));
+      data = JSON.parse(e.newValue);
     } catch (x) {
       return;
     }
-    applyBg();
-    refreshAll();
-    if (S.prefs.showClipy) mountClipy();
+    applyExternal(data);
   });
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) {

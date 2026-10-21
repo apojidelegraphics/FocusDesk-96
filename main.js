@@ -65,7 +65,6 @@ const MAX_OPEN_BYTES = 50 * 1024 * 1024;
 /* ---------------------------------------------------------------------------
  * Small helpers
  * ------------------------------------------------------------------------- */
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const isPlainObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -563,6 +562,32 @@ function validAccel(s) {
   if (new Set(parts).size !== parts.length) return false;
   if (!/^([A-Z0-9]|F([1-9]|1[0-9]|2[0-4])|Space|Tab|Backspace|Delete|Insert|Return|Up|Down|Left|Right|Home|End|PageUp|PageDown|[-=\[\];',.\/\\`])$/.test(key)) return false;
   return parts.some((x) => x !== "Shift");
+}
+/* true for addresses that point at the person's own computer or network (so a web lookup can't be aimed at them) */
+function isPrivateHost(host) {
+  let h = String(host || "").toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  if (!h) return true;
+  if (h === "localhost" || /\.(localhost|local|internal|lan|home|corp)$/.test(h)) return true;
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+  if (v4) {
+    const a = +v4[1],
+      b = +v4[2];
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127);
+  }
+  if (h.indexOf(":") >= 0) {
+    if (h === "::1" || h === "::") return true;
+    if (/^f[cd][0-9a-f]{2}:/.test(h) || /^fe[89ab][0-9a-f]:/.test(h)) return true; // private and link-local ranges
+    const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(h);
+    if (mapped) return isPrivateHost(mapped[1]);
+    // the same thing written in hex, which is how a URL is normalised: ::ffff:7f00:1 is 127.0.0.1
+    const hex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(h);
+    if (hex) {
+      const hi = parseInt(hex[1], 16),
+        lo = parseInt(hex[2], 16);
+      return isPrivateHost([hi >> 8, hi & 255, lo >> 8, lo & 255].join("."));
+    }
+  }
+  return false;
 }
 function validBounds(b) {
   return !!b && typeof b === "object" && [b.x, b.y, b.width, b.height].every((n) => typeof n === "number" && isFinite(n)) && b.width >= 300 && b.height >= 200 && b.width <= 12000 && b.height <= 12000 && Math.abs(b.x) < 40000 && Math.abs(b.y) < 40000;
@@ -1294,11 +1319,13 @@ function registerDesktopIpc() {
       return { ok: false, error: "That isn't a valid link." };
     }
     if (u.protocol !== "https:") return { ok: false, error: "The link has to start with https://." };
+    if (isPrivateHost(u.hostname)) return { ok: false, error: "That address is on your own network, so it was blocked." };
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 15000);
     try {
       const res = await net.fetch(u.toString(), { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; FocusDesk96)", Accept: "text/html,application/xhtml+xml" } });
       if (!res.ok) return { ok: false, error: "The site answered " + res.status + "." };
+      if (res.url && isPrivateHost(new URL(res.url).hostname)) return { ok: false, error: "The link redirected to an address on your own network, so it was blocked." };
       if (res.url && !/^https:/i.test(res.url)) return { ok: false, error: "The link redirected to an unsecured page, so it was blocked." };
       const reader = res.body.getReader();
       const chunks = [];
