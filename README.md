@@ -9,7 +9,7 @@ instead of browser storage. Portable, backupable, and fully yours.
 
 ![FocusDesk 96 boot screen](docs/boot.png)
 
-**When does it update?** See the [update schedule](ROADMAP.md) (also on the [website](https://apojidelegraphics.github.io/FocusDesk-96/roadmap.html)): two more updates are planned this week, then a pause, and serious fixes still ship when they're needed.
+**When does it update?** See the [update schedule](ROADMAP.md) (also on the [website](https://apojidelegraphics.github.io/FocusDesk-96/roadmap.html)): one more update (a stability release) is planned this week, and serious fixes still ship when they're needed.
 
 FocusDesk 96 is a complete study and productivity environment built as a Windows 95-style
 desktop: windows, a taskbar, a Start menu, and a little assistant called Clipy. It has no

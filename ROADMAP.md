@@ -1,43 +1,31 @@
 # FocusDesk 96 update schedule
 
-*Two more updates this week, then a pause. Serious fixes still ship when they're needed.*
+*One more update this week, a stability release. Serious fixes still ship when they're needed.*
 
-**Next update:** This week - version 1.3.2, Silent updates, and a few smaller things.
+**Next update:** This week - version 1.4, Stability release.
 
-**Right now:** desktop app 1.3.1, browser version 2.9. [Latest release](https://github.com/apojidelegraphics/FocusDesk-96/releases/latest)
+**Right now:** desktop app 1.3.2, browser version 2.9.1. [Latest release](https://github.com/apojidelegraphics/FocusDesk-96/releases/latest)
 
 The same schedule is on the website: https://apojidelegraphics.github.io/FocusDesk-96/roadmap.html
 
 ## How updates work
 
-- Version 1.3.2 (silent updates, and more) and version 1.4 (a stability release) are both planned for this week.
+- Version 1.4 (a stability release) is planned for this week.
 - After 1.4, the next planned update is 1.4.1 (Clipy can edit and complete things you already have). Its date will be posted here. If a serious problem turns up before then, especially anything that could lose your data, a fix is still released as quickly as possible.
 - If an update isn't ready or hasn't been tested properly, it moves instead of shipping. This page says so and why.
-- The browser version (the website) updates as soon as a release is published, and now tells you when a newer version is ready. The browser zip is attached to every release.
-- Windows and Linux can update by themselves from version 1.3.2 on (you choose: automatically, ask first, or just tell me). Version 1.3.1 and older need one manual install of 1.3.2 first. On a Mac the app tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.
+- The browser version (the website) updates as soon as a release is published, and shows a bar when a newer version is ready. The browser zip is attached to every release.
+- Windows and Linux can now update by themselves (version 1.3.2 and newer). In Control Panel you choose: install automatically, ask me first, or just tell me. If you're on 1.3.1 or older, install 1.3.2 by hand once. On a Mac the app tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.
 - Windows is tested on a real PC. Linux can only be tested in a virtual environment.
 
 ## Coming up
 
-### Version 1.3.2: Silent updates, and a few smaller things
-
-- **When:** This week (in progress)
-- **Versions:** desktop 1.3.2, browser 2.9.1
-- Silent auto-update for Windows and Linux, with a setting: install automatically, ask me first, or just tell me (Mac stays notify-and-download)
-- If a silent update ever fails, the app falls back to telling you and linking to the download
-- Windows Now Playing checks every media session, so more covers show up
-- Clipy: an Undo button after it adds things, and it can make flash cards
-- Pop-out windows remember their size and position, and the command palette can pop out any app
-- A See the update schedule link in Control Panel
-- Browser: a new-version-is-ready bar, and a warning when storage is nearly full
-- *The first update this delivers is 1.4. Linux updating is best effort, because Linux can't be tested on real hardware.*
-
 ### Version 1.4: Stability release
 
-- **When:** This week, after 1.3.2 (planned)
+- **When:** This week (planned)
 - **Versions:** desktop 1.4.0, browser 3.0.0
 - No new features: fixes, testing and making things more reliable
 - Testing on Mac, Windows and Linux
+- *This will be the first update that Windows and Linux copies of 1.3.2 can install by themselves.*
 
 ### Version 1.4.1: Clipy edits and completes things
 
@@ -51,6 +39,7 @@ Dates are targets. If something isn't ready or hasn't been tested, it moves, and
 
 | Version | When | What |
 | --- | --- | --- |
+| 1.3.2 / 2.9.1 | October 2026 | Windows and Linux can update by themselves (you choose: automatic, ask first, or just tell me), Windows Now Playing checks every media session, Clipy has an Undo button and can make flash cards, pop-outs remember their size and position, the website shows a new-version bar, and the browser warns when storage is nearly full. |
 | 1.3.1 / 2.9 | October 2026 | Clipy can add events, reminders, tasks and assignments when you ask (with an optional switch to write them to Apple Calendar), tidier pop-outs and a File > Pop Out App menu, no more back-to-back Clipy tips, and an accurate storage bar in the browser. |
 | 1.3.0 / 2.8.2 | October 2026 | Write to Apple Calendar and Reminders (Mac), pop-out windows for apps, Apple's on-device model for M.X.E.S., optional Now Playing cover lookup, and loading your desktop backup in the browser. |
 | 1.2.7 / 2.8.1 | October 2026 | Important fix: saved data wasn't read after updating if you had folders or structured citations. |
@@ -67,4 +56,4 @@ Dates are targets. If something isn't ready or hasn't been tested, it moves, and
 - [All releases](https://github.com/apojidelegraphics/FocusDesk-96/releases), [releases feed](https://github.com/apojidelegraphics/FocusDesk-96/releases.atom)
 - Found a problem or want a feature? [Open an issue](https://github.com/apojidelegraphics/FocusDesk-96/issues/new/choose)
 
-_Last updated 2026-10-20. This page is generated from schedule.json._
+_Last updated 2026-10-21. This page is generated from schedule.json._
