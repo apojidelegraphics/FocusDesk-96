@@ -93,6 +93,15 @@ Yes, from version 3.0. Changes made in either tab are merged, so one tab no long
 ### Citation Maker says an address "is on your own network"
 Looking up a web page is only allowed for public websites. Addresses that point at your own computer or network (like `localhost` or `192.168.x.x`) are blocked on purpose, so a link can never be used to reach your private devices. Type the details in by hand for pages like that.
 
+### Chrome says "can't open this folder because it contains system files"
+That is Chrome's rule, and FocusDesk can't change it. Chrome won't let a website open Desktop, Documents, Downloads, the top of iCloud Drive or Dropbox, or any folder with system files in it. The way around it: make a **new** folder inside iCloud Drive or Dropbox (for example "FocusDesk Backups"), point the desktop app at that folder (Control Panel, Desktop, Daily backups, Choose folder), and choose the same folder in the browser version. Or press "Choose the backup file instead" (BETA) and pick `focusdesk-latest.json` from that folder. The same help is in Control Panel, under Desktop backups folder.
+
+### What do the colours in the storage bar mean?
+The bar shows where your browser's space is going: Notes, Pictures, Flash cards, everything else in FocusDesk, restore points and copies, and anything else stored on the same web address. Restore points are an automatic copy of your data that is refreshed about once an hour, so they can be large. You can delete the restore point from Control Panel if space is tight; a new one is made within the hour.
+
+### Can Clipy change or complete things I already have? (BETA)
+Yes. Ask it, for example, to move your study group to Saturday or to mark chapter 3 done. It always shows what it wants to change and waits for you to say yes, even if "Add things without asking" is on, and Undo puts everything back. It only touches things you made by hand (or that Clipy made). It leaves repeating items alone, and anything that comes from Apple, Canvas or a calendar feed, because the next sync would just undo the change. You can switch it off in Clipy's menu.
+
 ### What do the tags like MINOR and BETA mean?
 Every update has a tag shown beside its version number, as a small label (for example MINOR next to 1.4.1). The tag is separate: it is never part of the number.
 - **MAJOR** (like 1.5): starts a new cycle of updates.

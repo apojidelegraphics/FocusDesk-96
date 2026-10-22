@@ -32,7 +32,7 @@
       "title": "Fixes and polish",
       "when": "Date to be set",
       "target": "2026-11-07",
-      "status": "planned",
+      "status": "testing",
       "desktop": "1.4.1",
       "browser": "3.0.1",
       "items": [

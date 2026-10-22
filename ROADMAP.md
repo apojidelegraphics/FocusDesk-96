@@ -29,7 +29,7 @@ The same schedule is on the website: https://apojidelegraphics.github.io/FocusDe
 ### Version 1.4.1: Fixes and polish
 
 - **Tag:** `MINOR`
-- **When:** Date to be set (planned)
+- **When:** Date to be set (testing)
 - **Versions:** desktop 1.4.1, browser 3.0.1
 - A new logo on the Start button
 - Clipy can edit and complete things you already have (it asks first, and Undo puts it back) `BETA`

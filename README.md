@@ -57,6 +57,16 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
+### New in 1.4.1 (fixes and polish)
+
+- 🌠 **A new logo** on the Start button, and a new Mac menu bar icon.
+- 🤖 **Clipy can change and complete things you already have** (BETA): ask it to move an event or tick off a task. It always asks first, and Undo puts it back.
+- ⚙️ **Start → Settings** jumps straight to the right part of Control Panel (new Storage, Backup and Updates entries too).
+- 📊 **A clearer storage bar** (browser) that shows what is using the space, with checked numbers.
+- 📁 **Backup folder help** (browser): real error messages, a guide to Chrome's "contains system files" message, and a choose-the-file option (BETA).
+- 🍎 **Mac:** an optional red number on the Dock icon (BETA). 🪟 **Windows:** Ask Clipy and Mini timer in the taskbar right-click menu. 🖥️ **Pop-outs** open where you left them, never off screen (BETA), with a Reset button.
+- 🏷️ Small **tags** (MINOR, BETA) now sit beside versions and single features.
+
 ### New in 1.4 (stability)
 
 - 🔒 **Security fixes** in how notes are shown, a safer graphing calculator, and web lookups that can't reach your own network.

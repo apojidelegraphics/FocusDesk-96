@@ -589,8 +589,77 @@ function isPrivateHost(host) {
   }
   return false;
 }
+/* the tags written in square brackets in a release title, like "v1.4.2 [MINOR] [BETA]" (BETA is left out: betas are never offered) */
+function tagsFromName(name) {
+  const out = [];
+  String(name || "").replace(/\[([A-Za-z]+)\]/g, (m, w) => {
+    w = w.toUpperCase();
+    if (["MAJOR", "MINOR", "STABILITY", "HOTFIX"].indexOf(w) >= 0 && out.indexOf(w) < 0) out.push(w);
+    return m;
+  });
+  return out;
+}
+/* the newest FINISHED release in GitHub's release feed: a [BETA] pre-release is never offered as an update */
+function latestFromFeed(xml) {
+  const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
+  let m;
+  while ((m = entryRe.exec(String(xml || "")))) {
+    const title = (/<title[^>]*>([\s\S]*?)<\/title>/.exec(m[1]) || [])[1] || "";
+    const hit = /<link[^>]*href="https:\/\/github\.com\/[^"]*\/releases\/tag\/([^"]*)"/.exec(m[1]);
+    if (!hit) continue;
+    if (/beta/i.test(title) || /beta/i.test(hit[1])) continue;
+    const ver = /^v?(\d+(?:\.\d+){1,3})$/.exec(hit[1]);
+    if (ver) {
+      ver.tags = tagsFromName(title);
+      return ver;
+    }
+  }
+  return null;
+}
 function validBounds(b) {
   return !!b && typeof b === "object" && [b.x, b.y, b.width, b.height].every((n) => typeof n === "number" && isFinite(n)) && b.width >= 300 && b.height >= 200 && b.width <= 12000 && b.height <= 12000 && Math.abs(b.x) < 40000 && Math.abs(b.y) < 40000;
+}
+/* Where a pop-out window opens, as a plain calculation (so it can be tested with made-up screens):
+ *  - a remembered place on a screen that is still connected: kept, but never bigger than that screen and always fully on it
+ *  - a remembered place on a screen that is gone: the remembered SIZE is kept, and the window opens near the main window
+ *  - nothing remembered: a cascade near the main window, kept on that window's screen */
+function placePopout(saved, near, displays, nth) {
+  const areas = (displays || []).map((d) => d && d.workArea).filter((a) => a && a.width > 0 && a.height > 0);
+  const primary = areas[0] || { x: 0, y: 0, width: 1280, height: 800 };
+  const MINW = 420,
+    MINH = 320;
+  const fit = (r, a) => {
+    const width = Math.max(MINW, Math.min(r.width, a.width)),
+      height = Math.max(MINH, Math.min(r.height, a.height));
+    return {
+      x: Math.round(Math.max(a.x, Math.min(r.x, a.x + a.width - width))),
+      y: Math.round(Math.max(a.y, Math.min(r.y, a.y + a.height - height))),
+      width: Math.round(width),
+      height: Math.round(height),
+    };
+  };
+  const areaOf = (pt) => areas.find((a) => pt.x >= a.x && pt.x < a.x + a.width && pt.y >= a.y && pt.y < a.y + a.height) || primary;
+  const step = (Number(nth) || 0) % 8 * 28;
+  const cascade = (size) => {
+    const target = near ? areaOf({ x: near.x + near.width / 2, y: near.y + 20 }) : primary;
+    const from = near ? { x: near.x, y: near.y } : { x: target.x, y: target.y };
+    return fit({ x: from.x + 60 + step, y: from.y + 50 + step, width: size.width, height: size.height }, target);
+  };
+  if (saved && validBounds(saved)) {
+    let best = null,
+      bestArea = 0;
+    for (const a of areas) {
+      const ox = Math.min(saved.x + saved.width, a.x + a.width) - Math.max(saved.x, a.x),
+        oy = Math.min(saved.y + saved.height, a.y + a.height) - Math.max(saved.y, a.y);
+      if (ox >= 160 && oy >= 100 && ox * oy > bestArea) {
+        best = a;
+        bestArea = ox * oy;
+      }
+    }
+    if (best) return Object.assign(fit(saved, best), { max: !!saved.max, remembered: true });
+    return Object.assign(cascade({ width: saved.width, height: saved.height }), { max: false, remembered: false });
+  }
+  return Object.assign(cascade({ width: 900, height: 720 }), { max: false, remembered: false });
 }
 function mergeDprefs(base, p) {
   const clean = cleanDprefs(p);
@@ -791,13 +860,15 @@ let lastTimer = null;
 let miniWin = null;
 
 function quickFromArgs(argv) {
-  const a = (argv || []).find((x) => /^--quick=(task|card|timer|nowplaying)$/.test(String(x)));
+  const a = (argv || []).find((x) => /^--quick=(task|card|timer|nowplaying|askclipy|minitimer)$/.test(String(x)));
   return a ? String(a).slice(8) : "";
 }
 function runQuick(kind) {
   if (kind === "task" || kind === "card") openCapture(kind);
   else if (kind === "timer") sendCmd("timer-toggle", true);
   else if (kind === "nowplaying") openNowPlaying();
+  else if (kind === "askclipy") openClipyChat("");
+  else if (kind === "minitimer") openMiniTimer();
 }
 function sendCmd(cmd, show) {
   return whenMainReady().then((wc) => {
@@ -806,6 +877,17 @@ function sendCmd(cmd, show) {
   });
 }
 
+/* the menu bar / tray picture: on a Mac a "template" image (black shapes that macOS paints black or white to suit the menu bar), elsewhere the colour one */
+function trayImage() {
+  if (process.platform === "darwin") {
+    const t = nativeImage.createFromPath(path.join(__dirname, "assets", "trayTemplate.png")); // trayTemplate@2x.png is picked up by itself on Retina screens
+    if (!t.isEmpty()) {
+      t.setTemplateImage(true);
+      return t;
+    }
+  }
+  return nativeImage.createFromPath(path.join(__dirname, "assets", "tray.png"));
+}
 function buildTrayMenu() {
   const total = due.cards + due.tasks + due.assign;
   const items = [{ label: "Open FocusDesk 96", click: showMainWindow }, { type: "separator" }];
@@ -855,14 +937,14 @@ function applyDue() {
     if (process.platform === "win32" && mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.setOverlayIcon(dprefs.taskbarBadge && total > 0 && due.badge ? nativeImage.createFromDataURL(due.badge) : null, dprefs.taskbarBadge && total > 0 ? total + " due" : "");
     } else if (process.platform === "linux") app.setBadgeCount(dprefs.taskbarBadge ? total : 0);
-    // macOS: no dock badge on purpose; the counts are inside the menu bar menu.
+    else if (process.platform === "darwin" && app.dock) app.dock.setBadge(dprefs.taskbarBadge && total > 0 ? (total > 999 ? "999+" : String(total)) : ""); // the red number on the Dock icon (off unless you turn it on)
   } catch (_) {}
 }
 
 function ensureTray() {
   if (tray) return;
   try {
-    const img = nativeImage.createFromPath(path.join(__dirname, "assets", "tray.png"));
+    const img = trayImage();
     if (img.isEmpty()) return;
     tray = new Tray(img);
     tray.setToolTip("FocusDesk 96");
@@ -1221,9 +1303,11 @@ function registerDesktopIpc() {
   ipcMain.handle("focusdesk:setDesktopPrefs", async (e, p) => {
     assertTrusted(e);
     dprefs = mergeDprefs(dprefs, p);
+    if (p && p.resetPopoutBounds === true) dprefs.popoutBounds = {}; // forget where pop-outs were
     await atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2));
     registerHotkey();
     ensureTray();
+    if (p && p.taskbarBadge !== undefined) applyDue();
     if (p && p.backupKeep !== undefined) {
       backupCheckedFor = null;
       await ensureDailyBackup();
@@ -1288,7 +1372,7 @@ function registerDesktopIpc() {
               }
             });
             const url = /^https:\/\/github\.com\//.test(rel.html_url || "") ? rel.html_url : "https://github.com/" + REPO + "/releases";
-            return { ok: true, info: { tag: tag, url: url, browserVer: browserVer, browserUrl: browserUrl } };
+            return { ok: true, info: { tag: tag, url: url, browserVer: browserVer, browserUrl: browserUrl, tags: tagsFromName(rel.name) } };
           }
         }
       } catch (_) {
@@ -1299,8 +1383,8 @@ function registerDesktopIpc() {
         const f = await get("https://github.com/" + REPO + "/releases.atom", "application/atom+xml,text/xml,*/*");
         if (f.ok) {
           const xml = await f.text();
-          const hit = /<link[^>]*href="https:\/\/github\.com\/[^"]*\/releases\/tag\/v?(\d+(?:\.\d+){1,3})"/.exec(xml);
-          if (hit) return { ok: true, info: { tag: hit[1], url: "https://github.com/" + REPO + "/releases/tag/v" + hit[1], browserVer: "", browserUrl: "" } };
+          const hit = latestFromFeed(xml);
+          if (hit) return { ok: true, info: { tag: hit[1], url: "https://github.com/" + REPO + "/releases/tag/v" + hit[1], browserVer: "", browserUrl: "", tags: hit.tags || [] } };
         }
       } catch (_) {}
       return { ok: false, status: status };
@@ -1674,14 +1758,14 @@ function setupUpdater() {
   updater.allowDowngrade = false;
   if (process.env.FD_TEST_UPDATER === "real") updater.forceDevUpdateConfig = true;
   updater.on("update-available", (info) => {
-    sendUpdate({ phase: "available", version: String((info && info.version) || "") });
+    sendUpdate({ phase: "available", version: String((info && info.version) || ""), tags: tagsFromName(info && info.releaseName) });
     if (dprefs.updateMode === "auto") startUpdateDownload();
   });
   updater.on("update-not-available", () => sendUpdate({ phase: "none" }));
-  updater.on("download-progress", (p) => sendUpdate({ phase: "progress", version: updState.version || "", percent: Math.max(0, Math.min(100, Math.round((p && p.percent) || 0))) }));
+  updater.on("download-progress", (p) => sendUpdate({ phase: "progress", version: updState.version || "", tags: updState.tags || [], percent: Math.max(0, Math.min(100, Math.round((p && p.percent) || 0))) }));
   updater.on("update-downloaded", (info) => {
     if (dprefs.updateMode === "auto") updater.autoInstallOnAppQuit = true; // installs when FocusDesk is closed
-    sendUpdate({ phase: "ready", version: String((info && info.version) || ""), auto: dprefs.updateMode === "auto" });
+    sendUpdate({ phase: "ready", version: String((info && info.version) || ""), tags: tagsFromName(info && info.releaseName), auto: dprefs.updateMode === "auto" });
   });
   updater.on("error", (err) => {
     const msg = String((err && err.message) || err).replace(/\s+/g, " ").slice(0, 200);
@@ -1702,22 +1786,6 @@ function updateTick() {
 }
 
 /* ---- where each popped-out app was last: size and position, kept between runs ---- */
-function popoutBoundsFor(id) {
-  const b = dprefs.popoutBounds && dprefs.popoutBounds[id];
-  if (!validBounds(b)) return null;
-  try {
-    // only if it would still be visible on a connected screen (a screen may have been unplugged)
-    const visible = screen.getAllDisplays().some((d) => {
-      const w = d.workArea,
-        ox = Math.min(b.x + b.width, w.x + w.width) - Math.max(b.x, w.x),
-        oy = Math.min(b.y + b.height, w.y + w.height) - Math.max(b.y, w.y);
-      return ox >= 160 && oy >= 100;
-    });
-    return visible ? b : null;
-  } catch (_) {
-    return null;
-  }
-}
 function rememberPopout(win, id) {
   if (!win || win.isDestroyed()) return;
   const b = win.getNormalBounds();
@@ -1764,11 +1832,16 @@ function openPopout(id, near) {
   }
   const iconPath = path.join(__dirname, "build", "icon.png");
   const at = near && !near.isDestroyed() ? near.getBounds() : null;
-  const saved = popoutBoundsFor(id);
+  let displays = [];
+  try {
+    displays = screen.getAllDisplays();
+  } catch (_) {}
+  const pl = placePopout(dprefs.popoutBounds && dprefs.popoutBounds[id], at, displays, popouts.size);
   const win = new BrowserWindow({
-    width: (saved && saved.width) || 900,
-    height: (saved && saved.height) || 720,
-    ...(saved ? { x: saved.x, y: saved.y } : at ? { x: Math.max(0, at.x + 60 + popouts.size * 28), y: Math.max(0, at.y + 50 + popouts.size * 28) } : {}),
+    width: pl.width,
+    height: pl.height,
+    x: pl.x,
+    y: pl.y,
     minWidth: 420,
     minHeight: 320,
     show: false,
@@ -1782,9 +1855,14 @@ function openPopout(id, near) {
   });
   win.__appId = id;
   popouts.add(win);
-  if (saved && saved.max) win.maximize();
-  let rememberT = null;
+  try {
+    // a second time, now that the window exists: on Windows with screens of different scaling, the size given at creation can come out wrong
+    win.setBounds({ x: pl.x, y: pl.y, width: pl.width, height: pl.height });
+  } catch (_) {}
+  let rememberT = null,
+    shown = false; // nothing is remembered until the window is really on screen (so the setting-up moves aren't saved as if the person chose them)
   const remember = () => {
+    if (!shown) return;
     clearTimeout(rememberT);
     rememberT = setTimeout(() => rememberPopout(win, id), 700);
   };
@@ -1792,11 +1870,31 @@ function openPopout(id, near) {
   win.on("move", remember);
   win.on("close", () => {
     clearTimeout(rememberT);
-    rememberPopout(win, id);
+    if (shown) rememberPopout(win, id);
   });
   win.setMenuBarVisibility(false);
-  win.once("ready-to-show", () => win.show());
-  win.on("closed", () => popouts.delete(win));
+  const showNow = () => {
+    if (win.isDestroyed() || shown) return;
+    if (pl.max) win.maximize(); // maximize when it is shown (doing it before can be ignored on Windows)
+    win.show();
+    shown = true;
+  };
+  win.once("ready-to-show", showNow);
+  const showT = setTimeout(showNow, 6000); // if the page is slow to say it is ready, the window still appears
+  win.on("closed", () => {
+    clearTimeout(showT);
+    popouts.delete(win);
+  });
+  let retried = false;
+  win.webContents.on("did-fail-load", (ev, code, desc, url, isMain) => {
+    // a page that fails to load (not a cancelled navigation) is tried once more instead of leaving an empty window
+    if (isMain && !retried && code !== -3) {
+      retried = true;
+      setTimeout(() => {
+        if (!win.isDestroyed()) win.loadFile(INDEX_FILE, { query: { popout: id } });
+      }, 400);
+    }
+  });
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: "deny" };
@@ -2123,7 +2221,9 @@ if (!app.requestSingleInstanceLock()) {
           app.setUserTasks([
             task("task", "Add a quick task", "Open quick capture"),
             task("card", "New flash card from the clipboard", "Turn what you copied into a card"),
+            task("askclipy", "Ask Clipy", "Open Clipy and ask a question"),
             task("timer", "Start or pause the focus timer", "Control the focus timer"),
+            task("minitimer", "Show the mini timer", "Show the small floating timer"),
             task("nowplaying", "Open Now Playing", "Show what is playing"),
           ]);
         } catch (_) {}

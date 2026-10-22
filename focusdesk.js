@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "3.0.0";
-  var VERSION_DESKTOP = "1.4.0";
+  var VERSION_BROWSER = "3.0.1";
+  var VERSION_DESKTOP = "1.4.1";
   /* set when this window is an app popped out of the main window (the desktop app) */
   var POP = (function () {
     try {
@@ -39,6 +39,11 @@ window.addEventListener("error", function (e) {
     }
   })();
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
+  /* The tag shown beside this version: MAJOR, MINOR, STABILITY or HOTFIX. It is a separate label and is never part of the number.
+     Set both when the version numbers are bumped (a version ending in .0 is MAJOR, anything else is not). */
+  var TAG_DESKTOP = "MINOR";
+  var TAG_BROWSER = "MINOR";
+  var TAG = window.__focusdeskIsDesktop ? TAG_DESKTOP : TAG_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
     {
@@ -55,7 +60,38 @@ window.addEventListener("error", function (e) {
       ],
     },
     {
+      v: "3.0.1",
+      tag: "MINOR",
+      date: "October 2026",
+      title: "Fixes and polish",
+      apps: [],
+      notes: [
+        "A new logo on the Start button.",
+        "Clipy can now change and complete things you already have, like moving a study group or ticking off a task (BETA). It always asks first, and Undo puts everything back. There is a switch for it in Clipy\u2019s menu.",
+        "The Settings items in the Start menu (and the command palette) jump straight to the right part of Control Panel, with new Storage, Backup and Updates entries.",
+        "The storage bar now shows what is using the space (notes, pictures, flash cards, restore points) and its numbers are double-checked.",
+        "Choosing your backup folder now explains Chrome\u2019s \u201ccontains system files\u201d message and shows real errors, and you can choose the backup file instead (BETA).",
+        "Versions and single features can now carry small tags, like MINOR and BETA.",
+      ],
+    },
+    {
+      v: "1.4.1",
+      tag: "MINOR",
+      date: "October 2026",
+      title: "Desktop 1.4.1: fixes and polish",
+      apps: [],
+      notes: [
+        "A new logo on the Start button, and a new Mac menu bar icon.",
+        "Clipy can now change and complete things you already have (BETA). It always asks first, and Undo puts everything back.",
+        "Mac: an optional red number on the Dock icon for what is due (BETA). Windows: Ask Clipy and the mini timer are in the taskbar right-click menu.",
+        "Pop-out windows open where you left them more reliably, never off screen and never invisible, and there is a Reset pop-out positions button (BETA).",
+        "The Settings items in the Start menu jump straight to the right part of Control Panel.",
+        "Includes browser version 3.0.1: a clearer storage bar, and help for choosing your backup folder.",
+      ],
+    },
+    {
       v: "3.0.0",
+      tag: "MAJOR",
       date: "October 2026",
       title: "Stability release: security fixes, safer saving, faster start-up",
       apps: [],
@@ -70,6 +106,7 @@ window.addEventListener("error", function (e) {
     },
     {
       v: "1.4.0",
+      tag: "MAJOR",
       date: "October 2026",
       title: "Desktop 1.4.0: stability release",
       apps: [],
@@ -764,6 +801,8 @@ window.addEventListener("error", function (e) {
       "- **Calendar Link** is the fastest way to get assignments in. Import once a week.",
       "- **Flash Cards** use real spaced repetition \u2014 the algorithm schedules reviews for you. Just grade honestly.",
       "- **Clipy 'Plan my week'** is a genuine time-saver. Try it Sunday evening.",
+      "- **Clipy can change what you already have (BETA)**: ask it to move an event or tick off a task. It always asks first, and Undo puts it back.",
+      "- **Settings jump**: Start, then Settings, opens Control Panel at the right section. Ctrl/Cmd+K has Settings shortcuts too.",
       "- **Session persistence** reopens every window you had open when you come back.",
       "- **Drag sections** on Today to reorder. Whatever you use most goes at the top.",
       "",
@@ -820,7 +859,7 @@ window.addEventListener("error", function (e) {
       new Date().toLocaleDateString() +
       "\n\n";
     fresh.forEach(function (p) {
-      body += "Version " + p.v + " \u2014 " + p.title + "  (" + p.date + ")\n";
+      body += "Version " + p.v + " \u2014 " + p.title + (p.tag ? "  [" + p.tag + "]" : "") + "  (" + p.date + ")\n";
       p.notes.forEach(function (n) {
         body += "  \u2022 " + n + "\n";
       });
@@ -1030,11 +1069,13 @@ window.addEventListener("error", function (e) {
         appleWriteLast: 0,
         mxesEngine: "server",
         clipyAuto: false,
+        clipyEdit: true /* Clipy may change and complete things you already have (always asks first) */,
         storageWarnedAt: 0,
         appleClipy: false,
         clipyMade: {},
         bakFolderAuto: false,
         bakFolderName: "",
+        bakKind: "" /* "dir" or "file": what the backup source is */,
         bakFolderLoaded: 0,
         bakFolderHash: "",
         bakFolderMsg: "",
@@ -1704,6 +1745,7 @@ window.addEventListener("error", function (e) {
     o.prefs.appleWriteLast = isNum(pp.appleWriteLast) ? pp.appleWriteLast : 0;
     o.prefs.mxesEngine = pp.mxesEngine === "apple" ? "apple" : "server";
     o.prefs.clipyAuto = pp.clipyAuto === true;
+    o.prefs.clipyEdit = pp.clipyEdit !== false;
     o.prefs.storageWarnedAt = isNum(pp.storageWarnedAt) ? pp.storageWarnedAt : 0;
     o.prefs.appleClipy = pp.appleClipy === true;
     o.prefs.clipyMade = {}; /* which items Clipy made: { "ev:ID": 1, ... } */
@@ -1715,6 +1757,7 @@ window.addEventListener("error", function (e) {
         });
     o.prefs.bakFolderAuto = pp.bakFolderAuto === true;
     o.prefs.bakFolderName = isStr(pp.bakFolderName) ? clip(pp.bakFolderName, 80) : "";
+    o.prefs.bakKind = pp.bakKind === "file" || pp.bakKind === "dir" ? pp.bakKind : "";
     o.prefs.bakFolderLoaded = isNum(pp.bakFolderLoaded) ? pp.bakFolderLoaded : 0;
     o.prefs.bakFolderHash = isStr(pp.bakFolderHash) ? clip(pp.bakFolderHash, 20) : "";
     o.prefs.bakFolderMsg = isStr(pp.bakFolderMsg) ? clip(pp.bakFolderMsg, 160) : "";
@@ -6252,6 +6295,15 @@ window.addEventListener("error", function (e) {
       }
     }
   }
+  /* open Control Panel and jump straight to one of its sections (Storage, Backup, Display & Preferences, Assistant, Desktop Icons, Updates ...) */
+  function openControl(section) {
+    openApp("control");
+    if (section)
+      setTimeout(function () {
+        var w = wins["control"];
+        if (w && w.jumpTo) w.jumpTo(section);
+      }, 0);
+  }
   function openApp(id) {
     var app = APPS[id];
     if (!app) return;
@@ -9441,7 +9493,8 @@ window.addEventListener("error", function (e) {
   /* ===== browser: load the newest desktop backup from a folder you choose (iCloud Drive, Dropbox, ...) =====
      The desktop app can keep focusdesk-latest.json (and dated backups) in a folder. Browsers that can open folders
      (Chrome, Edge, Brave...) remember the one you choose and offer the newest file when the page opens. */
-  var bakHandle = null;
+  var bakHandle = null,
+    bakFileHandle = null; /* the backup FILE, when the person chose a file instead of a folder (Chrome won't open some folders) */
   /* How full this browser's storage is, MEASURED instead of guessed. Browsers have different limits and count differently,
      so we count what's stored and then find out how much more the browser will accept (a temporary key, removed straight away). */
   function measureStorage() {
@@ -9467,7 +9520,7 @@ window.addEventListener("error", function (e) {
         capped = true;
         lo = hi;
       } catch (e) {}
-      while (!capped && hi - lo > 131072) {
+      while (!capped && hi - lo > 16384) {
         var mid = Math.floor((lo + hi) / 2),
           ok = true;
         try {
@@ -9485,6 +9538,46 @@ window.addEventListener("error", function (e) {
       } catch (e) {}
     }
     return { used: used, free: lo, capped: capped };
+  }
+  /* where this browser's storage is going: the parts of the main data, the restore point and other copies, and anything else kept on this web address */
+  function storageBreakdown() {
+    var out = { total: 0, keys: 0, notes: 0, pics: 0, cards: 0, other: 0, copies: 0, outside: 0, bakLen: 0, corruptLen: 0 },
+      mainLen = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k === KEY + ".probe") continue;
+        var len = k.length + (localStorage.getItem(k) || "").length;
+        out.total += len;
+        out.keys++;
+        if (k === KEY) mainLen = len;
+        else if (k === KEY + ".bak") {
+          out.copies += len;
+          out.bakLen = len;
+        } else if (k === KEY + ".baktime") out.copies += len;
+        else if (k === KEY + ".corrupt") {
+          out.copies += len;
+          out.corruptLen = len;
+        } else if (k === WALLKEY) out.pics += len;
+        else if (k.indexOf("focusdesk96") === 0) out.other += len;
+        else out.outside += len;
+      }
+    } catch (e) {
+      return null;
+    }
+    var n = JSON.stringify(S.notes).length,
+      im = JSON.stringify(S.images || {}).length,
+      c = JSON.stringify(S.cards).length,
+      parts = n + im + c,
+      scale = parts > mainLen && parts > 0 ? mainLen / parts : 1; /* S can hold changes that are not saved yet */
+    out.notes = Math.round(n * scale);
+    out.cards = Math.round(c * scale);
+    out.pics += Math.round(im * scale);
+    out.other += Math.max(0, mainLen - out.notes - out.cards - Math.round(im * scale));
+    return out;
+  }
+  function fmtSize(n) {
+    return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(1) + " KB" : (n / 1048576).toFixed(2) + " MB";
   }
   /* browser: when the page opens, say so if this browser's storage is nearly full (at most once a day) */
   function storageStartWarn() {
@@ -9509,13 +9602,13 @@ window.addEventListener("error", function (e) {
   }
   /* the website: tell the person when a newer version has been published */
   var siteVerShown = "";
-  function showNewVersionBar(v) {
+  function showNewVersionBar(v, tag) {
     var old = document.getElementById("fdNewVer");
     if (old) old.remove();
     var bar = el(
       "div",
       { id: "fdNewVer", class: "fd-newver", role: "status" },
-      el("span", null, "A new version of FocusDesk 96 (" + v + ") is ready."),
+      el("span", null, "A new version of FocusDesk 96 (" + v, tagChip(tag), ") is ready."),
       el(
         "button",
         {
@@ -9544,9 +9637,26 @@ window.addEventListener("error", function (e) {
         var v = j && isStr(j.browser) ? j.browser : "";
         if (!/^\d+(\.\d+){0,3}$/.test(v) || verCmp(VERSION, v) >= 0 || siteVerShown === v) return;
         siteVerShown = v;
-        showNewVersionBar(v);
+        showNewVersionBar(v, j.tags);
       })
       .catch(function () {});
+  }
+  function bakFileSupported() {
+    return !window.__focusdeskIsDesktop && typeof window.showOpenFilePicker === "function";
+  }
+  /* the backup file the person chose directly: is it a real FocusDesk backup, and when was it written? */
+  function bakReadFile(fh) {
+    return fh.getFile().then(function (f) {
+      if (!f || f.size <= 0 || f.size > 150000000) return null;
+      return f.text().then(function (txt) {
+        try {
+          var obj = JSON.parse(txt),
+            data = obj && isObj(obj.data) ? obj.data : obj;
+          if (isObj(data) && (Array.isArray(data.notes) || isObj(data.prefs))) return { name: f.name, t: f.lastModified, data: data };
+        } catch (e) {}
+        return null;
+      });
+    });
   }
   function bakSupported() {
     return !window.__focusdeskIsDesktop && typeof window.showDirectoryPicker === "function";
@@ -9660,6 +9770,7 @@ window.addEventListener("error", function (e) {
     S = clean;
     S.prefs.bakFolderAuto = keep.bakFolderAuto;
     S.prefs.bakFolderName = keep.bakFolderName;
+    S.prefs.bakKind = keep.bakKind;
     S.prefs.bakFolderLoaded = pick.t;
     S.prefs.bakFolderHash = bakContentHash();
     flush();
@@ -9667,13 +9778,14 @@ window.addEventListener("error", function (e) {
   }
   /* manual: the person pressed a button (so asking for permission is allowed). Otherwise it runs quietly at start-up. */
   function bakCheck(manual) {
-    if (!bakHandle) return Promise.resolve({ ok: false, msg: "No folder chosen yet." });
-    var h = bakHandle;
+    var isFile = !!bakFileHandle,
+      h = bakFileHandle || bakHandle;
+    if (!h) return Promise.resolve({ ok: false, msg: "No folder or file chosen yet." });
     function go() {
-      return bakFindNewest(h).then(
+      return (isFile ? bakReadFile(h) : bakFindNewest(h)).then(
         function (pick) {
           if (!pick) {
-            S.prefs.bakFolderMsg = "No FocusDesk backup was found in that folder.";
+            S.prefs.bakFolderMsg = isFile ? "That file isn't a FocusDesk backup." : "No FocusDesk backup was found in that folder.";
             save();
             if (manual) msgBox({ title: "Desktop Backups", icon: "info", text: S.prefs.bakFolderMsg });
             return { ok: false, msg: S.prefs.bakFolderMsg };
@@ -9696,7 +9808,7 @@ window.addEventListener("error", function (e) {
             title: "Newer Desktop Backup",
             icon: "q",
             width: 420,
-            text: "A backup from your desktop FocusDesk is in the folder you chose:\n\n" + pick.name + "\n" + bakWhen(pick.t) + "\n\n" + (first ? "Loading it replaces what's in this browser." : "This browser has changes made since the last load. Loading it replaces them.") + "\nWhat's here now is kept as a restore point (Control Panel \u2192 Recover last restore point).",
+            text: "A backup from your desktop FocusDesk is in the " + (isFile ? "file" : "folder") + " you chose:\n\n" + pick.name + "\n" + bakWhen(pick.t) + "\n\n" + (first ? "Loading it replaces what's in this browser." : "This browser has changes made since the last load. Loading it replaces them.") + "\nWhat's here now is kept as a restore point (Control Panel \u2192 Recover last restore point).",
             buttons: [
               { label: "Load it", fn: function () { bakApply(pick); } },
               {
@@ -9711,7 +9823,7 @@ window.addEventListener("error", function (e) {
           return { ok: true, msg: "Waiting for your answer." };
         },
         function (e) {
-          var msg = "Couldn't read the folder: " + clip((e && e.message) || "no access", 100);
+          var msg = "Couldn't read the " + (isFile ? "file" : "folder") + ": " + clip((e && e.message) || "no access", 100);
           S.prefs.bakFolderMsg = msg;
           save();
           if (manual) msgBox({ title: "Desktop Backups", icon: "warn", text: msg });
@@ -9730,34 +9842,120 @@ window.addEventListener("error", function (e) {
       msgBox({
         title: "Desktop Backups",
         icon: "q",
-        text: "Check your desktop backup folder (\u201c" + (S.prefs.bakFolderName || "folder") + "\u201d) for a newer copy?\n\nYour browser needs you to allow access to the folder again.",
+        text: "Check your desktop " + (isFile ? "backup file" : "backup folder") + " (\u201c" + (S.prefs.bakFolderName || "folder") + "\u201d) for a newer copy?\n\nYour browser needs you to allow access to the folder again.",
         buttons: [{ label: "Check now", fn: function () { bakCheck(true); } }, { label: "Not now" }],
       });
       return { ok: false, msg: "Needs a click." };
     });
   }
   function bakStart() {
-    if (!bakSupported() || !S.prefs.bakFolderAuto) return;
-    bakIdb("readonly", function (st) {
-      return st.get("backupDir");
-    }).then(
-      function (h) {
-        if (!h) return;
-        bakHandle = h;
-        bakCheck(false);
-      },
-      function () {}
-    );
+    if (!(bakSupported() || bakFileSupported()) || !S.prefs.bakFolderAuto) return;
+    Promise.all([
+      bakIdb("readonly", function (st) {
+        return st.get("backupDir");
+      }).catch(function () {
+        return null;
+      }),
+      bakIdb("readonly", function (st) {
+        return st.get("backupFile");
+      }).catch(function () {
+        return null;
+      }),
+    ]).then(function (r) {
+      if (r[1]) bakFileHandle = r[1];
+      else if (r[0]) bakHandle = r[0];
+      else return;
+      bakCheck(false);
+    });
   }
   function bakFolderUI() {
     if (window.__focusdeskIsDesktop) return null;
     var msg = el("div", { class: "dim", style: "padding:2px 0" });
     function paint() {
-      msg.textContent = S.prefs.bakFolderName ? "Folder: " + S.prefs.bakFolderName + (S.prefs.bakFolderLoaded ? ". Last loaded: " + bakWhen(S.prefs.bakFolderLoaded) + "." : ".") + (S.prefs.bakFolderMsg ? " " + S.prefs.bakFolderMsg : "") : "No folder chosen.";
+      var kind = S.prefs.bakKind === "file" ? "File: " : "Folder: ";
+      msg.textContent = S.prefs.bakFolderName
+        ? kind + S.prefs.bakFolderName + (S.prefs.bakFolderLoaded ? ". Last loaded: " + bakWhen(S.prefs.bakFolderLoaded) + "." : ".") + (S.prefs.bakFolderMsg ? " " + S.prefs.bakFolderMsg : "")
+        : "No folder or file chosen." + (S.prefs.bakFolderMsg ? " " + S.prefs.bakFolderMsg : "");
     }
     paint();
     if (!bakSupported())
       return el("fieldset", null, el("legend", null, "Desktop backups folder"), el("div", { class: "dim", style: "padding:2px 0" }, "This needs a browser that can open folders, like Chrome, Edge or Brave. In this browser, use Restore from file instead."));
+    var det = el(
+      "details",
+      { style: "padding:2px 0 4px" },
+      el("summary", { style: "cursor:pointer" }, "Chrome says it can\u2019t open my folder (\u201ccontains system files\u201d)"),
+      el(
+        "div",
+        { class: "dim", style: "padding:4px 0 0" },
+        "Chrome won\u2019t let any website open Desktop, Documents, Downloads, the top of iCloud Drive or Dropbox, or any folder that has system files in it. That is Chrome\u2019s rule, and FocusDesk can\u2019t change it. Here is the way around it:",
+        el(
+          "ol",
+          { style: "margin:4px 0 0;padding-left:20px" },
+          el("li", null, "In Finder or File Explorer, make a NEW folder inside iCloud Drive or Dropbox, for example \u201cFocusDesk Backups\u201d."),
+          el("li", null, "In the desktop app: Control Panel \u2192 Desktop \u2192 Daily backups \u2192 Choose folder, and pick that new folder."),
+          el("li", null, "Come back here, press Choose folder, and pick the same new folder."),
+          el("li", null, "Or press \u201cChoose the backup file instead\u201d and pick focusdesk-latest.json from that folder.")
+        )
+      )
+    );
+    /* did the picker fail? a cancel can mean Chrome refused the folder, so point at the help; any other problem is shown as it is */
+    function pickFailed(e, what) {
+      if (e && e.name === "AbortError") {
+        S.prefs.bakFolderMsg = "Nothing was chosen. If Chrome said the folder \u201ccontains system files\u201d, see the help just below.";
+        det.open = true;
+      } else S.prefs.bakFolderMsg = "Chrome wouldn\u2019t open that " + what + " (" + clip((e && (e.message || e.name)) || "no reason given", 90) + "). See the help just below.";
+      if (!(e && e.name === "AbortError")) det.open = true;
+      save();
+      paint();
+    }
+    function newSource(kind, name) {
+      if (S.prefs.bakKind !== kind || S.prefs.bakFolderName !== name) {
+        S.prefs.bakFolderLoaded = 0;
+        S.prefs.bakFolderHash = "";
+      }
+      S.prefs.bakKind = kind;
+      S.prefs.bakFolderName = clip(name, 80);
+      S.prefs.bakFolderMsg = "";
+      save();
+      paint();
+      bakCheck(true).then(paint);
+    }
+    function chooseFolder() {
+      window.showDirectoryPicker({ id: "focusdesk-backups", mode: "read" }).then(
+        function (h) {
+          bakHandle = h;
+          bakFileHandle = null;
+          bakIdb("readwrite", function (st) {
+            st.delete("backupFile");
+            return st.put(h, "backupDir");
+          }).catch(function () {});
+          newSource("dir", h.name);
+        },
+        function (e) {
+          pickFailed(e, "folder");
+        }
+      );
+    }
+    function chooseFile() {
+      window
+        .showOpenFilePicker({ id: "focusdesk-backup-file", multiple: false, types: [{ description: "FocusDesk backup (.json)", accept: { "application/json": [".json"] } }] })
+        .then(
+          function (hs) {
+            var fh = hs && hs[0];
+            if (!fh) return;
+            bakFileHandle = fh;
+            bakHandle = null;
+            bakIdb("readwrite", function (st) {
+              st.delete("backupDir");
+              return st.put(fh, "backupFile");
+            }).catch(function () {});
+            newSource("file", fh.name);
+          },
+          function (e) {
+            pickFailed(e, "file");
+          }
+        );
+    }
     return el(
       "fieldset",
       null,
@@ -9766,29 +9964,10 @@ window.addEventListener("error", function (e) {
       el(
         "div",
         { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
-        el(
-          "button",
-          {
-            class: "btn sm",
-            onclick: function () {
-              window.showDirectoryPicker({ id: "focusdesk-backups", mode: "read" }).then(
-                function (h) {
-                  bakHandle = h;
-                  bakIdb("readwrite", function (st) {
-                    return st.put(h, "backupDir");
-                  }).catch(function () {});
-                  S.prefs.bakFolderName = clip(h.name, 80);
-                  S.prefs.bakFolderMsg = "";
-                  save();
-                  paint();
-                  bakCheck(true).then(paint);
-                },
-                function () {}
-              );
-            },
-          },
-          "Choose folder\u2026"
-        ),
+        el("button", { class: "btn sm", onclick: chooseFolder }, "Choose folder\u2026"),
+        bakFileSupported()
+          ? el("span", { class: "row", style: "gap:2px;align-items:center" }, el("button", { class: "btn sm", title: "Pick the backup file itself (focusdesk-latest.json). This works even when Chrome won\u2019t open the folder.", onclick: chooseFile }, "Choose the backup file instead\u2026"), featureChip("BETA"))
+          : null,
         el("button", { class: "btn sm", onclick: function () { bakCheck(true).then(paint); } }, "Load newest now"),
         el(
           "label",
@@ -9809,10 +9988,13 @@ window.addEventListener("error", function (e) {
             class: "btn sm",
             onclick: function () {
               bakHandle = null;
+              bakFileHandle = null;
               bakIdb("readwrite", function (st) {
+                st.delete("backupFile");
                 return st.delete("backupDir");
               }).catch(function () {});
               S.prefs.bakFolderName = "";
+              S.prefs.bakKind = "";
               S.prefs.bakFolderLoaded = 0;
               S.prefs.bakFolderHash = "";
               S.prefs.bakFolderMsg = "";
@@ -9820,10 +10002,11 @@ window.addEventListener("error", function (e) {
               paint();
             },
           },
-          "Forget folder"
+          "Forget it"
         )
       ),
-      msg
+      msg,
+      det
     );
   }
   function appleStatus(msg) {
@@ -12497,6 +12680,12 @@ window.addEventListener("error", function (e) {
       ["Start or pause the focus timer", function () { openApp("timer"); startPause(); }],
       ["Save a backup now", function () { quickBackup(); }],
       ["Open Control Panel", function () { openApp("control"); }],
+      ["Settings: Assistant", function () { openControl("Assistant"); }],
+      ["Settings: Themes and desktop picture", function () { openControl("Display & Preferences"); }],
+      ["Settings: Desktop icons", function () { openControl("Desktop Icons"); }],
+      ["Settings: Storage", function () { openControl("Storage"); }],
+      ["Settings: Backup", function () { openControl("Backup"); }],
+      ["Settings: Updates", function () { openControl("Updates"); }],
       ["Check for updates", function () { checkUpdate(true); }],
       ["Show the taskbar calendar", function () { showClockFlyout(); }],
       ["Ask Clipy", function () { if (typeof openClipyPanel === "function") openClipyPanel(); }],
@@ -14888,42 +15077,142 @@ window.addEventListener("error", function (e) {
     });
     var storageBar = el("div", {
       class: "col",
-      style: "gap:4px;margin-top:6px",
+      style: "gap:4px;margin-top:6px;min-height:150px" /* the space is kept so the screen doesn't jump when the measurement arrives */,
     });
-    function drawStorageBar() {
+    var storageCache = null; /* the last measurement (measuring writes a big test value, so it isn't repeated on every redraw) */
+    function drawStorageBar(force) {
       storageBar.textContent = "";
       if (window.__focusdeskIsDesktop) return; /* files on disk: no browser limit */
+      if (!force && storageCache && Date.now() - storageCache.at < 15000) {
+        paintStorageBar(storageCache.r, storageCache.bd);
+        return;
+      }
       storageBar.append(el("div", { class: "dim", style: "padding:0" }, "Measuring storage\u2026"));
       setTimeout(function () {
-        paintStorageBar(measureStorage());
+        var bd = storageBreakdown(),
+          r = measureStorage(),
+          bd2 = storageBreakdown();
+        if (bd && bd2 && bd.total !== bd2.total) {
+          /* something else changed the storage while it was being measured (another tab, say): measure once more */
+          r = measureStorage();
+          bd2 = storageBreakdown();
+        }
+        storageCache = { at: Date.now(), r: r, bd: bd2 };
+        paintStorageBar(r, bd2);
       }, 30);
     }
-    function paintStorageBar(r) {
+    function paintStorageBar(r, bd) {
       storageBar.textContent = "";
-      if (!r) {
+      if (!r || !bd) {
         storageBar.append(el("div", { class: "dim" }, "Storage info isn't available in this browser."));
         return;
       }
-      if (!r.free && !r.used) {
-        storageBar.append(el("div", { style: "color:#c00000;font-size:11px;font-weight:bold" }, "This browser isn't letting FocusDesk store anything here (private browsing, or storage is blocked). Download a backup file to keep your work."));
+      if (!r.free && !bd.total) {
+        storageBar.append(el("div", { style: "color:#c00000;font-size:11px;font-weight:bold" }, "This browser isn't letting FocusDesk store anything right now. Save a backup file to be safe."));
         return;
       }
-      var total = r.used + r.free,
-        pct = Math.min(100, Math.round((r.used / total) * 100)),
-        barColor = pct < 60 ? "#006000" : pct < 85 ? "#a05000" : "#c00000",
-        mb = total / 1048576;
-      storageBar.append(
-        el("div", { style: "font-size:11px;color:#404040" }, "Using " + (r.used / 1024).toFixed(1) + " KB of about " + (r.capped ? "at least " + mb.toFixed(0) : mb.toFixed(1)) + " MB that this browser allows (" + pct + "%)"),
-        el(
-          "div",
-          { style: "height:12px;background:#e8e8e8;position:relative;box-shadow:inset 1px 1px #808080,inset -1px -1px #fff" },
-          el("i", { style: "display:block;height:100%;width:" + pct + "%;background:" + barColor })
-        )
-      );
-      if (pct >= 85) storageBar.append(el("div", { style: "color:#c00000;font-size:11px;font-weight:bold" }, "Storage is nearly full. Save a backup and consider removing old notes or cards."));
-      try {
-        storageBar.append(el("div", { style: "font-size:11px;color:#606060;padding-top:4px" }, "Keys: " + Object.keys(localStorage).length + "  \u00b7  FocusDesk data: " + (JSON.stringify(S).length / 1024).toFixed(1) + " KB"));
-      } catch (e) {}
+      var allow = bd.total + r.free;
+      if (!r.capped)
+        [2, 2.5, 5, 10].forEach(function (mb) {
+          /* browsers give round allowances (5 MB is common); the measurement is within a few KB of it, so show the round number */
+          if (Math.abs(allow - mb * 1048576) <= 40000) allow = mb * 1048576;
+        });
+      var left = Math.max(0, allow - bd.total),
+        pct = Math.min(100, Math.round((bd.total / allow) * 100)),
+        parts = [
+          ["Notes", bd.notes, "#2050d0"],
+          ["Pictures", bd.pics, "#a03090"],
+          ["Flash cards", bd.cards, "#208040"],
+          ["Everything else in FocusDesk", bd.other, "#707070"],
+          ["Restore points and copies", bd.copies, "#d09020"],
+          ["Other things on this web address", bd.outside, "#303030"],
+        ],
+        summary = r.capped
+          ? "Using " + fmtSize(bd.total) + ". This browser has at least " + fmtSize(r.free) + " more room, which is plenty."
+          : "Using " + fmtSize(bd.total) + " of about " + fmtSize(allow) + " (" + (pct < 1 && bd.total ? "under 1" : pct) + "%). About " + fmtSize(left) + " left.";
+      var bar = el("div", {
+        role: "img",
+        "aria-label": summary,
+        style: "height:14px;background:#e8e8e8;display:flex;box-shadow:inset 1px 1px #808080,inset -1px -1px #fff;overflow:hidden",
+      });
+      parts.forEach(function (p) {
+        if (p[1] <= 0) return;
+        bar.append(el("i", { title: p[0] + ": " + fmtSize(p[1]), style: "display:block;height:100%;flex:none;width:" + Math.max(0.8, (p[1] / allow) * 100).toFixed(2) + "%;background:" + p[2] }));
+      });
+      storageBar.append(el("div", { style: "font-size:11px;color:#404040" }, summary), bar);
+      var legend = el("div", { style: "display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:2px 12px;font-size:11px;color:#303030" });
+      parts.forEach(function (p) {
+        if (p[1] <= 0) return;
+        legend.append(el("div", { style: "display:flex;gap:6px;align-items:center" }, el("i", { style: "width:10px;height:10px;flex:none;background:" + p[2] + ";box-shadow:inset 0 0 0 1px #000" }), el("span", null, p[0] + ": " + fmtSize(p[1]))));
+      });
+      storageBar.append(legend);
+      if (pct >= 85)
+        storageBar.append(el("div", { style: "color:#c00000;font-size:11px;font-weight:bold" }, "Storage is nearly full. Save a backup file, then delete things you don't need (pictures use the most space)."));
+      var row = el("div", { class: "row", style: "gap:6px;flex-wrap:wrap;padding-top:2px" }, el("button", { class: "btn xs", onclick: function () { drawStorageBar(true); } }, "Measure again"));
+      if (bd.bakLen)
+        row.append(
+          el(
+            "button",
+            {
+              class: "btn xs",
+              title: "A copy of your data that is refreshed about once an hour",
+              onclick: function () {
+                msgBox({
+                  title: "Delete the restore point?",
+                  icon: "q",
+                  width: 380,
+                  text: "This deletes the automatic copy of your data (" + fmtSize(bd.bakLen) + "). Your real data isn't touched, and a new restore point is made within the hour.",
+                  buttons: [
+                    {
+                      label: "Delete",
+                      fn: function () {
+                        try {
+                          localStorage.removeItem(KEY + ".bak");
+                          localStorage.removeItem(KEY + ".baktime");
+                        } catch (e) {}
+                        drawStorageBar(true);
+                      },
+                    },
+                    { label: "Keep it" },
+                  ],
+                });
+              },
+            },
+            "Delete restore point (" + fmtSize(bd.bakLen) + ")"
+          )
+        );
+      if (bd.corruptLen)
+        row.append(
+          el(
+            "button",
+            {
+              class: "btn xs",
+              title: "A copy kept when a save couldn't be read",
+              onclick: function () {
+                msgBox({
+                  title: "Delete the copy of the damaged save?",
+                  icon: "warn",
+                  width: 400,
+                  text: "FocusDesk kept a copy (" + fmtSize(bd.corruptLen) + ") of a save it couldn't read, in case something could be recovered from it. Delete it only if you don't need it.",
+                  buttons: [
+                    {
+                      label: "Delete",
+                      fn: function () {
+                        try {
+                          localStorage.removeItem(KEY + ".corrupt");
+                        } catch (e) {}
+                        drawStorageBar(true);
+                      },
+                    },
+                    { label: "Keep it" },
+                  ],
+                });
+              },
+            },
+            "Delete damaged-save copy (" + fmtSize(bd.corruptLen) + ")"
+          )
+        );
+      storageBar.append(row);
     }
     function draw() {
       var saveErr = window.__focusdeskIsDesktop && window.__focusdeskSaveError;
@@ -15962,7 +16251,7 @@ window.addEventListener("error", function (e) {
         ["Studio", "Apoji Studios"],
         ["Developer", "Apoji Delegraphics"],
         ["Product", "FocusDesk 96"],
-        ["Version", VERSION],
+        ["Version", el("span", null, VERSION, tagChip(TAG))],
         [
           "Where",
           window.__focusdeskIsDesktop
@@ -16040,7 +16329,7 @@ window.addEventListener("error", function (e) {
           function paintBk() {
             bkPath.textContent = "Daily backups go to: " + (D.backups || "") + (P.backupPath ? "" : "  (default)");
           }
-          function opt(key, label, dflt) {
+          function opt(key, label, dflt, chip) {
             return el(
               "label",
               { class: "row", style: "gap:6px;align-items:center" },
@@ -16056,7 +16345,8 @@ window.addEventListener("error", function (e) {
                   });
                 },
               }),
-              label
+              label,
+              chip || null
             );
           }
           function btn(label, fn, title) {
@@ -16228,7 +16518,21 @@ window.addEventListener("error", function (e) {
               opt("dueOverdue", "Show overdue tasks and assignments in the " + tray + " menu, too", true),
               opt("mirrorLatest", "Keep a copy of your newest data in the backup folder (focusdesk-latest.json), so the browser version can load it. Works well with a folder in iCloud Drive.", false),
               opt("npCoverLookup", "Now Playing: if the player has no cover picture, look one up online (sends the song title and artist to Apple's music search)", false),
-              opt("taskbarBadge", mac ? "Show a number on the Dock icon for what's due (Linux and Windows: on the taskbar icon)" : "Show a red number on the taskbar icon for what's due", false),
+              opt("taskbarBadge", mac ? "Show a number on the Dock icon for what's due (Linux and Windows: on the taskbar icon)" : "Show a red number on the taskbar icon for what's due", false, mac ? featureChip("BETA") : null),
+              el(
+                "div",
+                { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
+                btn(
+                  "Reset pop-out positions",
+                  function () {
+                    window.__focusdeskSetPrefs({ resetPopoutBounds: true }).then(function () {
+                      paintNote("Pop-outs will open in their usual place and size again.");
+                    });
+                  },
+                  "Forget where each pop-out window was, so they open in the default place again"
+                ),
+                featureChip("BETA")
+              ),
               el(
                 "div",
                 { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
@@ -16350,9 +16654,11 @@ window.addEventListener("error", function (e) {
     var bakFolderBox = bakFolderUI();
     var updInfo = el("div", { class: "dim", style: "padding:4px 0 0" });
     function paintUpd() {
-      updInfo.textContent = S.prefs.updLast
-        ? "Last checked " + new Date(S.prefs.updLast).toLocaleString() + (S.prefs.updMsg ? ": " + S.prefs.updMsg : ".")
-        : "Not checked yet. You're on " + VERSION + ".";
+      updInfo.textContent = "";
+      if (S.prefs.updLast) {
+        updInfo.append("Last checked " + new Date(S.prefs.updLast).toLocaleString());
+        paintTagged(updInfo, S.prefs.updMsg ? ": " + S.prefs.updMsg : ".");
+      } else updInfo.append("Not checked yet. You're on " + VERSION, tagChip(TAG), ".");
     }
     paintUpd();
     window.__fdUpdPaint = paintUpd;
@@ -17102,6 +17408,14 @@ window.addEventListener("error", function (e) {
         return f.querySelector("legend");
       });
       if (secs.length < 4) return;
+      w.jumpTo = function (name) {
+        for (var i = 0; i < secs.length; i++)
+          if (secs[i].querySelector("legend").textContent === name) {
+            secs[i].scrollIntoView({ block: "start" });
+            return true;
+          }
+        return false;
+      };
       var parent = secs[0].parentNode,
         bar = el("div", { class: "cp-jump", role: "navigation", "aria-label": "Jump to a section" }, "Jump to: ");
       secs
@@ -23633,6 +23947,7 @@ window.addEventListener("error", function (e) {
         out.browserUrl = a.browser_download_url;
       }
     });
+    out.tags = tagsFromTitle(rel && rel.name);
     return out;
   }
   function getReleaseInfo() {
@@ -23664,12 +23979,57 @@ window.addEventListener("error", function (e) {
           })
           .then(function (j) {
             var zip = "https://github.com/" + REPO + "/releases/latest";
-            return { tag: String(j.desktop || "").replace(/^v/i, ""), url: zip, browserVer: String(j.browser || ""), browserUrl: zip };
+            return { tag: String(j.desktop || "").replace(/^v/i, ""), url: zip, browserVer: String(j.browser || ""), browserUrl: zip, tags: Array.isArray(j.tags) ? j.tags : [] };
           })
           .catch(function () {
             throw err;
           });
       });
+  }
+  /* ---- tags: a small label beside a version. Never part of the number. ---- */
+  function isTagName(t) {
+    return t === "MAJOR" || t === "MINOR" || t === "STABILITY" || t === "HOTFIX";
+  }
+  function firstTag(x) {
+    var a = Array.isArray(x) ? x : [x];
+    for (var i = 0; i < a.length; i++) if (isStr(a[i]) && isTagName(a[i].toUpperCase())) return a[i].toUpperCase();
+    return "";
+  }
+  function featureChip(tag) {
+    return el("span", { class: "tagchip tag-" + String(tag).toLowerCase(), title: "Newer and less proven. Tell us if it misbehaves." }, tag);
+  }
+  function tagWord(t) {
+    return { MAJOR: "Major update", MINOR: "Minor update", STABILITY: "Stability update", HOTFIX: "Hotfix" }[t] || "";
+  }
+  function tagChip(x) {
+    var t = firstTag(x);
+    return t ? el("span", { class: "tagchip tag-" + t.toLowerCase(), title: tagWord(t) }, t) : document.createTextNode("");
+  }
+  function tagWords(x) {
+    var t = firstTag(x);
+    return t ? " (a " + tagWord(t) + ")" : "";
+  }
+  function tagToken(x) {
+    var t = firstTag(x);
+    return t ? "{tag:" + t + "}" : "";
+  }
+  function paintTagged(parent, text) {
+    String(text)
+      .split(/(\{tag:[A-Z]+\})/)
+      .forEach(function (part) {
+        var m = /^\{tag:([A-Z]+)\}$/.exec(part);
+        if (m) parent.append(tagChip(m[1]));
+        else if (part) parent.append(part);
+      });
+  }
+  function tagsFromTitle(name) {
+    var out = [];
+    String(name || "").replace(/\[([A-Za-z]+)\]/g, function (m, w) {
+      w = w.toUpperCase();
+      if (isTagName(w) && out.indexOf(w) < 0) out.push(w);
+      return m;
+    });
+    return out;
   }
   function updNote(text) {
     S.prefs.updMsg = clip(text, 160);
@@ -23705,21 +24065,22 @@ window.addEventListener("error", function (e) {
   }
   window.__focusdeskUpdate = function (st) {
     if (!st || typeof st.phase !== "string") return;
-    var v = isStr(st.version) ? st.version : "";
+    var v = isStr(st.version) ? st.version : "",
+      tg = st.tags;
     if (st.phase === "checking") return;
     if (st.phase === "none") {
       updNote("Up to date (" + VERSION + ").");
       if (updManual) msgBox({ title: "Updates", icon: "info", text: "You're up to date. FocusDesk 96 " + VERSION + " is the newest release." });
       updManual = false;
     } else if (st.phase === "available") {
-      updNote("Version " + v + " is available (you have " + VERSION + ").");
+      updNote("Version " + v + tagToken(tg) + " is available (you have " + VERSION + ").");
       if (updateMode() === "ask" && updToldAbout !== v) {
         updToldAbout = v;
         msgBox({
           title: "Update Available",
           icon: "bulb",
           width: 400,
-          text: "FocusDesk 96 " + v + " is available (you have " + VERSION + ").\n\nDownload and install it? FocusDesk restarts to finish. Your data is kept.",
+          text: "FocusDesk 96 " + v + tagWords(tg) + " is available (you have " + VERSION + ").\n\nDownload and install it? FocusDesk restarts to finish. Your data is kept.",
           buttons: [
             {
               label: "Download",
@@ -23740,12 +24101,12 @@ window.addEventListener("error", function (e) {
       }
     } else if (st.phase === "ready") {
       updLastPct = -1;
-      updNote("Version " + v + " is ready to install.");
+      updNote("Version " + v + tagToken(tg) + " is ready to install.");
       msgBox({
         title: "Update Ready",
         icon: "bulb",
         width: 400,
-        text: "FocusDesk 96 " + v + " has been downloaded.\n\n" + (st.auto ? "It installs when you close FocusDesk, or you can restart now." : "Restart now to install it, or choose Later and it installs when you close FocusDesk."),
+        text: "FocusDesk 96 " + v + tagWords(tg) + " has been downloaded.\n\n" + (st.auto ? "It installs when you close FocusDesk, or you can restart now." : "Restart now to install it, or choose Later and it installs when you close FocusDesk."),
         buttons: installNowButtons(v),
       });
     } else if (st.phase === "error") {
@@ -23808,14 +24169,14 @@ window.addEventListener("error", function (e) {
         var url = info.url;
         if (isDesk) {
           if (verCmp(VERSION, tag) < 0) {
-            updNote("Version " + tag + " is available (you have " + VERSION + ").");
+            updNote("Version " + tag + tagToken(info.tags) + " is available (you have " + VERSION + ").");
             if (!manual && S.prefs.updSeen === tag) return;
             S.prefs.updSeen = tag;
             save();
             msgBox({
               title: "Update Available",
               icon: "bulb",
-              text: "FocusDesk 96 " + tag + " is available (you have " + VERSION + ").\n\nDownload the new installer and run it over your current copy. Your data is kept. On a Mac, you need to run the two Terminal steps from the release page again.",
+              text: "FocusDesk 96 " + tag + tagWords(info.tags) + " is available (you have " + VERSION + ").\n\nDownload the new installer and run it over your current copy. Your data is kept. On a Mac, you need to run the two Terminal steps from the release page again.",
               buttons: [
                 { label: "Download", fn: function () { window.open(url, "_blank", "noopener"); } },
                 { label: "Later" },
@@ -23834,7 +24195,7 @@ window.addEventListener("error", function (e) {
             return;
           }
           if (verCmp(VERSION, info.browserVer) < 0) {
-            updNote("Browser version " + info.browserVer + " is available (you have " + VERSION + ").");
+            updNote("Browser version " + info.browserVer + tagToken(info.tags) + " is available (you have " + VERSION + ").");
             if (!manual && S.prefs.updSeen === "b" + info.browserVer) return;
             S.prefs.updSeen = "b" + info.browserVer;
             save();
@@ -23842,7 +24203,7 @@ window.addEventListener("error", function (e) {
               title: "Update Available",
               icon: "bulb",
               width: 380,
-              text: "Browser version " + info.browserVer + " is available (you have " + VERSION + ").\n\nThis downloads the BROWSER version as a zip. Unzip it and open index.html. Export a backup first if you like; your data stays in this browser.",
+              text: "Browser version " + info.browserVer + tagWords(info.tags) + " is available (you have " + VERSION + ").\n\nThis downloads the BROWSER version as a zip. Unzip it and open index.html. Export a backup first if you like; your data stays in this browser.",
               buttons: [
                 { label: "Download zip", fn: function () { window.open(info.browserUrl, "_blank", "noopener"); } },
                 { label: "Later" },
@@ -31119,9 +31480,10 @@ window.addEventListener("error", function (e) {
     return v;
   }
   /* one requested item, checked strictly; anything odd is dropped */
-  function cleanClipyAction(o) {
+  function cleanClipyAction(o, refs) {
     if (!isObj(o)) return null;
     var kind = o["do"];
+    if (kind === "complete" || kind === "update") return cleanClipyEdit(o, refs);
     if (kind === "card") {
       var front = clip(String(o.front || o.q || o.title || "").replace(/\s+/g, " ").trim(), 1000),
         back = clip(String(o.back || o.answer || o.a || "").replace(/\s+/g, " ").trim(), 2000),
@@ -31141,18 +31503,36 @@ window.addEventListener("error", function (e) {
     if (kind === "assignment" && o.course) out.course = clip(String(o.course).trim(), 60);
     return out;
   }
-  function extractClipyActions(text) {
+  function extractClipyActions(text, refs) {
     var acts = [],
       clean = String(text || "").replace(CLIPY_ACTION_RE, function (all, json) {
         try {
-          var a = cleanClipyAction(JSON.parse(json));
+          var a = cleanClipyAction(JSON.parse(json), refs);
           if (a && acts.length < 8) acts.push(a);
         } catch (e) {}
         return "";
       });
     return { text: clean.replace(/\n{3,}/g, "\n\n").trim(), actions: acts };
   }
-  function clipyDescribe(a) {
+  function clipyDescribe(a, past) {
+    if (a.kind === "complete") return (past ? "Marked done: " : "Mark done: ") + a.label;
+    if (a.kind === "update") {
+      var it = clipyFind(a.target.kind, a.target.id),
+        plan = it ? clipyPlan(a.target.kind, it, a.changes) : [];
+      return (
+        (past ? "Changed " : "Change ") + a.label + ": " +
+        (plan.length
+          ? plan
+              .filter(function (x) {
+                return x.f !== "allDay" && x.f !== "fired";
+              })
+              .map(function (x) {
+                return clipyFieldName(x.f) + " " + clipyShowVal(x.f, x.b) + " \u2192 " + clipyShowVal(x.f, x.a);
+              })
+              .join(", ")
+          : "nothing to change")
+      );
+    }
     if (a.kind === "card") return "Flash card: " + clip(a.title, 60) + " -> " + clip(a.back, 60) + " (" + a.deck + ")";
     var when = "";
     if (a.date) {
@@ -31192,12 +31572,196 @@ window.addEventListener("error", function (e) {
     }
     return { kind: a.kind, id: id };
   }
+  /* ===== Clipy can change and complete things you already have (BETA) ===== */
+  function isEditAct(a) {
+    return !!a && (a.kind === "complete" || a.kind === "update");
+  }
+  function clipyKindList(kind) {
+    return { task: S.tasks, assignment: S.assign, event: S.events, reminder: S.reminders }[kind] || [];
+  }
+  function clipyFind(kind, id) {
+    var list = clipyKindList(kind);
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+  function clipyLabel(kind, it) {
+    return String(kind === "task" || kind === "reminder" ? it.text : it.title) || "";
+  }
+  /* only things made by hand (or by Clipy): what came from Apple, Canvas or a calendar feed would simply be put back by the next sync,
+     and repeating things roll forward in their own way */
+  function clipyEditable(kind, it) {
+    if (!it) return false;
+    if (it.repeat && it.repeat !== "none") return false;
+    if (it.src) return it.src === "manual";
+    return !it.uid;
+  }
+  function clipyHM(ms) {
+    var d = new Date(ms);
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function clipyFieldName(f) {
+    return { title: "name", text: "name", date: "date", time: "time", dur: "length", due: "due", at: "time", course: "course", pri: "priority" }[f] || f;
+  }
+  function clipyShowVal(f, v) {
+    if (v == null || v === "") return "none";
+    if (f === "due" || f === "at") {
+      var d = new Date(v);
+      return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    }
+    if (f === "date") return new Date(v + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    if (f === "dur") return v + " min";
+    return String(v);
+  }
+  /* the short list of items Clipy is allowed to change, each with a code (T1, A2, E1, R3). Clipy has to use the code, never a name,
+     so it can't pick the wrong item. Items that match what you just said come first. */
+  function clipyBuildRefs(userText) {
+    var out = { text: "", map: {}, count: 0 };
+    if (S.prefs.clipyEdit === false) return out;
+    var words = String(userText || "").toLowerCase().split(/[^a-z0-9]+/).filter(function (w) {
+        return w.length >= 3;
+      }),
+      now = Date.now(),
+      cand = [];
+    function score(t) {
+      var low = String(t).toLowerCase(),
+        n = 0;
+      words.forEach(function (w) {
+        if (low.indexOf(w) >= 0) n++;
+      });
+      return n;
+    }
+    function push(kind, it, title, when) {
+      var sc = score(title);
+      if (!clipyEditable(kind, it)) return;
+      if (!sc && when != null && (when > now + 120 * 86400000 || when < now - 2 * 86400000)) return;
+      cand.push({ kind: kind, it: it, title: title, when: when, sc: sc });
+    }
+    S.tasks.forEach(function (t) { if (!t.done) push("task", t, t.text, t.due); });
+    S.assign.forEach(function (a) { if (!a.done) push("assignment", a, a.title, a.due); });
+    S.events.forEach(function (e) { push("event", e, e.title, new Date(e.date + "T" + (e.time || "12:00") + ":00").getTime()); });
+    S.reminders.forEach(function (r) { if (!r.done) push("reminder", r, r.text, r.at); });
+    cand.sort(function (a, b) {
+      return b.sc - a.sc || (a.when == null ? 1 : b.when == null ? -1 : a.when - b.when);
+    });
+    cand = cand.slice(0, S.prefs.mxesEngine === "apple" ? 14 : 24); /* the on-device model has less room */
+    var cnt = { task: 0, assignment: 0, event: 0, reminder: 0 },
+      LET = { task: "T", assignment: "A", event: "E", reminder: "R" },
+      lines = [];
+    cand.forEach(function (c) {
+      var code = LET[c.kind] + ++cnt[c.kind],
+        title = clip(String(c.title).replace(/\s+/g, " ").replace(/"/g, "'"), 60),
+        when = c.when == null ? "" : ymd(new Date(c.when)) + " " + clipyHM(c.when);
+      out.map[code] = { kind: c.kind, id: c.it.id };
+      lines.push(code + " " + c.kind + ' "' + title + '"' + (c.kind === "assignment" && c.it.course ? " [" + clip(c.it.course, 20) + "]" : "") + (when ? " " + (c.kind === "event" ? "" : "due ") + when : "") + (c.kind === "event" && c.it.dur ? " (" + c.it.dur + " min)" : "") + (c.kind === "task" && c.it.pri === "high" ? " (high priority)" : ""));
+    });
+    out.count = lines.length;
+    out.text = lines.length ? "Items you are allowed to change or complete (use the code exactly as written):\n" + lines.join("\n") : "";
+    return out;
+  }
+  function clipyEditPrompt() {
+    return (
+      "You can also COMPLETE or CHANGE one of the items in that list, but only when the user clearly asks (for example \"move my study group to Saturday\" or \"mark the lab report done\"). Use the item's code. One line per change at the very end of your reply, exactly like these examples:\n" +
+      '[[ACTION {"do":"complete","ref":"T2"}]]\n' +
+      '[[ACTION {"do":"update","ref":"E1","date":"2030-01-16","time":"15:30"}]] (include only what changes: title, date, time, minutes for an event, course for an assignment, pri of high, normal or low for a task)\n' +
+      "Only use codes from the list. Never change or complete anything the user didn't ask about. If you aren't sure which item they mean, ask which one instead of guessing. Say what you are changing in one short sentence and don't mention these lines."
+    );
+  }
+  /* one requested change, checked strictly against the real item; anything odd is dropped */
+  function cleanClipyEdit(o, refs) {
+    var ref = String(o.ref || "").toUpperCase().trim();
+    if (!refs || !/^[TAER]\d{1,3}$/.test(ref) || !refs[ref] || S.prefs.clipyEdit === false) return null;
+    var tgt = refs[ref],
+      it = clipyFind(tgt.kind, tgt.id);
+    if (!it || !clipyEditable(tgt.kind, it)) return null;
+    var label = clip(clipyLabel(tgt.kind, it), 80);
+    if (o["do"] === "complete") {
+      if (tgt.kind === "event" || it.done) return null; /* an event has no "done" */
+      return { kind: "complete", target: tgt, label: label };
+    }
+    var ch = {},
+      title = o.title != null ? o.title : o.text;
+    if (title != null) {
+      title = clip(String(title).replace(/\s+/g, " ").trim(), 200);
+      if (!title) return null;
+      ch.title = title;
+    }
+    if (o.date != null && o.date !== "") {
+      var d = clipyOkDate(String(o.date));
+      if (d === null) return null;
+      ch.date = d;
+    }
+    if (o.time != null && o.time !== "") {
+      var tm = String(o.time);
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(tm)) return null;
+      ch.time = tm;
+    }
+    if (tgt.kind === "event" && isNum(o.minutes) && o.minutes >= 5 && o.minutes <= 1440) ch.minutes = Math.round(o.minutes);
+    if (tgt.kind === "assignment" && o.course != null) ch.course = clip(String(o.course).trim(), 60);
+    if (tgt.kind === "task" && (o.pri === "high" || o.pri === "normal" || o.pri === "low")) ch.pri = o.pri;
+    if (!Object.keys(ch).length) return null;
+    if (!clipyPlan(tgt.kind, it, ch).length) return null; /* it already is that way */
+    return { kind: "update", target: tgt, label: label, changes: ch };
+  }
+  /* what a change would do to one item right now: a list of { f: field, b: before, a: after } */
+  function clipyPlan(kind, it, ch) {
+    var L = [];
+    function put(f, a) {
+      if (it[f] !== a) L.push({ f: f, b: it[f], a: a });
+    }
+    if (kind === "event") {
+      if (ch.title !== undefined) put("title", ch.title);
+      if (ch.date !== undefined) put("date", ch.date);
+      if (ch.time !== undefined) put("time", ch.time);
+      if (ch.minutes !== undefined) put("dur", ch.minutes);
+      return L;
+    }
+    var key = kind === "reminder" ? "at" : "due",
+      tf = kind === "assignment" ? "title" : "text";
+    if (ch.title !== undefined) put(tf, ch.title);
+    if (ch.date !== undefined || ch.time !== undefined) {
+      var cur = it[key] != null ? it[key] : null,
+        date = ch.date !== undefined ? ch.date : cur != null ? ymd(new Date(cur)) : "",
+        time = ch.time !== undefined ? ch.time : cur != null ? clipyHM(cur) : kind === "task" ? "12:00" : "";
+      if (date && time) {
+        put(key, new Date(date + "T" + time + ":00").getTime());
+        if (kind === "assignment" && ch.time !== undefined) put("allDay", false);
+        if (kind === "reminder" && L.some(function (x) { return x.f === "at"; })) put("fired", false);
+      }
+    }
+    if (kind === "assignment" && ch.course !== undefined) put("course", ch.course);
+    if (kind === "task" && ch.pri !== undefined) put("pri", ch.pri);
+    return L;
+  }
+  /* make the change; returns a record that Undo can reverse, or null if the item has gone or already changed */
+  function clipyChange(a) {
+    var it = clipyFind(a.target.kind, a.target.id);
+    if (!it || !clipyEditable(a.target.kind, it)) return null;
+    var fields = a.kind === "complete" ? (it.done ? [] : [{ f: "done", b: false, a: true }]) : clipyPlan(a.target.kind, it, a.changes);
+    if (!fields.length) return null;
+    fields.forEach(function (x) {
+      it[x.f] = x.a;
+    });
+    return { edit: true, kind: a.target.kind, id: a.target.id, fields: fields };
+  }
   /* take back what Clipy just added */
   function clipyUndo(made) {
     var n = 0,
       LISTS = { event: "events", reminder: "reminders", task: "tasks", assignment: "assign", card: "cards" },
       PREFIX = { event: "ev", reminder: "rm", task: "tk", assignment: "as" };
     made.forEach(function (m) {
+      if (m.edit) {
+        var it = clipyFind(m.kind, m.id);
+        if (!it) return;
+        var back = 0;
+        m.fields.forEach(function (x) {
+          if (it[x.f] !== x.a) return; /* you changed this yourself since, so it is left as you made it */
+          if (x.b === undefined) delete it[x.f];
+          else it[x.f] = x.b;
+          back++;
+        });
+        if (back) n++;
+        return;
+      }
       var list = LISTS[m.kind];
       if (!list) return;
       var before = S[list].length;
@@ -31481,6 +32045,14 @@ window.addEventListener("error", function (e) {
           },
         },
         {
+          label: "Let Clipy change and complete things (BETA)",
+          check: S.prefs.clipyEdit !== false,
+          fn: function () {
+            S.prefs.clipyEdit = S.prefs.clipyEdit === false;
+            save();
+          },
+        },
+        {
           label: "Tips",
           check: S.prefs.clipyTips !== false,
           fn: function () {
@@ -31503,7 +32075,7 @@ window.addEventListener("error", function (e) {
           label: "Clipy options\u2026",
           ic: "control",
           fn: function () {
-            openApp("control");
+            openControl("Assistant");
           },
         },
       ]);
@@ -31777,12 +32349,17 @@ window.addEventListener("error", function (e) {
     var pendingActs = null; /* what Clipy wants to add, waiting for a yes or no */
     var lastAdd = null; /* what Clipy just added, so it can be undone */
     function undoCard() {
-      var made = lastAdd;
+      var made = lastAdd,
+        nAdd = made.filter(function (m) { return !m.edit; }).length,
+        nChg = made.length - nAdd,
+        said = [];
+      if (nAdd) said.push("Added " + nAdd + (nAdd === 1 ? " thing" : " things"));
+      if (nChg) said.push((nAdd ? "changed " : "Changed ") + nChg + (nChg === 1 ? " thing" : " things"));
       return el(
         "div",
         { class: "cm assistant" },
         el("span", { class: "who2" }, "Clipy"),
-        el("div", null, "Added " + made.length + (made.length === 1 ? " thing." : " things.")),
+        el("div", null, said.join(" and ") + "."),
         el(
           "div",
           { class: "cm-actions" },
@@ -31791,10 +32368,12 @@ window.addEventListener("error", function (e) {
             {
               class: "btn xs",
               onclick: function () {
-                var list = lastAdd;
+                var list = lastAdd || [],
+                  hadAdd = list.some(function (m) { return !m.edit; }),
+                  hadChg = list.some(function (m) { return m.edit; });
                 lastAdd = null;
-                var n = clipyUndo(list || []);
-                pushMsg("sys", n ? "Undone: removed " + n + (n === 1 ? " item." : " items.") : "Nothing to undo.");
+                var n = clipyUndo(list);
+                pushMsg("sys", n ? "Undone: " + (hadChg && hadAdd ? "put back or removed " : hadChg ? "put back " : "removed ") + n + (n === 1 ? " item." : " items.") : "Nothing to undo.");
               },
             },
             "Undo"
@@ -31814,20 +32393,44 @@ window.addEventListener("error", function (e) {
       );
     }
     function applyClipyActs(list) {
-      lastAdd = list.map(clipyMake);
+      var made = [],
+        added = [],
+        changed = [],
+        skipped = [];
+      list.forEach(function (a) {
+        if (isEditAct(a)) {
+          var desc = clipyDescribe(a, true),
+            r = clipyChange(a);
+          if (r) {
+            made.push(r);
+            changed.push(desc);
+          } else skipped.push(a.label || "an item");
+        } else {
+          made.push(clipyMake(a));
+          added.push(clipyDescribe(a));
+        }
+      });
+      lastAdd = made;
       save();
       refreshAll();
-      pushMsg("sys", "Added: " + list.map(clipyDescribe).join("; ") + ".");
+      var parts = [];
+      if (added.length) parts.push("Added: " + added.join("; ") + ".");
+      if (changed.length) parts.push(changed.join("; ") + ".");
+      if (skipped.length) parts.push("Couldn't change " + skipped.join(", ") + " (it has gone, or it already is that way).");
+      pushMsg("sys", parts.join(" "));
     }
     function offerClipyActions(acts) {
-      if (S.prefs.clipyAuto) return applyClipyActs(acts);
+      /* adding can be set to happen without asking, but changing what you already have always asks first */
+      if (S.prefs.clipyAuto && !acts.some(isEditAct)) return applyClipyActs(acts);
       pendingActs = acts;
       paintMsgs();
     }
     function actsCard() {
       var acts = pendingActs,
+        edits = acts.some(isEditAct),
+        adds = acts.some(function (a) { return !isEditAct(a); }),
         lines = el("div", { class: "col", style: "gap:2px;padding:2px 0" }),
-        toApple = appleOn() && S.prefs.appleWrite && S.prefs.appleClipy;
+        toApple = adds && appleOn() && S.prefs.appleWrite && S.prefs.appleClipy;
       add(
         lines,
         acts.map(function (a) {
@@ -31837,7 +32440,7 @@ window.addEventListener("error", function (e) {
       return el(
         "div",
         { class: "cm assistant" },
-        el("span", { class: "who2" }, "Clipy \u2014 wants to add"),
+        el("span", { class: "who2" }, edits ? (adds ? "Clipy \u2014 wants to add and change things" : "Clipy \u2014 wants to change things") : "Clipy \u2014 wants to add", edits ? featureChip("BETA") : null),
         lines,
         toApple ? el("div", { class: "dim", style: "padding:0" }, "These will also go to Apple Calendar.") : null,
         el(
@@ -31853,7 +32456,7 @@ window.addEventListener("error", function (e) {
                 applyClipyActs(list);
               },
             },
-            acts.length > 1 ? "Add all" : "Add"
+            edits ? (adds ? "Do it" : acts.length > 1 ? "Change all" : "Change") : acts.length > 1 ? "Add all" : "Add"
           ),
           el(
             "button",
@@ -31861,7 +32464,7 @@ window.addEventListener("error", function (e) {
               class: "btn xs",
               onclick: function () {
                 pendingActs = null;
-                pushMsg("sys", "Okay, I didn't add anything.");
+                pushMsg("sys", edits ? "Okay, I didn't change anything." : "Okay, I didn't add anything.");
               },
             },
             "Skip"
@@ -32106,6 +32709,7 @@ window.addEventListener("error", function (e) {
             return (mm.role === "user" ? "User: " : "Clipy: ") + mm.text;
           })
           .join("\n");
+        var refs = clipyBuildRefs(v);
         var prompt =
           "You are Clipy, a warm, concise study companion built into FocusDesk 96. " +
           "Answer in plain text (no markdown headers, no asterisks). Be practical and specific. " +
@@ -32114,6 +32718,7 @@ window.addEventListener("error", function (e) {
           clipyContext() +
           "\n\n" +
           clipyActionPrompt() +
+          (refs.count ? "\n\n" + refs.text + "\n" + clipyEditPrompt() : "") +
           (contextPrefix
             ? "\n\nEarlier, in the Research window:\n---\n" +
               clipTextForPrompt(contextPrefix) +
@@ -32138,8 +32743,8 @@ window.addEventListener("error", function (e) {
             if (looksBroken(t))
               pushMsg("sys", "Clipy's answer didn't come through properly. Press Try again, or ask a different way.");
             else {
-              var ex = extractClipyActions(t);
-              pushMsg("assistant", ex.text || (ex.actions.length ? "Okay, here's what I'd add." : t));
+              var ex = extractClipyActions(t, refs.map);
+              pushMsg("assistant", ex.text || (ex.actions.length ? (ex.actions.some(isEditAct) ? "Okay, here's what I'd change." : "Okay, here's what I'd add.") : t));
               if (ex.actions.length) offerClipyActions(ex.actions);
             }
           },
@@ -33573,7 +34178,7 @@ window.addEventListener("error", function (e) {
         label: "Desktop Picture\u2026",
         ic: "image",
         fn: function () {
-          openApp("control");
+          openControl("Display & Preferences");
         },
       },
     ]);
@@ -33929,28 +34534,49 @@ window.addEventListener("error", function (e) {
           label: "Assistant\u2026",
           ic: "helpy",
           fn: function () {
-            openApp("control");
+            openControl("Assistant");
           },
         },
         {
           label: "Desktop Picture\u2026",
           ic: "image",
           fn: function () {
-            openApp("control");
+            openControl("Display & Preferences");
           },
         },
         {
           label: "Themes\u2026",
           ic: "paint",
           fn: function () {
-            openApp("control");
+            openControl("Display & Preferences");
           },
         },
         {
           label: "Desktop Icons\u2026",
           ic: "folder",
           fn: function () {
-            openApp("control");
+            openControl("Desktop Icons");
+          },
+        },
+        {
+          label: "Storage\u2026",
+          ic: "control",
+          fn: function () {
+            openControl("Storage");
+          },
+        },
+        {
+          label: "Backup\u2026",
+          ic: "control",
+          fn: function () {
+            openControl("Backup");
+          },
+        },
+        {
+          label: "Updates\u2026",
+          ic: "control",
+          fn: function () {
+            openControl("Updates");
           },
         },
         { label: "Full Screen  (Alt+Enter)", ic: "full", fn: toggleFullscreen },

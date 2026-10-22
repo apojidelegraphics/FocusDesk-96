@@ -398,28 +398,14 @@ legend {
   min-width: 0;
   flex: none;
 }
-.flag {
-  width: 15px;
-  height: 14px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  transform: skewX(-6deg);
-}
-.flag i {
-  display: block;
-}
-.flag i:nth-child(1) {
-  background: #e03020;
-}
-.flag i:nth-child(2) {
-  background: #30a030;
-}
-.flag i:nth-child(3) {
-  background: #2050d0;
-}
-.flag i:nth-child(4) {
-  background: #f0c020;
+/* the Start button logo: an 18 by 18 pixel picture drawn at 2x so it stays sharp on every screen */
+.startlogo {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAABDUlEQVR42u3XPwrCMBQG8C/+AUXBUXFycdfNAwiOXsEbCEXwDAURvEGvIbg6615wlDp2kDoZpwclJG0qaNOQt6UPSvLje4EArjQriUOexCEvex81J1k5IdWJy8qUcUIsLQIA7d6YiVLptdh/XgIOAJ3pirkpIxFS0fleeaFG1vTJMkNZycvOt9kyd8rypFRTFvkeB4DBdi+VE/v2ZEglQmLv2xkyCVrz444DAFtsCkkZJ/T3DUW+x0nLjinTubmzpkql0Z8Mkc6YfUIqCTr543qHTl+Usi9DohTdP1SihHIj1grpSr1mSwBAqzuS/+B0gN1CVKIM5mtLXh0/k3JCBV7IWVPG6k0z7yFXefUBPpisHSIxlWsAAAAASUVORK5CYII=") center / 18px 18px no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.4)); /* a crisp one-pixel shadow so the light pixels show up on a silver button */
 }
 .sep-v {
   width: 2px;
@@ -3964,3 +3950,10 @@ body.popout #desktop { bottom: 0 !important; }
 /* ===== Control Panel: jump-to row ===== */
 .cp-jump { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; padding: 4px 2px; margin: 0 0 4px; background: var(--face, #c0c0c0); border-bottom: 1px solid #808080; font-size: 11px; }
 .cp-jump ~ fieldset { scroll-margin-top: 38px; }
+
+/* ===== version tags: a small label beside a version number (never part of it) ===== */
+.tagchip { display: inline-block; margin-left: 5px; padding: 0 5px; font-size: 10px; font-weight: bold; letter-spacing: 0.4px; line-height: 15px; vertical-align: 1px; border: 1px solid #000; background: #e8e8ff; color: #000; }
+.tagchip.tag-major { background: #ffe0a0; }
+.tagchip.tag-stability { background: #c8f0c8; }
+.tagchip.tag-hotfix { background: #ffc0c0; }
+.tagchip.tag-beta { background: #ffd0ff; }
