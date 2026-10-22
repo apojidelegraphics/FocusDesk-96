@@ -27,6 +27,9 @@ const SITE = "https://apojidelegraphics.github.io/FocusDesk-96/";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const KINDS = { major: "MAJOR", minor: "MINOR", stability: "STABILITY", hotfix: "HOTFIX" };
+/* an item in an update's list is plain text, or { "text": "...", "tags": ["BETA"] } to put a tag beside that one feature */
+const FEATURE_TAGS = ["BETA"];
+const itemOf = (i) => (typeof i === "string" ? { text: i, tags: [] } : { text: i && i.text, tags: (i && i.tags) || [] });
 const STATUS = { planned: "Planned", "in-progress": "In progress", testing: "Testing", shipped: "Shipped", delayed: "Delayed", unplanned: "Not planned yet" };
 
 function fail(msg) {
@@ -145,6 +148,11 @@ data.upcoming.forEach((u) => {
   if (!STATUS[u.status]) fail("unknown status: " + u.status);
   if (!KINDS[u.kind]) fail("update " + u.version + " needs a kind: major, minor, stability or hotfix");
   if (u.beta !== undefined && typeof u.beta !== "boolean") fail("update " + u.version + ": beta must be true or false");
+  (u.items || []).forEach((raw) => {
+    const it = itemOf(raw);
+    if (typeof it.text !== "string" || !it.text.trim()) fail("update " + u.version + ": every item needs some text");
+    if (!Array.isArray(it.tags) || it.tags.some((t) => FEATURE_TAGS.indexOf(t) < 0)) fail("update " + u.version + ': a feature tag must be one of ' + FEATURE_TAGS.join(", ") + " (in: " + it.text.slice(0, 40) + ")");
+  });
   const okNumber = u.kind === "major" ? /^\d+\.\d+$/ : /^\d+\.\d+\.\d+$/;
   if (!okNumber.test(u.version)) fail("update " + u.version + " doesn't look like a " + u.kind + " version number");
   day(u.target);
@@ -174,7 +182,10 @@ data.upcoming.forEach((u) => {
   if (u.beta) md.push("- **Stage:** Beta. Published as a pre-release for testing, so the automatic updater skips it.");
   md.push("- **When:** " + (u.when || day(u.target)) + " (" + STATUS[u.status].toLowerCase() + ")");
   if (u.desktop || u.browser) md.push("- **Versions:** desktop " + (u.desktop || "-") + ", browser " + (u.browser || "-"));
-  u.items.forEach((i) => md.push("- " + i));
+  u.items.forEach((raw) => {
+    const it = itemOf(raw);
+    md.push("- " + it.text + (it.tags.length ? " " + it.tags.map((t) => "`" + t + "`").join(" ") : ""));
+  });
   if (u.note) md.push("- *" + u.note + "*");
   md.push("");
 });
@@ -197,6 +208,15 @@ const esc = (s) =>
     .replace(/"/g, "&quot;")
     .replace(/[^\x20-\x7e\n]/g, (c) => "&#x" + c.codePointAt(0).toString(16) + ";");
 const li = (arr) => "<ul>" + arr.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>";
+const itemList = (items) =>
+  "<ul>" +
+  items
+    .map((raw) => {
+      const it = itemOf(raw);
+      return "<li>" + esc(it.text) + it.tags.map((t) => ' <span class="badge ' + esc(t.toLowerCase()) + '">' + esc(t) + "</span>").join("") + "</li>";
+    })
+    .join("") +
+  "</ul>";
 const chips = (u) =>
   (u && KINDS[u.kind] ? '<span class="badge kind ' + esc(u.kind) + '">' + esc(KINDS[u.kind]) + "</span>" : "") + (u && u.beta ? '<span class="badge beta">BETA</span>' : "");
 const cards = data.upcoming.length
@@ -216,7 +236,7 @@ const cards = data.upcoming.length
           esc(u.when || day(u.target)) +
           (u.desktop || u.browser ? " &middot; desktop " + esc(u.desktop || "-") + ", browser " + esc(u.browser || "-") : "") +
           "</p>" +
-          li(u.items) +
+          itemList(u.items) +
           (u.note ? '<p class="note">' + esc(u.note) + "</p>" : "") +
           "</section>"
       )

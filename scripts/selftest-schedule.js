@@ -68,6 +68,18 @@ const check = (ok, what) => {
   const e = run(sched, "not json at all");
   check(d.status === 0 && d.html.indexOf("Version 1.4.1: First minor") >= 0 && d.html.indexOf("desktop app 1.4.0") >= 0, "schedule page: an error answer from GitHub must fall back to schedule.json");
   check(e.status === 0 && e.html.indexOf("Version 1.4.1: First minor") >= 0, "schedule page: unreadable release data must fall back to schedule.json");
+  /* a single feature can carry a tag beside it; plain items still work; a typo in a tag is refused */
+  const withTags = JSON.parse(JSON.stringify(sched));
+  withTags.upcoming[0].items = ["Plain item", { text: "Shiny feature", tags: ["BETA"] }];
+  const f = run(withTags, "[]");
+  check(f.status === 0 && f.html.indexOf('<li>Plain item</li>') >= 0, "feature tags: a plain item must still work");
+  check(f.html.indexOf('<li>Shiny feature <span class="badge beta">BETA</span></li>') >= 0, "feature tags: a BETA tag must show beside its feature");
+  const badTag = JSON.parse(JSON.stringify(sched));
+  badTag.upcoming[0].items = [{ text: "Oops", tags: ["BEATA"] }];
+  const noText = JSON.parse(JSON.stringify(sched));
+  noText.upcoming[0].items = [{ tags: ["BETA"] }];
+  check(run(badTag, "[]").status !== 0, "feature tags: a misspelt tag must be refused");
+  check(run(noText, "[]").status !== 0, "feature tags: an item without text must be refused");
   /* the website workflow must really use it */
   const pages = read(".github/workflows/pages.yml");
   check(pages.indexOf("scripts/build-roadmap.js --releases releases.json --out site") >= 0, "schedule page: pages.yml must build the page from the published releases");

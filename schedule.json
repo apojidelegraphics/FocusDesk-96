@@ -12,6 +12,7 @@
       "A Minor update is small and has one theme. The fifth Minor of every cycle is a Stability update: no new features, just fixes, speed, safety checks and tidying up.",
       "A Hotfix is an urgent fix for something serious, like anything that could lose your data. It doesn't wait its turn and it doesn't count toward the five.",
       "Every update carries a tag shown beside its version number: MAJOR, MINOR, STABILITY or HOTFIX. An update can also carry a BETA tag while it is being tried out. A beta is published as a pre-release that the automatic updater skips, so only people who choose to download it get it. A tag is a separate label, so the version number never changes, and when a beta is ready the BETA tag simply comes off. Betas apply to the downloads (desktop installers and the browser zip); the website only ever shows a finished version.",
+      "A single feature can carry a BETA tag too, shown beside it in the list. It still comes in a finished update that everyone gets, but it is newer and less proven, so it may change, or be switched off if it causes trouble. When it has proved itself the tag comes off.",
       "Version numbers only go up, so a Hotfix in the middle of a cycle moves the numbers after it up by one. The tags always say what each update is.",
       "Each update has a desktop number and a browser number that move together (desktop 1.4.1 comes with browser 3.0.1). Dates are set when an update is nearly ready. If one isn't ready or hasn't been tested properly, it moves instead of shipping, and this page says so.",
       "The browser version (the website) updates as soon as the new version is put online, and shows a bar when a newer version is ready. The browser zip is attached to every release.",
@@ -36,13 +37,38 @@
       "browser": "3.0.1",
       "items": [
         "A new logo on the Start button",
-        "Clipy can edit and complete things you already have (it asks before changing anything, and Undo puts it back)",
+        {
+          "text": "Clipy can edit and complete things you already have (it asks first, and Undo puts it back)",
+          "tags": [
+            "BETA"
+          ]
+        },
         "The Settings items in the Start menu jump straight to the right part of Control Panel",
         "Browser: the storage bar shows what is using the space, and its numbers are double-checked",
-        "Browser: an easier way to pick your backup folder, with a fix for Chrome's \"contains system files\" message",
-        "Desktop: a new Mac menu bar icon, a red number on the Mac Dock icon (optional), Ask Clipy and Mini timer in the Windows taskbar menu, and pop-outs that remember their size, place and screen more reliably"
+        "Browser: a clearer way to pick your backup folder, with help for Chrome's \"contains system files\" message",
+        {
+          "text": "Browser: choose the backup file instead of a folder",
+          "tags": [
+            "BETA"
+          ]
+        },
+        "Desktop: a new Mac menu bar icon",
+        {
+          "text": "Desktop: a red number on the Mac Dock icon (optional)",
+          "tags": [
+            "BETA"
+          ]
+        },
+        "Desktop: Ask Clipy and Mini timer in the Windows taskbar menu",
+        {
+          "text": "Desktop: pop-outs remember their size, place and screen more reliably",
+          "tags": [
+            "BETA"
+          ]
+        },
+        "Support for Update & feature based tags (a small label like BETA beside an update or a single feature)"
       ],
-      "note": "Date to be set. Anything that can't be tested properly moves to a later Minor update."
+      "note": "Date to be set. Features marked BETA are newer and less proven. Anything that can't be tested properly moves to a later Minor update."
     },
     {
       "version": "1.4.2",

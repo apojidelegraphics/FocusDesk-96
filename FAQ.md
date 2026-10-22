@@ -100,6 +100,7 @@ Every update has a tag shown beside its version number, as a small label (for ex
 - **STABILITY**: the fifth Minor of every cycle. No new features, only fixes, speed and safety checks.
 - **HOTFIX**: an urgent fix for something serious. It ships as soon as it's tested and doesn't count toward the five.
 - **BETA**: an extra tag for an update that is still being tried out. The automatic updater skips betas, so you only get one if you download it yourself. The number stays the same when the beta becomes final.
+- **BETA beside a single feature**: that one feature is newer and less proven. It comes in a finished update that everyone gets, and may change or be switched off if it causes trouble. The tag comes off once it has proved itself.
 
 The desktop app and the browser version each have their own number, and they move together: desktop 1.4.1 comes with browser 3.0.1. The update schedule page shows what is coming next and updates itself when a release is published.
 
