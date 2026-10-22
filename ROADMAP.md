@@ -30,7 +30,7 @@ The same schedule is on the website: https://apojidelegraphics.github.io/FocusDe
 - **Tag:** `MINOR`
 - **When:** Date to be set (planned)
 - **Versions:** desktop 1.4.1, browser 3.0.1
-- Your own logo on the Start button
+- A new logo on the Start button
 - Clipy can edit and complete things you already have (it asks before changing anything, and Undo puts it back)
 - The Settings items in the Start menu jump straight to the right part of Control Panel
 - Browser: the storage bar shows what is using the space, and its numbers are double-checked
