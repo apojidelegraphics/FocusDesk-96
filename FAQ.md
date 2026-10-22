@@ -93,6 +93,16 @@ Yes, from version 3.0. Changes made in either tab are merged, so one tab no long
 ### Citation Maker says an address "is on your own network"
 Looking up a web page is only allowed for public websites. Addresses that point at your own computer or network (like `localhost` or `192.168.x.x`) are blocked on purpose, so a link can never be used to reach your private devices. Type the details in by hand for pages like that.
 
+### What do the tags like MINOR and BETA mean?
+Every update has a tag shown beside its version number, as a small label (for example MINOR next to 1.4.1). The tag is separate: it is never part of the number.
+- **MAJOR** (like 1.5): starts a new cycle of updates.
+- **MINOR** (like 1.5.1): a small update with one theme. There are five Minor updates after each Major.
+- **STABILITY**: the fifth Minor of every cycle. No new features, only fixes, speed and safety checks.
+- **HOTFIX**: an urgent fix for something serious. It ships as soon as it's tested and doesn't count toward the five.
+- **BETA**: an extra tag for an update that is still being tried out. The automatic updater skips betas, so you only get one if you download it yourself. The number stays the same when the beta becomes final.
+
+The desktop app and the browser version each have their own number, and they move together: desktop 1.4.1 comes with browser 3.0.1. The update schedule page shows what is coming next and updates itself when a release is published.
+
 ### Does FocusDesk update itself?
 On **Windows and Linux**, yes, from version 1.3.2. In Control Panel → Updates you choose: **install it automatically**, **ask me first**, or **just tell me**. Automatic updates download in the background and install when you close FocusDesk (or when you press Restart now). If an update ever fails, FocusDesk falls back to telling you and linking to the download. Version 1.3.1 and older can't update themselves, so install 1.3.2 by hand once. On a **Mac**, FocusDesk tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.
 

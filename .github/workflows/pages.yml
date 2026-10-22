@@ -20,8 +20,9 @@ on:
       - scripts/check-load-order.js
       - scripts/check-menu-apps.js
       - scripts/selftest.js
+      - scripts/selftest-schedule.js
       - .github/workflows/pages.yml
-  workflow_dispatch:
+  workflow_dispatch: # also started by schedule-sync.yml whenever a release is published, edited or removed
 
 permissions:
   contents: read
@@ -43,11 +44,14 @@ jobs:
 
       - name: Build the site
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           node scripts/check-ascii.js
           node scripts/check-load-order.js
           node scripts/check-menu-apps.js
           node scripts/selftest.js
+          node scripts/selftest-schedule.js
           node scripts/build-roadmap.js --check
           mkdir site
           cp focusdesk.js focusdesk.css apojilogo.js site/
@@ -61,6 +65,9 @@ jobs:
           # the update checker in browsers reads this when GitHub's own address is busy
           node -e "const fs=require('fs');const pk=require('./package.json');const m=/VERSION_BROWSER = \"([^\"]+)\"/.exec(fs.readFileSync('focusdesk.js','utf8'));fs.writeFileSync('site/release-info.json',JSON.stringify({desktop:pk.version,browser:m&&m[1]}))"
           cat site/release-info.json
+          # the update schedule page ticks off whatever has been published on GitHub (if GitHub can't be reached it keeps what schedule.json says)
+          curl -fsS -m 30 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases?per_page=100" -o releases.json || echo "[]" > releases.json
+          node scripts/build-roadmap.js --releases releases.json --out site
           touch site/.nojekyll
           grep -c 'manifest.webmanifest' site/index.html
           grep -c 'serviceWorker' site/index.html

@@ -1,17 +1,21 @@
 {
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "current": {
-    "desktop": "1.3.2",
-    "browser": "2.9.1"
+    "desktop": "1.4.0",
+    "browser": "3.0.0"
   },
   "policy": {
-    "headline": "One more update this week, a stability release. Serious fixes still ship when they're needed.",
+    "headline": "Small, steady updates: five Minor updates, then the next Major. Serious fixes still ship the moment they're tested.",
     "points": [
-      "Version 1.4 (a stability release) is planned for this week.",
-      "After 1.4, the next planned update is 1.4.1 (Clipy can edit and complete things you already have). Its date will be posted here. If a serious problem turns up before then, especially anything that could lose your data, a fix is still released as quickly as possible.",
-      "If an update isn't ready or hasn't been tested properly, it moves instead of shipping. This page says so and why.",
-      "The browser version (the website) updates as soon as a release is published, and shows a bar when a newer version is ready. The browser zip is attached to every release.",
-      "Windows and Linux can now update by themselves (version 1.3.2 and newer). In Control Panel you choose: install automatically, ask me first, or just tell me. If you're on 1.3.1 or older, install 1.3.2 by hand once. On a Mac the app tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.",
+      "This page updates itself. When a release is published, edited or removed on GitHub, it moves from Coming up to Recently released within a couple of minutes.",
+      "Updates come in cycles. A Major update (like 1.5) starts a cycle. It is followed by five Minor updates, and then the next Major (1.6).",
+      "A Minor update is small and has one theme. The fifth Minor of every cycle is a Stability update: no new features, just fixes, speed, safety checks and tidying up.",
+      "A Hotfix is an urgent fix for something serious, like anything that could lose your data. It doesn't wait its turn and it doesn't count toward the five.",
+      "Every update carries a tag shown beside its version number: MAJOR, MINOR, STABILITY or HOTFIX. An update can also carry a BETA tag while it is being tried out. A beta is published as a pre-release that the automatic updater skips, so only people who choose to download it get it. A tag is a separate label, so the version number never changes, and when a beta is ready the BETA tag simply comes off. Betas apply to the downloads (desktop installers and the browser zip); the website only ever shows a finished version.",
+      "Version numbers only go up, so a Hotfix in the middle of a cycle moves the numbers after it up by one. The tags always say what each update is.",
+      "Each update has a desktop number and a browser number that move together (desktop 1.4.1 comes with browser 3.0.1). Dates are set when an update is nearly ready. If one isn't ready or hasn't been tested properly, it moves instead of shipping, and this page says so.",
+      "The browser version (the website) updates as soon as the new version is put online, and shows a bar when a newer version is ready. The browser zip is attached to every release.",
+      "Windows and Linux can update by themselves (version 1.3.2 and newer). In Control Panel you choose: install automatically, ask me first, or just tell me. On a Mac the app tells you when an update is out and links to the download, because Apple's signing isn't paid for yet.",
       "Windows is tested on a real PC. Linux can only be tested in a virtual environment."
     ],
     "notified": [
@@ -22,37 +26,111 @@
   },
   "upcoming": [
     {
-      "version": "1.4",
-      "title": "Stability release",
-      "when": "This week",
-      "target": "2026-10-24",
-      "status": "in-progress",
-      "desktop": "1.4.0",
-      "browser": "3.0.0",
-      "items": [
-        "No new features. Two security fixes in how notes are shown, a safer graphing calculator, and web lookups that can't reach your own network",
-        "Changes in two browser tabs now merge instead of overwriting each other",
-        "One app having a problem can't stop other windows updating",
-        "Quicker start-up, easier-to-read text, a Jump to row in Control Panel, and counts that read properly",
-        "Automatic safety checks now run in every build"
-      ],
-      "note": "This is the first update that Windows and Linux copies of 1.3.2 can install by themselves."
-    },
-    {
       "version": "1.4.1",
-      "title": "Clipy edits and completes things",
+      "kind": "minor",
+      "title": "Fixes and polish",
       "when": "Date to be set",
-      "target": "2026-11-14",
+      "target": "2026-11-07",
       "status": "planned",
       "desktop": "1.4.1",
       "browser": "3.0.1",
       "items": [
-        "Clipy can change or complete things you already have, like \"move my study group to Saturday\" or \"mark the lab report done\""
+        "Your own logo on the Start button",
+        "Clipy can edit and complete things you already have (it asks before changing anything, and Undo puts it back)",
+        "The Settings items in the Start menu jump straight to the right part of Control Panel",
+        "Browser: the storage bar shows what is using the space, and its numbers are double-checked",
+        "Browser: an easier way to pick your backup folder, with a fix for Chrome's \"contains system files\" message",
+        "Desktop: a new Mac menu bar icon, a red number on the Mac Dock icon (optional), Ask Clipy and Mini timer in the Windows taskbar menu, and pop-outs that remember their size, place and screen more reliably"
+      ],
+      "note": "Date to be set. Anything that can't be tested properly moves to a later Minor update."
+    },
+    {
+      "version": "1.4.2",
+      "kind": "minor",
+      "title": "Safety net",
+      "when": "Date to be set",
+      "target": "2026-11-14",
+      "status": "planned",
+      "desktop": "1.4.2",
+      "browser": "3.0.2",
+      "items": [
+        "Undo for deleting things, and a heads-up about duplicates",
+        "Browser: copy your backup to the clipboard, and a small \"works offline, your data is local\" sign",
+        "Desktop: better automatic backups into the folder you choose, and a crash log with an option to send details (nothing is ever sent automatically)"
+      ],
+      "note": ""
+    },
+    {
+      "version": "1.4.3",
+      "kind": "minor",
+      "title": "Find things faster",
+      "when": "Date to be set",
+      "target": "2026-11-21",
+      "status": "planned",
+      "desktop": "1.4.3",
+      "browser": "3.0.3",
+      "items": [
+        "Search shortcuts such as tag:, folder:, @overdue and @today",
+        "\"What did I do this week?\", answered by Clipy",
+        "A keyboard shortcut list (Ctrl or Cmd and /), recent apps in the Start menu, and a one-key 25-minute timer"
+      ],
+      "note": ""
+    },
+    {
+      "version": "1.4.4",
+      "kind": "minor",
+      "title": "Looks and first impressions",
+      "when": "Date to be set",
+      "target": "2026-11-28",
+      "status": "planned",
+      "desktop": "1.4.4",
+      "browser": "3.0.4",
+      "items": [
+        "Friendlier empty screens that tell you what to do first",
+        "Notes that print cleanly",
+        "Browser: a short 3-step tour the first time you open it",
+        "Desktop: a check of Windows full screen"
+      ],
+      "note": ""
+    },
+    {
+      "version": "1.4.5",
+      "kind": "stability",
+      "title": "Stability update",
+      "when": "Date to be set",
+      "target": "2026-12-05",
+      "status": "planned",
+      "desktop": "1.4.5",
+      "browser": "3.0.5",
+      "items": [
+        "No new features. A full check for bugs, security and speed, and everything found during 1.4.1 to 1.4.4 gets fixed"
+      ],
+      "note": ""
+    },
+    {
+      "version": "1.5",
+      "kind": "major",
+      "title": "The next Major update",
+      "when": "Date to be set",
+      "target": "2026-12-19",
+      "status": "planned",
+      "desktop": "1.5.0",
+      "browser": "3.1.0",
+      "items": [
+        "Browser: a phone-friendly layout for Today, and sharing links into Favorites from a phone",
+        "Desktop: a Mac menu bar dropdown with today's schedule and tasks",
+        "The rest of the 1.5 cycle's Minor updates will be added here once 1.5 gets closer"
       ],
       "note": ""
     }
   ],
   "released": [
+    {
+      "version": "1.4.0 / 3.0.0",
+      "kind": "major",
+      "date": "October 2026",
+      "summary": "A stability release: two security fixes in how notes are shown, a safer graphing calculator, web lookups that can't reach your own network, changes in two browser tabs that merge instead of overwriting, quicker start-up, easier-to-read text, and a Jump to row in Control Panel."
+    },
     {
       "version": "1.3.2 / 2.9.1",
       "date": "October 2026",
@@ -93,5 +171,11 @@
       "date": "October 2026",
       "summary": "Apple Calendar and Reminders (reading), Periodic Table 2.0, and a calendar in the taskbar clock."
     }
-  ]
+  ],
+  "cycle": {
+    "major": "1.4",
+    "minors": 5,
+    "shipped": 0,
+    "nextMajor": "1.5"
+  }
 }

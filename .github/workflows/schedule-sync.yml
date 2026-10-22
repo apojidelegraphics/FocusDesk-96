@@ -1,0 +1,22 @@
+name: Schedule sync
+
+# When a release is published, edited or deleted, rebuild the website so the update schedule page
+# ticks it off (or puts it back). The page itself is built by pages.yml from the published releases.
+# (A release made from a tag that doesn't contain this file yet won't start it. Run "Website (GitHub Pages)" by hand then.)
+
+on:
+  release:
+    types: [published, released, prereleased, edited, deleted, unpublished]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  rebuild-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rebuild the website from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
