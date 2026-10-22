@@ -74,46 +74,34 @@ accounts and no cloud. Everything runs on your computer.
 - ⚡ **Quicker start-up** (any key skips it), easier-to-read hint text, a **Jump to** row in Control Panel, and counts that read properly.
 - ✅ **Automatic safety checks** run in every build.
 
-### New in 1.3.2
+### Since 1.0
 
 - 🔄 **Silent updates** for Windows and Linux (you choose: automatic, ask first, or just tell me). A Mac still tells you and links to the download.
 - 🎵 **Windows Now Playing checks every media session**, so it finds the one that's playing and more covers.
 - 🤖 **Clipy has an Undo button** after it adds things, and can make flash cards.
 - 🪟 Pop-outs **remember their size and position**, and the command palette can pop out any app.
 - 🌐 The website shows a **new-version bar**, and warns when browser storage is nearly full.
-
-### New in 1.3.1
-
 - 🤖 **Clipy can add things.** Ask for an event, reminder, task or assignment in plain English; Clipy shows what it wants to add and you press Add.
   On a Mac you can also send what Clipy adds to Apple Calendar (optional).
 - 🪟 **Pop-outs are tidier**, and any app can be opened in its own window from **File > Pop Out App** or the tray icon.
 - 💾 **The browser's storage bar is accurate** in every browser.
-
-### New in 1.3
-
 - 📅 **Write to Apple Calendar and Reminders (Mac).** Your events, assignments, reminders and tasks can go into a calendar and a Reminders list
   called FocusDesk, and ticking off a reminder on your iPhone ticks it off here too. Off by default; changes only that calendar and list.
 - 🪟 **Pop out an app.** Move Notepad, Flash Cards or most other apps into their own window, for example Notes on one screen and your reading on the other.
 - 🍎 **Apple's on-device model for M.X.E.S.** (Mac with Apple Intelligence, macOS 26 or newer).
 - 🎵 **Cover lookup for Now Playing** (optional), and a **newest-copy file for the browser version** to load from an iCloud Drive folder (optional).
-
-### New in 1.2.x
-
 - 🪟 **Windows fixes (1.2.6).** Full screen works the same from the button, `Alt+Enter`, `F11` and the View menu, and FocusDesk no longer
   starts in full screen. Saving copes with antivirus and cloud-sync tools, and says exactly what went wrong if a save fails. The red
   number on the taskbar icon is now optional, and right-clicking the taskbar icon offers quick actions.
-
 - ⌨️ **Shortcuts you can change.** Control Panel → Desktop lists every global shortcut with Change and Reset buttons, tells you when
   another app already has the keys, and has two new ones to switch on: start or pause the focus timer, and bring FocusDesk to the front.
 - 🔄 **Update checking that explains itself.** The desktop app asks GitHub from its own process, with a second source if the first is
   busy, and Control Panel shows when it last checked and what it found.
-
 - 🃏 **Flash card hotkey.** Press `Cmd/Ctrl+Shift+Y` anywhere to turn the text you just copied into a new flash card. The
   quick capture window opens on the Card tab with the front filled in, so you only type the back.
 - ▶️ **Now Playing in the clock.** Click the taskbar clock for a player above the calendar: cover, scrub bar, play, pause, next,
   previous, shuffle and repeat. An optional indicator next to the clock shows the song and opens it. The Now Playing pill has
   shuffle and repeat too.
-
 - 🧪 **Full LaTeX, offline.** Math is drawn by [KaTeX](https://katex.org/), bundled inside the app: aligned
   multi-line equations, arrays, boxed and cancelled terms, colours, and chemistry with `\ce{2H2 + O2 -> 2H2O}`.
 - 🍎 **Apple Calendar and Reminders (Mac).** In Calendar Link, choose which Apple calendars and Reminders lists
@@ -140,9 +128,6 @@ accounts and no cloud. Everything runs on your computer.
   an option to start hidden.
 - ⬆️ **Update checker.** FocusDesk tells you when a new version is out and links to the download. Silent
   auto-update isn't included yet.
-
-### Since 1.0
-
 - 📁 **Real files on your computer.** Your data lives in a plain, readable
   `data.json` in your OS's standard user-data folder. Back it up, sync it
   with Dropbox, or open it in a text editor.
