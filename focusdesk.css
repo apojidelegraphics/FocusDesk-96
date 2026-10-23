@@ -3957,3 +3957,13 @@ body.popout #desktop { bottom: 0 !important; }
 .tagchip.tag-stability { background: #c8f0c8; }
 .tagchip.tag-hotfix { background: #ffc0c0; }
 .tagchip.tag-beta { background: #ffd0ff; }
+
+/* ===== Undo bar: after a delete, or after adding something you already have ===== */
+.fd-undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: 38px; z-index: 99986; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 16px); padding: 6px 8px; background: #ffffe1; color: #000; border: 2px solid; border-color: #fff #404040 #404040 #fff; outline: 1px solid #000; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35); font-size: 12px; }
+body.popout .fd-undo { bottom: 8px; }
+
+/* ===== browser: the small "works offline, your data is local" sign in the tray ===== */
+#offlineSign { font-size: 11px; cursor: default; white-space: nowrap; color: #404040; }
+#offlineSign.ok { color: #006000; }
+#offlineSign:hover { text-decoration: underline; }
+@media (max-width: 760px) { #offlineSign { display: none; } }

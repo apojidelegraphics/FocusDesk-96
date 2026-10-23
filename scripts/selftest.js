@@ -84,7 +84,7 @@ function cut(src, start, endMarker, what) {
   check(/const hit = latestFromFeed\(xml\);/.test(main), "update check: the fallback must use latestFromFeed");
   /* tags travel with the update information as a separate list, never inside the number */
   const tn = (x) => JSON.stringify(ctx.tagsFromName(x));
-  check(tn("v1.4.2 [MINOR] [BETA]") === '["MINOR"]' && tn("v1.4.1") === "[]" && tn("v1.5.0 [major]") === '["MAJOR"]' && tn("v1.4.3 [HOTFIX] [HOTFIX]") === '["HOTFIX"]', "tags: tagsFromName must read the tags in a release title");
+  check(tn("v1.4.2 [MINOR] [BETA]") === '["MINOR"]' && tn("v1.4.1") === "[]" && tn("v1.5.0 [major]") === '["MAJOR"]' && tn("v1.4.3 [HOTFIX] [HOTFIX]") === '["HOTFIX"]' && tn("v1.5.0 [HOTFIX] [MAJOR] [BETA]") === '["MAJOR","HOTFIX"]' && tn("v1.4.2 [minor] [hotfix]") === '["MINOR","HOTFIX"]', "tags: tagsFromName must read every tag in a release title, in a fixed order");
   const withTags = ctx.latestFromFeed('<feed><entry><title>v1.4.2 [HOTFIX]</title><link href="https://github.com/x/y/releases/tag/v1.4.2"/></entry></feed>');
   check(withTags && withTags[1] === "1.4.2" && JSON.stringify(withTags.tags) === '["HOTFIX"]', "tags: the fallback update check must carry the tags");
   check(/tags: tagsFromName\(rel\.name\)/.test(main) && /tags: tagsFromName\(info && info\.releaseName\)/.test(main), "tags: the update check and the updater must pass the tags on");
@@ -97,16 +97,147 @@ function cut(src, start, endMarker, what) {
   [["1 card(s)", "1 card"], ["0 reminder(s) today", "0 reminders today"], ["3 card(s)", "3 cards"], ["2 box(es)", "2 boxes"], ["1 box(es)", "1 box"], ["nothing to change", "nothing to change"]].forEach(([i, w]) => check(f(i) === w, "plurals: " + i + " should become " + w));
 }
 
-/* 4b. every build says what kind of update it is, as a separate tag, and the tag matches the number */
+/* 4b. every build says what kind of update it is, as separate tags, and the tags match the number */
 {
+  const list = (name) => {
+    const m = new RegExp("var " + name + " = (\\[[^\\]]*\\]);").exec(app);
+    if (!m) return null;
+    try {
+      return JSON.parse(m[1]);
+    } catch (e) {
+      return null;
+    }
+  };
   const val = (name) => (new RegExp("var " + name + " = \"([^\"]*)\"").exec(app) || [])[1];
+  const KINDS_OK = ["MAJOR", "MINOR", "STABILITY", "HOTFIX"];
   [["VERSION_DESKTOP", "TAG_DESKTOP"], ["VERSION_BROWSER", "TAG_BROWSER"]].forEach(([vn, tn2]) => {
     const v = val(vn),
-      tg = val(tn2);
-    check(["MAJOR", "MINOR", "STABILITY", "HOTFIX"].indexOf(tg) >= 0, "tags: " + tn2 + " must be MAJOR, MINOR, STABILITY or HOTFIX (it is " + tg + ")");
-    if (v) check(/^\d+\.\d+\.0$/.test(v) ? tg === "MAJOR" : tg !== "MAJOR", "tags: " + tn2 + " (" + tg + ") doesn't fit version " + v + ": a version ending in .0 is MAJOR, anything else is not");
+      tg = list(tn2);
+    check(Array.isArray(tg) && tg.length > 0 && tg.every((x) => KINDS_OK.indexOf(x) >= 0) && new Set(tg).size === tg.length, "tags: " + tn2 + " must be a list of MAJOR, MINOR, STABILITY and/or HOTFIX, each once (it is " + JSON.stringify(tg) + ")");
+    if (Array.isArray(tg)) {
+      check(tg.filter((x) => x !== "HOTFIX").length <= 1, "tags: " + tn2 + " can have one of MAJOR, MINOR or STABILITY, plus HOTFIX if the update is released again with a fix");
+      check(tg.join() === KINDS_OK.filter((x) => tg.indexOf(x) >= 0).join(), "tags: " + tn2 + " must be written in the order MAJOR, MINOR, STABILITY, HOTFIX");
+      if (v) check(/^\d+\.\d+\.0$/.test(v) ? tg.indexOf("MAJOR") >= 0 : tg.indexOf("MAJOR") < 0, "tags: " + tn2 + " (" + tg.join("+") + ") doesn't fit version " + v + ": a version ending in .0 is MAJOR, anything else is not");
+    }
   });
-  check(/tagChip\(TAG\)/.test(app) && /function tagChip\(/.test(app), "tags: the version in About must show its tag chip");
+  check(/tagChip\(TAG\)/.test(app) && /function tagChip\(/.test(app), "tags: the version in About must show its tag chips");
+  /* the helpers that read, order and describe tags */
+  const parts = cut(app, "  var TAG_ORDER = ", "  function featureChip(tag) {", "the tag helpers") + cut(app, "  function tagWord(t) {", "  function tagChip(x) {", "tagWord") + cut(app, "  function tagWords(x) {", "  function paintTagged(", "tagWords and tagToken") + cut(app, "  function tagsFromTitle(name) {", "  function updNote(text) {", "tagsFromTitle");
+  const tctx = { isStr: (x) => typeof x === "string" };
+  vm.createContext(tctx);
+  vm.runInContext(parts + ";this.allTags=allTags;this.tagWords=tagWords;this.tagToken=tagToken;this.tagsFromTitle=tagsFromTitle;", tctx);
+  const J = (x) => JSON.stringify(x);
+  check(J(tctx.allTags(["HOTFIX", "major", "HOTFIX", "evil", 5, null])) === '["MAJOR","HOTFIX"]' && J(tctx.allTags("minor")) === '["MINOR"]' && J(tctx.allTags([])) === "[]" && J(tctx.allTags(undefined)) === "[]", "tags: allTags must keep real tags only, once each, in a fixed order");
+  check(tctx.tagWords(["MAJOR", "HOTFIX"]) === " (a Major update and a Hotfix)" && tctx.tagWords("STABILITY") === " (a Stability update)" && tctx.tagWords([]) === "", "tags: the sentence for several tags must read naturally");
+  check(tctx.tagToken(["HOTFIX", "MINOR"]) === "{tag:MINOR}{tag:HOTFIX}" && tctx.tagToken([]) === "", "tags: tag tokens in notes must list every tag");
+  check(J(tctx.tagsFromTitle("v1.5.0 [HOTFIX] [MAJOR] [BETA]")) === '["MAJOR","HOTFIX"]' && J(tctx.tagsFromTitle("v1.4.1")) === "[]", "tags: tagsFromTitle must read every tag in a title, in a fixed order");
+}
+
+/* 4b2. the storage breakdown adds up: every kind of stored text lands in exactly one slice, and daily snapshots count as copies */
+{
+  const text = cut(app, "  function storageBreakdown() {", "  function fmtSize(n) {", "the storage breakdown");
+  const KEY = "focusdesk96.v1";
+  const S = { notes: [{ text: "a".repeat(300) }], images: {}, cards: [] };
+  const main = JSON.stringify(S);
+  const store = {};
+  store[KEY] = main;
+  store[KEY + ".bak"] = main;
+  store[KEY + ".baktime"] = "123";
+  store["focusdesk96.bak.daily.2026-10-20"] = main;
+  store["focusdesk96.bak.daily.2026-10-21"] = main;
+  store["focusdesk96.bak.daily.2026-10-22"] = main;
+  store[KEY + ".wall"] = "w".repeat(40);
+  store["focusdesk96.calfeed"] = "c".repeat(25);
+  store["some.other.site.key"] = "o".repeat(17);
+  const keys = Object.keys(store);
+  const ctx = { KEY, WALLKEY: KEY + ".wall", S, JSON, Math, localStorage: { get length() { return keys.length; }, key: (i) => keys[i], getItem: (k) => store[k] } };
+  vm.createContext(ctx);
+  vm.runInContext(text + ";this.storageBreakdown=storageBreakdown;", ctx);
+  const bd = ctx.storageBreakdown();
+  const sum = bd.notes + bd.pics + bd.cards + bd.other + bd.copies + bd.outside;
+  check(bd && sum === bd.total, "storage bar: the slices must add up to the total (slices " + (bd && sum) + ", total " + (bd && bd.total) + ")");
+  check(bd && bd.dailyCount === 3 && bd.dailyLen === 3 * ("focusdesk96.bak.daily.2026-10-20".length + main.length), "storage bar: the daily snapshots must be counted, as their own length");
+  check(bd && bd.copies === bd.dailyLen + (KEY + ".bak").length + main.length + (KEY + ".baktime").length + 3, "storage bar: restore points and daily snapshots must all count as copies");
+  check(bd && bd.notes + bd.cards + (bd.pics - 40 - (KEY + ".wall").length) + (bd.other - ("focusdesk96.calfeed".length + 25)) === (KEY + "").length + main.length, "storage bar: your data (notes, cards, pictures, the rest) must add up to what is saved, and snapshots must not be in it");
+  check(bd && bd.outside === "some.other.site.key".length + 17, "storage bar: other sites' keys must be counted as outside");
+  check(/Delete daily snapshots/.test(app) && /storageBar\.style\.display = "none"/.test(app) && !/min-height:150px/.test(app), "storage bar: no fixed empty space under the bar");
+}
+
+/* 4b3. Undo puts deleted things back exactly where they were; duplicates are recognised carefully */
+{
+  const kindsAt = app.indexOf("  var TRASH_KINDS = [");
+  const kindsText = kindsAt >= 0 ? app.slice(kindsAt, app.indexOf("];", kindsAt) + 2) : "";
+  const start = app.indexOf("  var TRASH_LABELS = {");
+  const pure = start >= 0 ? kindsText + "\n" + app.slice(start, app.indexOf("  /* ---- Undo: a small bar", start)) : "";
+  check(pure.indexOf("function softDelete(") >= 0 && pure.indexOf("function restoreMany(") >= 0, "undo: couldn't find the bin code (was it renamed?)");
+  const mk = () => {
+    const ctx = { S: { trash: [], folders: [], notes: [], tasks: [] }, saved: 0, noted: 0, n: 0, isNum: (x) => typeof x === "number" && isFinite(x), clip: (s) => String(s), uid: () => "u" + ++ctx.n, save() { ctx.saved++; }, refreshAll() {}, noteDeleted(m) { ctx.noted += m.length; }, Date, Array, Math, String, Number };
+    vm.createContext(ctx);
+    vm.runInContext(pure + ";this.softDelete=softDelete;this.restoreMany=restoreMany;this.restoreTrash=restoreTrash;", ctx);
+    return ctx;
+  };
+  const J = (x) => JSON.stringify(x);
+  const ids = (a) => a.map((x) => x.id).join("");
+  {
+    const c = mk();
+    c.S.tasks = ["a", "b", "c", "d", "e"].map((id) => ({ id: id, text: id }));
+    c.softDelete("tasks", (x) => x.id === "b" || x.id === "d");
+    check(ids(c.S.tasks) === "ace" && c.S.trash.length === 2 && c.noted === 2, "undo: deleting must move the items to the bin and offer Undo for both");
+    c.restoreMany(c.S.trash.map((t) => t.id));
+    check(ids(c.S.tasks) === "abcde" && c.S.trash.length === 0, "undo: restoring several items must put each back where it was (got " + ids(c.S.tasks) + ")");
+  }
+  {
+    const c = mk();
+    c.S.notes = [{ id: "n1" }, { id: "n2" }, { id: "n3" }];
+    c.S.folders = [{ id: "f1", note: ["n2", "n3"], assign: [] }, { id: "f2", note: ["n2"], assign: [] }];
+    c.softDelete("notes", (x) => x.id === "n2");
+    check(J(c.S.folders.map((f) => f.note)) === '[["n3"],[]]', "undo: deleting a note takes it out of its folders");
+    c.restoreTrash(c.S.trash[0].id);
+    check(ids(c.S.notes) === "n1n2n3" && J(c.S.folders.map((f) => f.note.slice().sort())) === '[["n2","n3"],["n2"]]', "undo: restoring a note must also put it back in the folders it was in");
+  }
+  {
+    const c = mk();
+    c.S.tasks = [{ id: "a" }, { id: "b" }];
+    c.softDelete("tasks", (x) => x.id === "a");
+    c.S.trash[0].idx = 999; /* a position that no longer exists, or a made-up one */
+    c.restoreMany([c.S.trash[0].id]);
+    check(ids(c.S.tasks) === "ba", "undo: a position past the end goes to the end");
+    c.softDelete("tasks", (x) => x.id === "b");
+    c.S.trash[0].idx = -4;
+    c.restoreMany([c.S.trash[0].id]);
+    check(ids(c.S.tasks) === "ab", "undo: a negative position is ignored and the item goes to the end (got " + ids(c.S.tasks) + ")");
+    c.S.tasks = [{ id: "z" }];
+    c.softDelete("tasks", (x) => x.id === "z");
+    c.S.tasks = [{ id: "z" }];
+    c.restoreMany([c.S.trash[0].id]);
+    check(c.S.tasks.length === 2 && c.S.tasks[0].id !== c.S.tasks[1].id, "undo: an item whose id is now taken must get a new id, never overwrite");
+    const before = c.S.trash.length;
+    c.restoreMany(["no-such-id"]);
+    check(c.S.trash.length === before, "undo: an unknown id restores nothing");
+  }
+  const dstart = app.indexOf("  function dupKey(s) {");
+  const dtext = dstart >= 0 ? app.slice(dstart, app.indexOf("  /* call right after something typed in was added", dstart)) : "";
+  const d = { S: { tasks: [{ id: "1", text: "Buy  Milk", done: false }, { id: "2", text: "Old", done: true }], cards: [{ id: "c1", q: "Capital of France?", deck: "Geo" }], events: [{ id: "e1", title: "Chem lab", date: "2026-11-03", time: "10:00" }], assign: [{ id: "a1", title: "Essay", course: "ENG", due: 5 }], reminders: [{ id: "r1", text: "Call mum", at: 1000000, done: false }] }, String, Math };
+  vm.createContext(d);
+  vm.runInContext(dtext + ";this.findDuplicate=findDuplicate;", d);
+  const fd = (k, it) => !!d.findDuplicate(k, it);
+  check(fd("tasks", { id: "9", text: "  buy milk " }) && !fd("tasks", { id: "9", text: "Buy bread" }) && !fd("tasks", { id: "9", text: "Old" }) && !fd("tasks", { id: "9", text: "" }), "duplicates: tasks match on the words, ignoring case and spacing, never on finished or empty ones");
+  check(fd("cards", { id: "9", q: "capital of france?", deck: "geo" }) && !fd("cards", { id: "9", q: "Capital of France?", deck: "Other" }), "duplicates: a card only matches within the same deck");
+  check(fd("events", { id: "9", title: "chem LAB", date: "2026-11-03", time: "10:00" }) && !fd("events", { id: "9", title: "Chem lab", date: "2026-11-04", time: "10:00" }) && !fd("events", { id: "9", title: "Chem lab", date: "2026-11-03", time: "" }), "duplicates: an event matches on title, day and time");
+  check(fd("assign", { id: "9", title: "essay", course: "eng", due: 5 }) && !fd("assign", { id: "9", title: "Essay", course: "ENG", due: 6 }), "duplicates: an assignment matches on title, course and due date");
+  check(fd("reminders", { id: "9", text: "call mum", at: 1000000 + 30000 }) && !fd("reminders", { id: "9", text: "call mum", at: 1000000 + 120000 }), "duplicates: a reminder matches on the words and the same minute");
+  const x = d.S.tasks[0];
+  check(!d.findDuplicate("tasks", x), "duplicates: an item is never a duplicate of itself");
+  check(/dupNoticeLast\("tasks"\)/.test(app) && /dupNoticeLast\("cards"\)/.test(app) && /dupNoticeLast\("events"\)/.test(app) && /dupNoticeLast\("reminders"\)/.test(app) && /dupNoticeLast\("assign"\)/.test(app), "duplicates: every add point must check for a duplicate");
+}
+
+/* 4b4. the desktop backup and crash-log helpers (own file: they are asynchronous) */
+{
+  const r = require("child_process").spawnSync(process.execPath, [path.join(__dirname, "selftest-desktop.js")], { encoding: "utf8" });
+  check(r.status === 0, "desktop helpers: " + String((r.stdout || "") + (r.stderr || "")).trim().split("\n").slice(0, 4).join(" | "));
+  check(/makeBackups\(/.test(main) && /makeCrashLog\(/.test(main) && /"backup\.js"/.test(read("package.json")) && /"crashlog\.js"/.test(read("package.json")), "desktop helpers: main.js must use them and package.json must ship them");
+  check(/uncaughtException/.test(main) && /render-process-gone/.test(main) && /focusdesk:crashSend/.test(main), "crash log: the app must record crashes");
+  check(!/crashSend[\s\S]{0,900}(fetch|net\.request|https\.request|http\.request)/.test(main), "crash log: nothing may ever be sent automatically (sending only opens the issue page)");
 }
 
 /* 4c. desktop: the red number on the Dock (Mac), the taskbar and Linux badges, and the Windows taskbar menu */

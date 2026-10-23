@@ -81,8 +81,24 @@
       "browser": "3.0.2",
       "items": [
         "Undo for deleting things, and a heads-up about duplicates",
+        "Updates can have more than one tag (for example a Major that was released again with a fix is MAJOR and HOTFIX)",
+        "Browser: the storage numbers now add up (daily snapshots are counted as copies), and the empty space under the storage bar is gone",
+        "Desktop: the empty space under the storage section is gone",
+        "Features that were BETA in 1.4.1 are now final (the pop-out windows stay BETA while they are fixed)",
         "Browser: copy your backup to the clipboard, and a small \"works offline, your data is local\" sign",
-        "Desktop: better automatic backups into the folder you choose, and a crash log with an option to send details (nothing is ever sent automatically)"
+        "Desktop: better automatic backups into the folder you choose (today's backup stays up to date and every backup is checked), and a crash log with an option to send details (nothing is ever sent automatically)",
+        {
+          "text": "Desktop: pop-out windows fit their size properly when you reopen them (Mac)",
+          "tags": [
+            "BETA"
+          ]
+        },
+        {
+          "text": "Desktop: if Research is popped out, Continue with Clipy opens Clipy's own pop-out",
+          "tags": [
+            "BETA"
+          ]
+        }
       ],
       "note": ""
     },

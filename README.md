@@ -57,6 +57,17 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
+### New in 1.4.2 (safety net)
+
+- ↩️ **Undo for deleting things.** A small bar offers Undo right after a delete (or press Ctrl/Cmd+Z), and puts the item back where it was. A heads-up appears if you add something you already have.
+- 💾 **Better automatic backups** (desktop): today's backup stays up to date while FocusDesk is open, every backup is checked after it is written, and **Back up now** saves one on the spot. If nearly everything is deleted by mistake, the bigger backup is kept beside it.
+- 🧯 **A crash log** (desktop): error text only, with your name, folders and keys removed. Nothing is ever sent automatically; **Send details** only opens a draft in your browser for you to read and submit.
+- 📋 **Copy backup** (browser) puts your whole backup on the clipboard as text, and a small sign says whether FocusDesk works offline and that your data stays on your device.
+- 📊 **The storage numbers add up** (browser): daily snapshots are counted as copies, with a button to delete them. The empty space under the storage bar is gone.
+- 🏷️ **Updates can carry more than one tag**, like MAJOR and HOTFIX together.
+- 🪟 **Pop-outs** re-measure themselves when they open (BETA, Mac), and Research's **Continue with Clipy** opens Clipy's own pop-out when Research is popped out (BETA).
+- The Dock number, Clipy's change-and-complete and the backup-file picker are no longer BETA.
+
 ### New in 1.4.1 (fixes and polish)
 
 - 🌠 **A new logo** on the Start button, and a new Mac menu bar icon.
@@ -135,7 +146,7 @@ accounts and no cloud. Everything runs on your computer.
 - 💾 **Native file dialogs.** Save backups, import `.ics` calendars, and
   export migration files through your OS's real save/open dialogs.
 - 🔄 **Automatic daily backups.** Rolling snapshots, written straight to disk,
-  no more relying on browser storage.
+  no more relying on browser storage. Today's backup is kept up to date, and each one is checked after it is written.
 - 🪟 **Window state persists.** FocusDesk remembers its size and position.
 - 📦 **Full session restore.** Every window you had open comes back exactly
   where you left it, even after a full quit and relaunch.

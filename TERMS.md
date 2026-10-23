@@ -16,8 +16,8 @@ This document governs the use, development, and distribution of Apoji Delegraphi
 
 These General Terms and Conditions ("T&C") apply to all users accessing or utilizing the following products (collectively, the "Products"):
 
-* a. **FocusDesk 96 Desktop Edition, Version 1.4.1**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
-* b. **FocusDesk 96 Browser Edition, Version 3.0.1**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
+* a. **FocusDesk 96 Desktop Edition, Version 1.4.2**, the native application for macOS, Windows, and Linux, including quick capture, native notifications, the tray or menu bar icon, the mini timer, the Ask Clipy window, and the title-bar menu on Windows.
+* b. **FocusDesk 96 Browser Edition, Version 3.0.2**, the version that runs in a web browser, including copies saved to your own computer (the "Browser zip").
 * c. **The FocusDesk 96 feature set**, consisting of: Habit Breaker, Achievements, the focus session log, LaTeX and image support in notes and flash cards, cloze and image-occlusion flash cards, the grade what-if projection, and the other apps in the Start menu.
 
 **1.2. Acceptance**
@@ -46,7 +46,7 @@ FocusDesk 96 has no accounts and no server of its own. Your notes, tasks, cards,
 
 **3.2. Backups Are Your Responsibility**
 
-Because Your data lives only on Your device, no copy exists anywhere else unless You make one. The Desktop Edition writes automatic daily backups (the newest seven are kept). The Browser Edition does not; You should use Control Panel, then Save backup file, regularly. Clearing Your browser's site data, deleting the data folder, or losing Your device can permanently erase Your data.
+Because Your data lives only on Your device, no copy exists anywhere else unless You make one. The Desktop Edition writes automatic daily backups (by default the newest seven are kept), keeps today's backup up to date while it is open, and checks each backup after writing it; it cannot protect You if the whole device and the backup folder are lost. The Browser Edition keeps up to seven daily snapshots inside the browser's own storage, which is erased with Your site data, so it does not replace a backup file; You should use Control Panel, then Save backup file (or Copy backup, which puts the backup text on Your clipboard when You press the button), regularly. Clearing Your browser's site data, deleting the data folder, or losing Your device can permanently erase Your data.
 
 **3.3. API Keys**
 
@@ -73,7 +73,7 @@ The grade calculator, GPA projection, and study statistics are planning aids. Th
 
 ## PART II: DESKTOP EDITION AGREEMENT
 
-This Part applies to the Desktop Edition (Version 1.4.1).
+This Part applies to the Desktop Edition (Version 1.4.2).
 
 ### 4. Installation, Builds, and Data Location
 
@@ -109,6 +109,7 @@ The following features are controlled by You in Control Panel, then Desktop, and
 * r. **Backup copies and the browser's folder access.** If You turn on "keep a copy of Your newest data in the backup folder", the Desktop Edition writes a file called focusdesk-latest.json there. If that folder is in iCloud Drive, Dropbox or similar, that service syncs it under its own terms. The browser version, if You choose a folder, only reads from it, and only the folder You pick.
 * s. **Clipy adding items.** When You ask Clipy to add an event, reminder, task or assignment, the words You type go to the assistant You chose in Control Panel, exactly as with any Clipy chat, and Clipy's answer may include the item. Nothing is added until You press Add, unless You turn on "Add things without asking" in Clipy's menu. Items Clipy adds stay in FocusDesk; they are written to Apple Calendar and Reminders only if You have turned on writing (item o above) and also turned on "Also write what Clipy adds for me".
 * t. **Automatic updates (Windows and Linux).** If automatic updates are on (the default, and You can change it in Control Panel), the Desktop Edition checks GitHub for a newer version about once every twelve hours and, depending on Your setting, downloads and installs it from GitHub. Only the version information and the update file are fetched; nothing about You is sent beyond what any web request includes, such as Your network address. If an automatic update fails, FocusDesk falls back to telling You and linking to the download. On a Mac, FocusDesk only tells You when an update is out.
+* v. **Crash log (Desktop Edition).** When FocusDesk crashes or hits an error, it records a short entry (the kind of problem, the version, Your system type and the error text) in a file called `crash.log` in its data folder. Before anything is written, Your user name, home folder, e-mail addresses, the query part of web addresses and anything that looks like a key or token are removed, and it never contains Your notes, tasks or other data. It stays on Your computer and nothing is sent automatically. If You choose "Send details", FocusDesk opens a draft issue on GitHub in Your web browser with the same text filled in; nothing is sent to GitHub until You review it and press Submit there, under GitHub's own terms. You can read, copy or clear the log in Control Panel.
 * u. **Update bar in the browser.** The website checks a small file on the FocusDesk website now and then to see whether a newer version has been published, and shows a bar if so.
 
 **4.4. Data Location**
@@ -147,7 +148,7 @@ The Browser zip is the **Browser Edition** saved to a folder on Your computer. I
 
 **6.2. Browser Storage**
 
-The Browser Edition keeps Your data inside Your web browser, not as files in the unzipped folder. Browsers limit how much a page can store (commonly about 5 MB), and different browsers or browser profiles do not share data. Moving Your data between the Browser Edition and the Desktop Edition is done with Control Panel, using Save backup file and Restore from file.
+The Browser Edition keeps Your data inside Your web browser, not as files in the unzipped folder. Browsers limit how much a page can store (commonly about 5 MB), and different browsers or browser profiles do not share data. The Browser Edition also keeps up to seven daily snapshots of Your data in that same storage; they count toward the limit, and Control Panel can delete them. Moving Your data between the Browser Edition and the Desktop Edition is done with Control Panel, using Save backup file and Restore from file.
 
 **6.3. Updates**
 

@@ -56,6 +56,23 @@ const check = (ok, what) => {
   check(a.html.indexOf("Small fixes and polish for everyone.") >= 0, "schedule page: a new release's summary comes from its notes");
   check(a.html.indexOf("Hand written summary for 1.4.0.") >= 0, "schedule page: a hand-written summary wins over the notes");
   check(a.html.indexOf("1.4.2 [BETA]") < 0 && a.html.indexOf("1.4.1 [MINOR]") < 0, "schedule page: a tag must never be written into the version number");
+  /* an update can carry more than one tag: a Major released again with a fix is MAJOR and HOTFIX, a Minor released again is MINOR and HOTFIX */
+  const multi = run(sched, [
+    rel("v1.4.0", "v1.4.0 [MAJOR] [HOTFIX]", { assets: zip("3.0.0"), published_at: "2026-10-21T10:00:00Z" }),
+    rel("v1.4.1", "v1.4.1 [HOTFIX] [MINOR]", { assets: zip("3.0.1") }),
+    rel("v1.4.3", "v1.4.3 [HOTFIX]", { assets: zip("3.0.3"), published_at: "2026-11-09T10:00:00Z" }),
+  ]);
+  check(multi.status === 0, "several tags: the build must succeed " + multi.err);
+  check(/<b>1\.4\.0 \/ 3\.0\.0<\/b> <span class="badge kind major">MAJOR<\/span><span class="badge kind hotfix">HOTFIX<\/span>/.test(multi.html), "several tags: a Major released again with a fix shows both chips, always in the same order");
+  check(/<b>1\.4\.1 \/ 3\.0\.1<\/b> <span class="badge kind minor">MINOR<\/span><span class="badge kind hotfix">HOTFIX<\/span>/.test(multi.html), "several tags: the order of tags in the title must not matter");
+  check(multi.html.indexOf("1 of 5 Minor updates shipped") >= 0, "several tags: a Minor released again with a fix still counts toward the five, and a hotfix on its own does not");
+  /* a planned update can list several kinds, and a bad kind is refused */
+  const mkinds = JSON.parse(JSON.stringify(sched));
+  mkinds.upcoming[0].kinds = ["hotfix"];
+  const mk1 = run(mkinds, []);
+  check(mk1.status === 0 && /Version 1\.4\.1: First minor[\s\S]{0,300}badge kind minor[\s\S]{0,40}badge kind hotfix/.test(mk1.html), "several tags: a planned update can carry more than one kind");
+  mkinds.upcoming[0].kinds = ["evil"];
+  check(run(mkinds, []).status !== 0, "several tags: an unknown kind must stop the build");
   /* the last planned update ships and a new Major starts the next cycle: the page must not break when nothing is left */
   const b = run(sched, [rel("v1.4.0", "v1.4.0 [MAJOR]", { assets: zip("3.0.0") }), rel("v1.4.1", "v1.4.1 [MINOR]", { assets: zip("3.0.1") }), rel("v1.4.2", "v1.4.2 [MINOR]", { assets: zip("3.0.2") }), rel("v1.5.0", "v1.5.0 [MAJOR]", { assets: zip("3.1.0") })]);
   check(b.status === 0 && b.html.indexOf("Nothing is scheduled yet") >= 0, "schedule page: an empty Coming up list must not break the build");

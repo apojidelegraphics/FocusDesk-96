@@ -30,6 +30,7 @@
   window.__focusdeskInitialData = init.data || null;
   window.__focusdeskInitialWall = init.wall || null;
   window.__focusdeskCorrupt = init.corrupt || [];
+  window.__focusdeskCrash = init.crash || null; /* what the crash log holds, for the one-time "last time" notice */
   window.__focusdeskDirs = init.dirs || {};
   if (window.__focusdeskCorrupt.length) {
     window.__focusdeskCorruptNote =

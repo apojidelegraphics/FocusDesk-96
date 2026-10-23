@@ -74,7 +74,21 @@ Your assistant API keys, and a calendar feed link if you saved one, are **not** 
 Yes. Use **Merge from file…** instead of Restore. It adds what's missing and can bring over the backup's theme, icons, cursors and wallpaper too.
 
 ### Does it back up automatically?
-The desktop app makes a backup once a day. By default it keeps the newest seven, and you can pick another folder (like Dropbox) and how many to keep in Control Panel → Desktop.
+The desktop app makes a backup file for every day. Today's file is kept up to date while FocusDesk is open and when you close it, so each day's file holds how that day ended. Every backup is read back and checked after it is written, and **Back up now** (Control Panel → Desktop) makes one on the spot. By default it keeps the newest seven, and you can pick another folder (like Dropbox) and how many to keep. If that folder can't be reached (an unplugged drive, say), the backup goes to the default folder and Control Panel says so. If nearly everything is deleted by mistake, the bigger backup is kept beside it as `...-before-shrink.json`.
+
+The browser version keeps up to seven daily snapshots inside the browser, which doesn't replace a backup file. Use **Save backup file** or **Copy backup**.
+
+### Can I undo a delete?
+Yes. Right after you delete something, a small bar offers **Undo** for about ten seconds (or press Ctrl/Cmd+Z when you're not typing). It puts the item back where it was, in its folders too. After that, it is still in the Recycle Bin until you empty it.
+
+### Why did it say I already have something?
+When you add a task, flash card, calendar event, reminder or assignment that matches one you already have, a bar tells you. Nothing is blocked. Press **Undo** on the bar to take the new one back, or ignore it to keep both.
+
+### What is the crash log, and is it sent anywhere?
+It is a small file (`crash.log`, in the data folder) that records what went wrong if FocusDesk crashes or hits an error, so a problem can be explained later. It holds error text only. Your notes and tasks are never in it, and your name, folders, e-mail addresses and keys are removed before anything is written. **Nothing is sent automatically.** In Control Panel → Desktop you can view it, copy it, or choose **Send details**, which opens a draft issue on GitHub in your browser. Nothing goes to GitHub until you read it and press Submit there.
+
+### What does the "Works offline" sign in the taskbar mean?
+(Browser version.) It says the page can open without internet, and that your notes, tasks and settings are stored only on this device. It only says "Works offline" when that's true: when you run the downloaded folder, or when the website has saved itself in your browser. Otherwise it says "Data stays here". Click it for the details.
 
 ### Is my data sent anywhere?
 No. FocusDesk has no servers and no accounts. It only goes online for things you ask for: your AI assistant, Research lookups, the update check, a calendar feed link you saved, Citation Maker lookups, and album covers in Now Playing.
@@ -97,9 +111,9 @@ Looking up a web page is only allowed for public websites. Addresses that point 
 That is Chrome's rule, and FocusDesk can't change it. Chrome won't let a website open Desktop, Documents, Downloads, the top of iCloud Drive or Dropbox, or any folder with system files in it. The way around it: make a **new** folder inside iCloud Drive or Dropbox (for example "FocusDesk Backups"), point the desktop app at that folder (Control Panel, Desktop, Daily backups, Choose folder), and choose the same folder in the browser version. Or press "Choose the backup file instead" (BETA) and pick `focusdesk-latest.json` from that folder. The same help is in Control Panel, under Desktop backups folder.
 
 ### What do the colours in the storage bar mean?
-The bar shows where your browser's space is going: Notes, Pictures, Flash cards, everything else in FocusDesk, restore points and copies, and anything else stored on the same web address. Restore points are an automatic copy of your data that is refreshed about once an hour, so they can be large. You can delete the restore point from Control Panel if space is tight; a new one is made within the hour.
+The bar shows where your browser's space is going: Notes, Pictures, Flash cards, everything else in FocusDesk, restore points and copies, and anything else stored on the same web address. Restore points are an automatic copy of your data that is refreshed about once an hour, and the browser also keeps up to seven daily snapshots; both count as copies and can be large. You can delete the restore point or the daily snapshots from Control Panel if space is tight. "Data size" counts only your own data, and Notes, Pictures, Flash cards and everything else add up to it.
 
-### Can Clipy change or complete things I already have? (BETA)
+### Can Clipy change or complete things I already have?
 Yes. Ask it, for example, to move your study group to Saturday or to mark chapter 3 done. It always shows what it wants to change and waits for you to say yes, even if "Add things without asking" is on, and Undo puts everything back. It only touches things you made by hand (or that Clipy made). It leaves repeating items alone, and anything that comes from Apple, Canvas or a calendar feed, because the next sync would just undo the change. You can switch it off in Clipy's menu.
 
 ### What do the tags like MINOR and BETA mean?

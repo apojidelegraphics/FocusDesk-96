@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "3.0.1";
-  var VERSION_DESKTOP = "1.4.1";
+  var VERSION_BROWSER = "3.0.2";
+  var VERSION_DESKTOP = "1.4.2";
   /* set when this window is an app popped out of the main window (the desktop app) */
   var POP = (function () {
     try {
@@ -39,10 +39,11 @@ window.addEventListener("error", function (e) {
     }
   })();
   var VERSION = window.__focusdeskIsDesktop ? VERSION_DESKTOP : VERSION_BROWSER;
-  /* The tag shown beside this version: MAJOR, MINOR, STABILITY or HOTFIX. It is a separate label and is never part of the number.
+  /* The tags shown beside this version: MAJOR, MINOR, STABILITY and/or HOTFIX. They are separate labels and are never part of the number.
+     An update can carry more than one: a Major that needed a quick fix and was released again under the same number is ["MAJOR", "HOTFIX"].
      Set both when the version numbers are bumped (a version ending in .0 is MAJOR, anything else is not). */
-  var TAG_DESKTOP = "MINOR";
-  var TAG_BROWSER = "MINOR";
+  var TAG_DESKTOP = ["MINOR"];
+  var TAG_BROWSER = ["MINOR"];
   var TAG = window.__focusdeskIsDesktop ? TAG_DESKTOP : TAG_BROWSER;
   var VERSION_KEY = "focusdesk96.version";
   var PATCHES = [
@@ -75,6 +76,21 @@ window.addEventListener("error", function (e) {
       ],
     },
     {
+      v: "3.0.2",
+      tag: ["MINOR"],
+      date: "October 2026",
+      title: "Safety net",
+      apps: [],
+      notes: [
+        "Undo: after you delete something, a small bar offers Undo (or press Ctrl or Cmd + Z). It puts the item back where it was, in its folders too.",
+        "A heads-up if you add something you already have, like a task or a flash card with the same words. Nothing is blocked, and you can undo the new one.",
+        "The storage bar now counts the daily snapshots as copies, so the numbers add up to your data size. A button deletes the snapshots if you need the space, and the empty gap under the bar is gone.",
+        "Copy backup puts your whole backup on the clipboard as text. A small sign in the taskbar says whether FocusDesk works offline and that your data stays on this device.",
+        "Updates can now have more than one tag, like MAJOR and HOTFIX together (a Major that was released again with a fix).",
+        "The backup-file picker and Clipy\u2019s change-and-complete are no longer BETA.",
+      ],
+    },
+    {
       v: "1.4.1",
       tag: "MINOR",
       date: "October 2026",
@@ -87,6 +103,22 @@ window.addEventListener("error", function (e) {
         "Pop-out windows open where you left them more reliably, never off screen and never invisible, and there is a Reset pop-out positions button (BETA).",
         "The Settings items in the Start menu jump straight to the right part of Control Panel.",
         "Includes browser version 3.0.1: a clearer storage bar, and help for choosing your backup folder.",
+      ],
+    },
+    {
+      v: "1.4.2",
+      tag: ["MINOR"],
+      date: "October 2026",
+      title: "Desktop 1.4.2: safety net",
+      apps: [],
+      notes: [
+        "Undo: after you delete something, a small bar offers Undo (or press Ctrl or Cmd + Z). A heads-up appears if you add something you already have.",
+        "Better backups: today\u2019s backup stays up to date while FocusDesk is open, every backup is checked after it is written, and Back up now saves one on the spot. If nearly everything is deleted by mistake, the bigger backup is kept beside it.",
+        "A crash log records what went wrong if FocusDesk crashes (error text only, with your name, folders and keys removed). Nothing is ever sent automatically. Send details only opens a draft in your browser for you to read and submit.",
+        "Pop-out windows re-measure themselves when they open, so they fit their size properly (BETA, Mac).",
+        "If Research is popped out, Continue with Clipy opens Clipy\u2019s own pop-out (BETA).",
+        "The empty space under the storage section is gone, and updates can carry more than one tag. The Dock number, Clipy\u2019s change-and-complete and the backup-file picker are no longer BETA.",
+        "Includes browser version 3.0.2.",
       ],
     },
     {
@@ -728,7 +760,9 @@ window.addEventListener("error", function (e) {
       "Type a word and press Enter. Definitions, examples, synonyms and antonyms.",
       "",
       "### Recycle Bin",
-      "Deleted items go here before they're gone for good. Restore individual items or empty the whole bin.",
+      "Deleted items go here before they're gone for good. Restore individual items or empty the whole bin. Right after a delete, a small bar offers **Undo** (or press Ctrl/Cmd+Z when you're not typing). It puts the item back where it was.",
+      "",
+      "If you add a task, card, event, reminder or assignment you already have, a bar says so and lets you undo the new one. Nothing is blocked.",
       "",
       "### Migrate",
       "Move individual notes, cards, assignments, folders and more **out to a file** to free up browser storage. Import them back later. Folders bring their contents along automatically.",
@@ -759,6 +793,8 @@ window.addEventListener("error", function (e) {
       "",
       "### Backup",
       "- **Save backup file\u2026** \u2014 downloads a complete JSON backup",
+      "- **Copy backup** (browser) \u2014 puts the whole backup on the clipboard as text. Paste it into a note or an email to yourself, and paste it back into the box to restore.",
+      "- **Back up now** and the **Crash log** (desktop) \u2014 the daily backups stay up to date and are checked, and the crash log records errors (names and keys removed). Nothing is ever sent automatically.",
       "- **Restore from file\u2026** \u2014 replaces everything with a backup",
       "- **Merge from file\u2026** \u2014 adds anything from a backup without deleting your current data",
       "- **Export .csv** \u2014 for spreadsheets",
@@ -801,7 +837,7 @@ window.addEventListener("error", function (e) {
       "- **Calendar Link** is the fastest way to get assignments in. Import once a week.",
       "- **Flash Cards** use real spaced repetition \u2014 the algorithm schedules reviews for you. Just grade honestly.",
       "- **Clipy 'Plan my week'** is a genuine time-saver. Try it Sunday evening.",
-      "- **Clipy can change what you already have (BETA)**: ask it to move an event or tick off a task. It always asks first, and Undo puts it back.",
+      "- **Clipy can change what you already have**: ask it to move an event or tick off a task. It always asks first, and Undo puts it back.",
       "- **Settings jump**: Start, then Settings, opens Control Panel at the right section. Ctrl/Cmd+K has Settings shortcuts too.",
       "- **Session persistence** reopens every window you had open when you come back.",
       "- **Drag sections** on Today to reorder. Whatever you use most goes at the top.",
@@ -859,7 +895,7 @@ window.addEventListener("error", function (e) {
       new Date().toLocaleDateString() +
       "\n\n";
     fresh.forEach(function (p) {
-      body += "Version " + p.v + " \u2014 " + p.title + (p.tag ? "  [" + p.tag + "]" : "") + "  (" + p.date + ")\n";
+      body += "Version " + p.v + " \u2014 " + p.title + (allTags(p.tag).length ? "  " + allTags(p.tag).map(function (t) { return "[" + t + "]"; }).join(" ") : "") + "  (" + p.date + ")\n";
       p.notes.forEach(function (n) {
         body += "  \u2022 " + n + "\n";
       });
@@ -1531,6 +1567,10 @@ window.addEventListener("error", function (e) {
             label: isStr(t.label) ? clip(t.label, 120) : t.kind,
             at: isNum(t.at) ? t.at : Date.now(),
           });
+        /* where the item was in its list, and which folders held it, so Undo can put it back exactly */
+        var tb = o.trash[o.trash.length - 1];
+        if (tb && isNum(t.idx) && t.idx >= 0 && t.idx < 100000) tb.idx = Math.floor(t.idx);
+        if (tb && Array.isArray(t.fold)) tb.fold = t.fold.filter(isStr).slice(0, 40).map(function (x) { return clip(x, 40); });
       });
     if (isObj(p.winpos))
       Object.keys(p.winpos)
@@ -2390,24 +2430,37 @@ window.addEventListener("error", function (e) {
     countdowns: "Countdown",
     links: "Favorite",
   };
-  function toTrash(kind, data, label) {
-    if (TRASH_KINDS.indexOf(kind) < 0) return;
-    S.trash.unshift({
+  function toTrash(kind, data, label, extra) {
+    if (TRASH_KINDS.indexOf(kind) < 0) return null;
+    var t = {
       id: uid(),
       kind: kind,
       data: data,
       label: clip(String(label || TRASH_LABELS[kind] || kind), 120),
       at: Date.now(),
-    });
+    };
+    if (extra && isNum(extra.idx)) t.idx = extra.idx; /* where it was in its list */
+    if (extra && Array.isArray(extra.fold) && extra.fold.length) t.fold = extra.fold; /* the folders that held it */
+    S.trash.unshift(t);
     if (S.trash.length > 200) S.trash.length = 200;
+    return t;
   }
   function softDelete(kind, pred) {
     var arr = S[kind] || [],
-      keep = [];
-    arr.forEach(function (x) {
+      keep = [],
+      made = [];
+    arr.forEach(function (x, pos) {
       if (pred(x)) {
         var lb = x.title || x.text || x.name || x.q || x.url || "";
-        toTrash(kind, x, lb || TRASH_LABELS[kind]);
+        var fold = [];
+        if ((kind === "assign" || kind === "notes") && Array.isArray(S.folders)) {
+          var fk0 = kind === "assign" ? "assign" : "note";
+          S.folders.forEach(function (f) {
+            if (f && Array.isArray(f[fk0]) && f[fk0].indexOf(x.id) >= 0) fold.push(f.id);
+          });
+        }
+        var tt = toTrash(kind, x, lb || TRASH_LABELS[kind], { idx: pos, fold: fold });
+        if (tt) made.push(tt);
       } else keep.push(x);
     });
     S[kind] = keep;
@@ -2425,14 +2478,10 @@ window.addEventListener("error", function (e) {
     }
     save();
     refreshAll();
+    if (made.length) noteDeleted(made);
   }
-  function restoreTrash(id) {
-    var i = -1;
-    S.trash.forEach(function (t, k) {
-      if (t.id === id) i = k;
-    });
-    if (i < 0) return;
-    var t = S.trash[i];
+  /* put one item from the bin back where it was (its place in the list, and its folders) */
+  function restoreOne(t) {
     if (!Array.isArray(S[t.kind])) S[t.kind] = [];
     if (t.data && t.data.id) {
       var dup = S[t.kind].some(function (x) {
@@ -2440,11 +2489,137 @@ window.addEventListener("error", function (e) {
       });
       if (dup) t.data.id = uid();
     }
-    S[t.kind].push(t.data);
-    S.trash.splice(i, 1);
+    var at = isNum(t.idx) && t.idx >= 0 && t.idx <= S[t.kind].length ? t.idx : S[t.kind].length;
+    S[t.kind].splice(at, 0, t.data);
+    if ((t.kind === "assign" || t.kind === "notes") && Array.isArray(t.fold) && Array.isArray(S.folders) && t.data.id) {
+      var fk = t.kind === "assign" ? "assign" : "note";
+      t.fold.forEach(function (fid) {
+        S.folders.forEach(function (f) {
+          if (f && f.id === fid && Array.isArray(f[fk]) && f[fk].indexOf(t.data.id) < 0) f[fk].push(t.data.id);
+        });
+      });
+    }
+    var i = S.trash.indexOf(t);
+    if (i >= 0) S.trash.splice(i, 1);
+  }
+  function restoreTrash(id) {
+    var t = null;
+    S.trash.forEach(function (x) {
+      if (x.id === id) t = x;
+    });
+    if (!t) return;
+    restoreOne(t);
     save();
     refreshAll();
   }
+  /* several at once, lowest position first so every item lands where it was */
+  function restoreMany(ids) {
+    var list = S.trash.filter(function (t) {
+      return ids.indexOf(t.id) >= 0;
+    });
+    list.sort(function (p, q) {
+      return p.kind === q.kind ? (p.idx || 0) - (q.idx || 0) : p.kind < q.kind ? -1 : 1;
+    });
+    list.forEach(restoreOne);
+    save();
+    refreshAll();
+    return list.length;
+  }
+  /* ---- Undo: a small bar after something is deleted (or added twice by mistake) ---- */
+  var undoBar = null,
+    undoBarT = 0,
+    undoBatch = null;
+  function showUndoBar(text, fn, label) {
+    var old = document.getElementById("fdUndo");
+    if (old) old.remove();
+    clearTimeout(undoBarT);
+    var bar = el("div", { id: "fdUndo", class: "fd-undo", role: "status", "aria-live": "polite" });
+    function close() {
+      bar.remove();
+      clearTimeout(undoBarT);
+      if (undoBar && undoBar.bar === bar) undoBar = null;
+    }
+    function run() {
+      close();
+      try {
+        fn();
+      } catch (e) {}
+    }
+    bar.append(
+      el("span", null, text),
+      el("button", { class: "btn sm", onclick: run }, label || "Undo"),
+      el("button", { class: "btn sm", "aria-label": "Dismiss", title: "Dismiss", onclick: close }, "\u00d7")
+    );
+    document.body.append(bar);
+    undoBar = { bar: bar, run: run };
+    undoBarT = setTimeout(close, 10000);
+  }
+  /* every delete in the same moment (an assignment and its calendar event, say) is one Undo */
+  function noteDeleted(made) {
+    if (!undoBatch) {
+      undoBatch = { ids: [], labels: [] };
+      setTimeout(function () {
+        var b = undoBatch;
+        undoBatch = null;
+        if (!b || !b.ids.length) return;
+        var n = b.ids.length;
+        showUndoBar(n === 1 ? "Deleted \u201c" + clip(b.labels[0], 40) + "\u201d." : "Deleted " + n + " items.", function () {
+          restoreMany(b.ids);
+        });
+      }, 0);
+    }
+    made.forEach(function (t) {
+      undoBatch.ids.push(t.id);
+      undoBatch.labels.push(t.label);
+    });
+  }
+  /* ---- a heads-up when you add something you already have ---- */
+  function dupKey(s) {
+    return String(s == null ? "" : s).toLowerCase().replace(/\s+/g, " ").trim();
+  }
+  function findDuplicate(kind, item) {
+    var arr = S[kind] || [];
+    for (var i = 0; i < arr.length; i++) {
+      var x = arr[i];
+      if (!x || x === item) continue;
+      if (kind === "tasks") {
+        if (!x.done && dupKey(item.text) && dupKey(x.text) === dupKey(item.text)) return x;
+      } else if (kind === "cards") {
+        if (dupKey(item.q) && dupKey(x.q) === dupKey(item.q) && dupKey(x.deck) === dupKey(item.deck)) return x;
+      } else if (kind === "events") {
+        if (dupKey(item.title) && dupKey(x.title) === dupKey(item.title) && x.date === item.date && (x.time || "") === (item.time || "")) return x;
+      } else if (kind === "assign") {
+        if (dupKey(item.title) && dupKey(x.title) === dupKey(item.title) && dupKey(x.course) === dupKey(item.course) && x.due === item.due) return x;
+      } else if (kind === "reminders") {
+        if (!x.done && dupKey(item.text) && dupKey(x.text) === dupKey(item.text) && Math.abs((x.at || 0) - (item.at || 0)) < 60000) return x;
+      }
+    }
+    return null;
+  }
+  /* call right after something typed in was added: if it matches one you already have, say so and offer to take the new one back */
+  function dupNoticeLast(kind) {
+    try {
+      var arr = S[kind] || [],
+        item = arr[arr.length - 1];
+      if (!item || !findDuplicate(kind, item)) return;
+      var name = item.title || item.text || item.q || "it";
+      showUndoBar("Added \u201c" + clip(String(name), 40) + "\u201d. You already have one just like it.", function () {
+        var pos = S[kind].indexOf(item);
+        if (pos < 0) return;
+        S[kind].splice(pos, 1);
+        save();
+        refreshAll();
+      }, "Undo (don't keep this one)");
+    } catch (e) {}
+  }
+  document.addEventListener("keydown", function (e) {
+    /* Ctrl or Cmd + Z takes back the last delete while the bar is showing, unless you are typing somewhere (then it undoes your typing) */
+    if (!undoBar || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || String(e.key).toLowerCase() !== "z") return;
+    var t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || ""))) return;
+    e.preventDefault();
+    undoBar.run();
+  });
   function purgeTrash(id) {
     S.trash = S.trash.filter(function (t) {
       return t.id !== id;
@@ -6797,6 +6972,7 @@ window.addEventListener("error", function (e) {
         kind: kind.value,
         repeat: repeatSel.value || "none",
       });
+      dupNoticeLast("events");
       tIn.value = "";
       save();
       refreshAll();
@@ -8407,6 +8583,7 @@ window.addEventListener("error", function (e) {
         fired: false,
         repeat: repSel.value || "none",
       });
+      dupNoticeLast("reminders");
       save();
       refreshAll();
     }
@@ -9541,7 +9718,7 @@ window.addEventListener("error", function (e) {
   }
   /* where this browser's storage is going: the parts of the main data, the restore point and other copies, and anything else kept on this web address */
   function storageBreakdown() {
-    var out = { total: 0, keys: 0, notes: 0, pics: 0, cards: 0, other: 0, copies: 0, outside: 0, bakLen: 0, corruptLen: 0 },
+    var out = { total: 0, keys: 0, notes: 0, pics: 0, cards: 0, other: 0, copies: 0, outside: 0, bakLen: 0, corruptLen: 0, dailyLen: 0, dailyCount: 0 },
       mainLen = 0;
     try {
       for (var i = 0; i < localStorage.length; i++) {
@@ -9558,6 +9735,11 @@ window.addEventListener("error", function (e) {
         else if (k === KEY + ".corrupt") {
           out.copies += len;
           out.corruptLen = len;
+        } else if (k.indexOf("focusdesk96.bak.daily.") === 0) {
+          /* the browser keeps up to seven daily snapshots of your data: they are copies, not part of your data */
+          out.copies += len;
+          out.dailyLen += len;
+          out.dailyCount++;
         } else if (k === WALLKEY) out.pics += len;
         else if (k.indexOf("focusdesk96") === 0) out.other += len;
         else out.outside += len;
@@ -9966,7 +10148,7 @@ window.addEventListener("error", function (e) {
         { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
         el("button", { class: "btn sm", onclick: chooseFolder }, "Choose folder\u2026"),
         bakFileSupported()
-          ? el("span", { class: "row", style: "gap:2px;align-items:center" }, el("button", { class: "btn sm", title: "Pick the backup file itself (focusdesk-latest.json). This works even when Chrome won\u2019t open the folder.", onclick: chooseFile }, "Choose the backup file instead\u2026"), featureChip("BETA"))
+          ? el("span", { class: "row", style: "gap:2px;align-items:center" }, el("button", { class: "btn sm", title: "Pick the backup file itself (focusdesk-latest.json). This works even when Chrome won\u2019t open the folder.", onclick: chooseFile }, "Choose the backup file instead\u2026"))
           : null,
         el("button", { class: "btn sm", onclick: function () { bakCheck(true).then(paint); } }, "Load newest now"),
         el(
@@ -10371,6 +10553,7 @@ window.addEventListener("error", function (e) {
         done: false,
         src: "manual",
       });
+      dupNoticeLast("assign");
       mTitle.value = "";
       save();
       refreshAll();
@@ -11146,6 +11329,7 @@ window.addEventListener("error", function (e) {
           lapses: 0,
           course: cIn.value.trim() ? clip(cIn.value.trim(), 60) : undefined,
         });
+        dupNoticeLast("cards");
         save();
         curCard = null;
         drawDecks();
@@ -15075,18 +15259,64 @@ window.addEventListener("error", function (e) {
       placeholder: "\u2026or paste backup text here",
       style: 'width:100%;resize:vertical;font:11px "Courier New",monospace',
     });
+    /* browser: the whole backup as text on the clipboard (paste it into a note or an email to yourself; paste it back into the box to restore) */
+    function copyBackup() {
+      var text = JSON.stringify({ app: "FocusDesk 96", version: VERSION, saved: new Date().toISOString(), data: S, wall: wallData }, null, 2);
+      var kb = Math.max(1, Math.round(text.length / 1024));
+      var size = kb >= 1024 ? (kb / 1024).toFixed(1) + " MB" : kb + " KB";
+      function done() {
+        msgBox({
+          title: "Backup copied",
+          icon: "info",
+          width: 400,
+          text: "Your whole backup (" + size + ") is on the clipboard as text.\n\nPaste it into a note, a document or an email to yourself. To bring it back, paste it into the box below and press Restore pasted text.\n\nA backup file (Save backup file) is still the safest copy.",
+        });
+      }
+      function failed() {
+        /* the browser wouldn't copy: put the text where it can be copied by hand */
+        paste.value = text;
+        paste.focus();
+        paste.select();
+        msgBox({
+          title: "Copy it yourself",
+          icon: "warn",
+          width: 400,
+          text: "Your browser didn't allow FocusDesk to copy. The backup text (" + size + ") is in the box below, already selected. Press " + (/Mac|iPhone|iPad/.test(navigator.platform || "") ? "Cmd" : "Ctrl") + "+C to copy it.",
+        });
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) navigator.clipboard.writeText(text).then(done, failed);
+      else {
+        var ok = false;
+        try {
+          paste.value = text;
+          paste.select();
+          ok = document.execCommand("copy");
+        } catch (e) {}
+        if (ok) {
+          paste.value = "";
+          done();
+        } else failed();
+      }
+    }
     var storageBar = el("div", {
       class: "col",
-      style: "gap:4px;margin-top:6px;min-height:150px" /* the space is kept so the screen doesn't jump when the measurement arrives */,
+      style: "gap:4px;margin-top:6px",
     });
+    var storageHeight = 0; /* how tall the finished bar was last time: room is kept for it only while measuring, so nothing jumps and nothing is left empty */
     var storageCache = null; /* the last measurement (measuring writes a big test value, so it isn't repeated on every redraw) */
     function drawStorageBar(force) {
       storageBar.textContent = "";
-      if (window.__focusdeskIsDesktop) return; /* files on disk: no browser limit */
+      if (window.__focusdeskIsDesktop) {
+        /* files on disk: no browser limit, so nothing is drawn and no space is kept */
+        storageBar.style.display = "none";
+        storageBar.style.minHeight = "";
+        return;
+      }
       if (!force && storageCache && Date.now() - storageCache.at < 15000) {
         paintStorageBar(storageCache.r, storageCache.bd);
         return;
       }
+      storageBar.style.minHeight = (storageHeight || 110) + "px";
       storageBar.append(el("div", { class: "dim", style: "padding:0" }, "Measuring storage\u2026"));
       setTimeout(function () {
         var bd = storageBreakdown(),
@@ -15103,6 +15333,7 @@ window.addEventListener("error", function (e) {
     }
     function paintStorageBar(r, bd) {
       storageBar.textContent = "";
+      storageBar.style.minHeight = "";
       if (!r || !bd) {
         storageBar.append(el("div", { class: "dim" }, "Storage info isn't available in this browser."));
         return;
@@ -15212,7 +15443,47 @@ window.addEventListener("error", function (e) {
             "Delete damaged-save copy (" + fmtSize(bd.corruptLen) + ")"
           )
         );
+      if (bd.dailyLen)
+        row.append(
+          el(
+            "button",
+            {
+              class: "btn xs",
+              title: "The browser keeps up to seven daily snapshots of your data. They are the biggest part of the copies.",
+              onclick: function () {
+                msgBox({
+                  title: "Delete the daily snapshots?",
+                  icon: "q",
+                  width: 400,
+                  text: "This deletes the " + bd.dailyCount + " daily snapshot" + (bd.dailyCount === 1 ? "" : "s") + " of your data (" + fmtSize(bd.dailyLen) + "). Your real data isn't touched, and a new snapshot is made tomorrow.\n\nIf you want a safe copy first, save a backup file.",
+                  buttons: [
+                    {
+                      label: "Delete",
+                      fn: function () {
+                        try {
+                          var gone = [];
+                          for (var i = 0; i < localStorage.length; i++) {
+                            var kk = localStorage.key(i);
+                            if (kk && kk.indexOf("focusdesk96.bak.daily.") === 0) gone.push(kk);
+                          }
+                          gone.forEach(function (kk) {
+                            localStorage.removeItem(kk);
+                          });
+                        } catch (e) {}
+                        drawStorageBar(true);
+                      },
+                    },
+                    { label: "Keep them" },
+                  ],
+                });
+              },
+            },
+            "Delete daily snapshots (" + fmtSize(bd.dailyLen) + ")"
+          )
+        );
       storageBar.append(row);
+      storageBar.append(el("div", { class: "dim", style: "padding:0;font-size:11px" }, offlineInfo().tip));
+      storageHeight = storageBar.offsetHeight || storageHeight;
     }
     function draw() {
       var saveErr = window.__focusdeskIsDesktop && window.__focusdeskSaveError;
@@ -15241,7 +15512,7 @@ window.addEventListener("error", function (e) {
         ["Folders", S.folders.length],
         ["Focus sessions", sessions],
         ["Recycle Bin", S.trash.length],
-        ["Data size", (JSON.stringify(S).length / 1024).toFixed(1) + " KB"],
+        ["Data size (your data only)", (JSON.stringify(S).length / 1024).toFixed(1) + " KB"],
       ].forEach(function (r) {
         info.append(el("span", null, r[0] + ":"), el("b", null, r[1]));
       });
@@ -16316,7 +16587,9 @@ window.addEventListener("error", function (e) {
             mac = window.__focusdeskPlatform === "darwin",
             tray = mac ? "menu bar" : "system tray",
             note = el("div", { class: "dim", style: "padding:0" }),
-            bkPath = el("div", { style: "padding:0;word-break:break-all;font-size:11px" });
+            bkPath = el("div", { style: "padding:0;word-break:break-all;font-size:11px" }),
+            bkStatus = el("div", { class: "dim", style: "padding:0;font-size:11px" }),
+            crashLine = el("div", { class: "dim", style: "padding:0" });
           function paintNote(extra) {
             var st = window.__focusdeskDStatus || {},
               bits = [];
@@ -16488,8 +16761,38 @@ window.addEventListener("error", function (e) {
             paintHotkeys();
             return el("div", { class: "col", style: "gap:3px" }, el("div", { style: "font-weight:bold" }, "Shortcuts (work from any app)"), hkRows);
           }
+          function paintBkStatus(s) {
+            bkStatus.textContent = "";
+            bkStatus.style.color = "";
+            if (!s) return;
+            if (s.error) {
+              bkStatus.textContent = "\u26A0 " + s.error;
+              bkStatus.style.color = "#c00000";
+              return;
+            }
+            if (!s.at) {
+              bkStatus.textContent = "No backup has been made yet in this session.";
+              return;
+            }
+            var d = new Date(s.at),
+              isToday = new Date().toDateString() === d.toDateString();
+            bkStatus.textContent =
+              "Last backup: " + (isToday ? "today at " : d.toLocaleDateString() + " ") + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + " \u2014 " + s.file + ", " + fmtSize(s.bytes) + ", checked \u2714. " + s.count + " daily backup" + (s.count === 1 ? "" : "s") + " kept. Today's backup stays up to date while FocusDesk is open." + (s.note ? " " + s.note : "");
+          }
+          function paintCrash() {
+            fdk.crashInfo().then(function (r) {
+              if (!r || !r.ok) return;
+              crashLine.textContent = r.count
+                ? r.count + " problem" + (r.count === 1 ? "" : "s") + " recorded. Latest: " + new Date(r.last.t).toLocaleString() + " (" + crashWord(r.last.kind) + ")."
+                : "Nothing has gone wrong. If FocusDesk ever crashes, the details are recorded here, on this computer only.";
+            });
+          }
           paintNote();
           paintBk();
+          fdk.backupStatus().then(function (r) {
+            paintBkStatus(r && r.status);
+          });
+          paintCrash();
           return el(
             "fieldset",
             null,
@@ -16518,7 +16821,7 @@ window.addEventListener("error", function (e) {
               opt("dueOverdue", "Show overdue tasks and assignments in the " + tray + " menu, too", true),
               opt("mirrorLatest", "Keep a copy of your newest data in the backup folder (focusdesk-latest.json), so the browser version can load it. Works well with a folder in iCloud Drive.", false),
               opt("npCoverLookup", "Now Playing: if the player has no cover picture, look one up online (sends the song title and artist to Apple's music search)", false),
-              opt("taskbarBadge", mac ? "Show a number on the Dock icon for what's due (Linux and Windows: on the taskbar icon)" : "Show a red number on the taskbar icon for what's due", false, mac ? featureChip("BETA") : null),
+              opt("taskbarBadge", mac ? "Show a number on the Dock icon for what's due (Linux and Windows: on the taskbar icon)" : "Show a red number on the taskbar icon for what's due", false),
               el(
                 "div",
                 { class: "row", style: "gap:6px;align-items:center;flex-wrap:wrap" },
@@ -16629,9 +16932,31 @@ window.addEventListener("error", function (e) {
                 btn("Open folder", function () {
                   fdk.openBackupDir();
                 }),
+                btn("Back up now", function () {
+                  fdk.backupNow().then(function (r) {
+                    paintBkStatus(r && r.status);
+                  });
+                }, "Saves a backup right away and checks that it can be read"),
                 keepSel
               ),
-              note
+              bkStatus,
+              note,
+              el("div", { style: "font-weight:bold;margin-top:6px" }, "Crash log"),
+              crashLine,
+              el("div", { class: "dim", style: "padding:0;font-size:11px" }, "Error text only: never your notes or tasks, and your name, folders and keys are removed. Nothing is sent unless you choose Send details and submit it yourself."),
+              el(
+                "div",
+                { class: "row", style: "gap:6px;flex-wrap:wrap;align-items:center" },
+                btn("View details\u2026", crashView),
+                btn("Copy details", crashCopy),
+                btn("Send details\u2026", crashSend, "Opens a draft on GitHub in your browser. Nothing is sent until you press Submit there."),
+                btn("Show file", function () {
+                  fdk.crashOpen();
+                }),
+                btn("Clear", function () {
+                  fdk.crashClear().then(paintCrash);
+                })
+              )
             )
           );
         })()
@@ -17227,6 +17552,9 @@ window.addEventListener("error", function (e) {
               },
               "Save backup file\u2026"
             ),
+            window.__focusdeskIsDesktop
+              ? null
+              : el("button", { class: "btn", title: "Copies the whole backup as text, to paste into a note or an email to yourself", onclick: copyBackup }, "Copy backup"),
             el(
               "button",
               {
@@ -17889,6 +18217,7 @@ window.addEventListener("error", function (e) {
         created: Date.now(),
         repeat: repSel.value || "none",
       });
+      dupNoticeLast("tasks");
       txt.value = "";
       save();
       refreshAll();
@@ -23987,13 +24316,18 @@ window.addEventListener("error", function (e) {
       });
   }
   /* ---- tags: a small label beside a version. Never part of the number. ---- */
+  var TAG_ORDER = ["MAJOR", "MINOR", "STABILITY", "HOTFIX"];
   function isTagName(t) {
-    return t === "MAJOR" || t === "MINOR" || t === "STABILITY" || t === "HOTFIX";
+    return TAG_ORDER.indexOf(t) >= 0;
   }
-  function firstTag(x) {
+  /* every real tag in x (a list, or a single name), once each and always in the same order: MAJOR, MINOR, STABILITY, HOTFIX */
+  function allTags(x) {
     var a = Array.isArray(x) ? x : [x];
-    for (var i = 0; i < a.length; i++) if (isStr(a[i]) && isTagName(a[i].toUpperCase())) return a[i].toUpperCase();
-    return "";
+    return TAG_ORDER.filter(function (k) {
+      return a.some(function (t) {
+        return isStr(t) && t.toUpperCase() === k;
+      });
+    });
   }
   function featureChip(tag) {
     return el("span", { class: "tagchip tag-" + String(tag).toLowerCase(), title: "Newer and less proven. Tell us if it misbehaves." }, tag);
@@ -24002,16 +24336,24 @@ window.addEventListener("error", function (e) {
     return { MAJOR: "Major update", MINOR: "Minor update", STABILITY: "Stability update", HOTFIX: "Hotfix" }[t] || "";
   }
   function tagChip(x) {
-    var t = firstTag(x);
-    return t ? el("span", { class: "tagchip tag-" + t.toLowerCase(), title: tagWord(t) }, t) : document.createTextNode("");
+    var ts = allTags(x);
+    if (!ts.length) return document.createTextNode("");
+    var box = el("span", { class: "tagchips" });
+    ts.forEach(function (t) {
+      box.append(el("span", { class: "tagchip tag-" + t.toLowerCase(), title: tagWord(t) }, t));
+    });
+    return box;
   }
   function tagWords(x) {
-    var t = firstTag(x);
-    return t ? " (a " + tagWord(t) + ")" : "";
+    var ts = allTags(x);
+    return ts.length ? " (a " + ts.map(tagWord).join(" and a ") + ")" : "";
   }
   function tagToken(x) {
-    var t = firstTag(x);
-    return t ? "{tag:" + t + "}" : "";
+    return allTags(x)
+      .map(function (t) {
+        return "{tag:" + t + "}";
+      })
+      .join("");
   }
   function paintTagged(parent, text) {
     String(text)
@@ -24029,7 +24371,7 @@ window.addEventListener("error", function (e) {
       if (isTagName(w) && out.indexOf(w) < 0) out.push(w);
       return m;
     });
-    return out;
+    return allTags(out);
   }
   function updNote(text) {
     S.prefs.updMsg = clip(text, 160);
@@ -24361,6 +24703,13 @@ window.addEventListener("error", function (e) {
         openApp("notepad");
       } else if (cmd === "clipy") openClipyPopout("");
       else if (cmd.indexOf("clipy:") === 0) openClipyPopout(cmd.slice(6));
+      else if (cmd.indexOf("clipyseed:") === 0) {
+        var sd = null;
+        try {
+          sd = JSON.parse(cmd.slice(10));
+        } catch (e) {}
+        openClipyPopoutSeeded(sd);
+      }
       else if (cmd === "backup-now") quickBackup();
       else if (cmd === "check-updates") checkUpdate(true);
       else if (cmd.indexOf("open:") === 0) {
@@ -24549,6 +24898,21 @@ window.addEventListener("error", function (e) {
     if (question && clipyController && clipyController.ask) clipyController.ask(question);
   }
 
+  /* a search or answer handed over from a popped-out Research window: open (or reuse) Clipy's own pop-out and start from it */
+  function openClipyPopoutSeeded(sd) {
+    if (!sd || typeof sd !== "object") return;
+    var seed = { topic: clip(String(isStr(sd.topic) ? sd.topic : "").trim(), 300), text: clip(String(isStr(sd.text) ? sd.text : "").trim(), 12000), at: Date.now() };
+    if (!seed.topic && !seed.text) return;
+    if (clipyPop && !clipyPop.closed && clipyController && typeof clipyController.seed === "function") {
+      try {
+        clipyPop.focus();
+      } catch (e) {}
+      clipyController.seed(seed);
+    } else {
+      pendingClipySeed = seed; /* picked up when the pop-out's panel is built */
+      openClipyPopout("");
+    }
+  }
   function quickBackup() {
     saveFile(
       "focusdesk96-backup-" + ymd(new Date()) + ".json",
@@ -31572,7 +31936,7 @@ window.addEventListener("error", function (e) {
     }
     return { kind: a.kind, id: id };
   }
-  /* ===== Clipy can change and complete things you already have (BETA) ===== */
+  /* ===== Clipy can change and complete things you already have ===== */
   function isEditAct(a) {
     return !!a && (a.kind === "complete" || a.kind === "update");
   }
@@ -32045,7 +32409,7 @@ window.addEventListener("error", function (e) {
           },
         },
         {
-          label: "Let Clipy change and complete things (BETA)",
+          label: "Let Clipy change and complete things",
           check: S.prefs.clipyEdit !== false,
           fn: function () {
             S.prefs.clipyEdit = S.prefs.clipyEdit === false;
@@ -32115,6 +32479,11 @@ window.addEventListener("error", function (e) {
       at: Date.now(),
     };
     if (!seed.topic && !seed.text) return;
+    if (POP && window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.openClipySeed) {
+      /* this app is in its own window: open Clipy's pop-out (through the main window) instead of drawing Clipy inside this one */
+      window.focusdesk.openClipySeed({ topic: seed.topic, text: seed.text }).catch(function () {});
+      return;
+    }
     if (!S.prefs.showClipy) {
       S.prefs.showClipy = true;
       save();
@@ -32440,7 +32809,7 @@ window.addEventListener("error", function (e) {
       return el(
         "div",
         { class: "cm assistant" },
-        el("span", { class: "who2" }, edits ? (adds ? "Clipy \u2014 wants to add and change things" : "Clipy \u2014 wants to change things") : "Clipy \u2014 wants to add", edits ? featureChip("BETA") : null),
+        el("span", { class: "who2" }, edits ? (adds ? "Clipy \u2014 wants to add and change things" : "Clipy \u2014 wants to change things") : "Clipy \u2014 wants to add"),
         lines,
         toApple ? el("div", { class: "dim", style: "padding:0" }, "These will also go to Apple Calendar.") : null,
         el(
@@ -35137,6 +35506,43 @@ window.addEventListener("error", function (e) {
       while (daily.length > 7) localStorage.removeItem(daily.shift());
     } catch (e) {}
   }
+  /* the browser versions: say plainly whether this copy works without internet and where the data lives (never claims more than is true) */
+  function offlineInfo() {
+    var local = "Your notes, tasks and settings are stored only on this device, not on a server.";
+    var extras = " Extras that need the internet (assistants, lookups, the update check) only connect when you use them.";
+    if (location.protocol === "file:")
+      return { offline: true, label: "Works offline", tip: "This copy runs from your computer, so it works without internet. " + local + extras };
+    if (navigator.serviceWorker && navigator.serviceWorker.controller)
+      return { offline: true, label: "Works offline", tip: "FocusDesk has saved itself in this browser, so it opens without internet. " + local + extras };
+    return { offline: false, label: "Data stays here", tip: local + " Offline use isn't ready in this browser yet. Open this page once more while you're online, and it will be." + extras };
+  }
+  function paintOfflineSign() {
+    var s = document.getElementById("offlineSign");
+    if (!s || window.__focusdeskIsDesktop || POP) return;
+    var i = offlineInfo();
+    s.textContent = i.label;
+    s.title = i.tip;
+    s.className = i.offline ? "ok" : "";
+    s.hidden = false;
+    if (!s.__wired) {
+      s.__wired = true;
+      var open = function () {
+        var j = offlineInfo();
+        msgBox({ title: "Offline and your data", icon: "info", width: 400, text: j.tip });
+      };
+      s.addEventListener("click", open);
+      s.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open();
+        }
+      });
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.addEventListener("controllerchange", paintOfflineSign);
+        navigator.serviceWorker.ready.then(function () { setTimeout(paintOfflineSign, 300); }, function () {});
+      }
+    }
+  }
   function checkBackupAge() {
     if (window.__focusdeskIsDesktop) return; /* desktop backs up automatically */
     var last = 0;
@@ -35306,6 +35712,17 @@ window.addEventListener("error", function (e) {
           openApp(POP);
           if (wins[POP]) toggleMax(wins[POP]);
         }
+        /* the window is still hidden and may not be at its final size yet: re-measure the app once it is really showing (see settle() in main.js) */
+        var refit = function () {
+          try {
+            window.dispatchEvent(new Event("resize"));
+          } catch (e) {}
+        };
+        document.addEventListener("visibilitychange", function () {
+          if (!document.hidden) setTimeout(refit, 60);
+        });
+        setTimeout(refit, 400);
+        setTimeout(refit, 1500);
         return;
       }
       try {
@@ -35345,6 +35762,12 @@ window.addEventListener("error", function (e) {
       } catch (e) {}
       if (S.prefs.tips) showWelcome();
       checkBackupAge();
+      try {
+        paintOfflineSign();
+      } catch (e) {}
+      try {
+        crashNoticeOnStart();
+      } catch (e) {}
       pruneImages();
       autoUpdateCheck();
       if (!window.__focusdeskIsDesktop) startMulti(); /* several browser tabs share one saved state */
@@ -35368,6 +35791,95 @@ window.addEventListener("error", function (e) {
     b.onclick = finish;
     window.addEventListener("keydown", finish, { once: true }); /* any key skips it */
   }
+  /* ---- the crash log (desktop). It is all local: nothing is sent unless the person chooses "Send details" and then submits the draft themselves. ---- */
+  var CRASH_WORDS = { "main-error": "an error in the app", "main-rejection": "a background error", "renderer-gone": "a window crashed", "child-gone": "a helper process stopped", "page-error": "an error on a page", unresponsive: "a window stopped responding", "unclean-exit": "it closed unexpectedly" };
+  function crashWord(k) {
+    return CRASH_WORDS[k] || String(k);
+  }
+  function crashView() {
+    var fdk = window.focusdesk;
+    if (!fdk || !fdk.crashReport) return;
+    fdk.crashReport().then(function (r) {
+      var ta = el("textarea", { class: "in", rows: 12, style: 'width:100%;font:11px "Courier New",monospace' });
+      ta.value = (r && r.text) || "";
+      ta.readOnly = true;
+      msgBox({
+        title: "Crash log",
+        icon: "info",
+        width: 560,
+        text: "This is exactly what Send details would put in the draft. Your name, folders and keys are already removed. Nothing is sent unless you choose Send details and then submit it yourself.",
+        extra: ta,
+        buttons: [
+          {
+            label: "Copy",
+            fn: function () {
+              copyText(ta.value);
+              return false;
+            },
+          },
+          { label: "Close" },
+        ],
+      });
+    });
+  }
+  function crashCopy() {
+    var fdk = window.focusdesk;
+    if (!fdk || !fdk.crashReport) return;
+    fdk.crashReport().then(function (r) {
+      copyText((r && r.text) || "").then(function (ok) {
+        msgBox({ title: "Crash log", icon: ok ? "info" : "warn", width: 380, text: ok ? "The details are on the clipboard." : "Couldn't copy. Choose View details and copy from there." });
+      });
+    });
+  }
+  function crashSend() {
+    var fdk = window.focusdesk;
+    if (!fdk || !fdk.crashSend) return;
+    msgBox({
+      title: "Send details",
+      icon: "q",
+      width: 440,
+      text: "This opens a draft issue on GitHub in your browser, with the crash details filled in. Nothing is sent until you press Submit there, and you can read, change or delete anything first. You need a free GitHub account to submit it.",
+      buttons: [
+        {
+          label: "Open the draft",
+          fn: function () {
+            fdk.crashSend();
+          },
+        },
+        { label: "Cancel" },
+      ],
+    });
+  }
+  /* the one time FocusDesk mentions a crash: the next start after it happened */
+  function crashNoticeOnStart() {
+    var c = window.__focusdeskCrash;
+    if (!window.__focusdeskIsDesktop || POP || !c || !c.unseen) return;
+    try {
+      window.focusdesk.crashSeen();
+    } catch (e) {}
+    msgBox({
+      title: "FocusDesk 96",
+      icon: "warn",
+      width: 420,
+      text: "FocusDesk ran into a problem the last time it was open" + (c.last ? " (" + crashWord(c.last.kind) + ")" : "") + ". Your data is safe.\n\nThe details are in the crash log. You can look at them, and send them if you want to. Nothing is ever sent automatically.",
+      buttons: [
+        {
+          label: "View details",
+          fn: function () {
+            crashView();
+          },
+        },
+        { label: "Close" },
+      ],
+    });
+  }
+  var pageErrCount = 0;
+  function logPageError(msg, stack) {
+    try {
+      if (!window.__focusdeskIsDesktop || !window.focusdesk || !window.focusdesk.logCrash || /ResizeObserver loop/i.test(String(msg || "")) || ++pageErrCount > 20) return;
+      window.focusdesk.logCrash({ message: String(msg || "unknown error"), stack: String(stack || "") });
+    } catch (x) {}
+  }
   var lastErr = 0;
   function reportErr(msg) {
     if (/ResizeObserver loop/i.test(String(msg || ""))) return;
@@ -35386,11 +35898,13 @@ window.addEventListener("error", function (e) {
     } catch (x) {}
   }
   window.addEventListener("error", function (e) {
+    logPageError(e.message, e.error && e.error.stack);
     reportErr(e.message);
   });
   window.addEventListener("unhandledrejection", function (e) {
     var r = e.reason;
     if (r && r.code === "cancelled") return;
+    logPageError(r && r.message ? r.message : "a background task failed", r && r.stack);
     reportErr(r && r.message ? r.message : "a background task failed");
   });
   window.addEventListener("storage", function (e) {

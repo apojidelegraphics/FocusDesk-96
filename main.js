@@ -17,9 +17,12 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell, screen, globalShortcut, Tray, nativeImage, Notification, net, clipboard } = require("electron");
 const nowPlaying = require("./nowplaying");
 const makeSafeWrite = require("./safewrite");
+const { makeBackups } = require("./backup");
+const { makeCrashLog } = require("./crashlog");
 const path = require("path");
 const fs = require("fs");
 const fsp = fs.promises;
+const os = require("os");
 const { fileURLToPath } = require("url");
 // Mac helper for Apple Calendar and Reminders (read-only). Packaged builds carry it in Resources.
 const apple = require("./apple")({
@@ -51,6 +54,33 @@ function backupDir() {
   return (typeof dprefs === "object" && dprefs.backupPath) || BACKUP_DIR_DEFAULT;
 }
 const MIGRATE_DIR = path.join(DATA_DIR, "migrate");
+/* ---- the crash log: error text only, names and secrets removed, never sent anywhere by itself (see crashlog.js) ---- */
+let osUser = "";
+try {
+  osUser = os.userInfo().username || "";
+} catch (_) {}
+const crash = makeCrashLog({ file: path.join(DATA_DIR, "crash.log"), version: app.getVersion(), platform: process.platform + " " + process.arch + " " + os.release(), home: os.homedir(), user: osUser });
+let lastCrashBox = 0;
+process.on("uncaughtException", (err) => {
+  crash.record("main-error", err && err.message, err && err.stack);
+  // with a handler in place Electron no longer shows its own error box, so say it (at most once a minute)
+  if (Date.now() - lastCrashBox > 60000) {
+    lastCrashBox = Date.now();
+    try {
+      dialog.showErrorBox("FocusDesk 96 ran into a problem", String((err && err.message) || err).slice(0, 300) + "\n\nYour data is safe. Details were saved to the crash log (Control Panel > Desktop), where you can look at them or send them if you want to.");
+    } catch (_) {}
+  }
+});
+process.on("unhandledRejection", (reason) => {
+  crash.record("main-rejection", reason && reason.message ? reason.message : String(reason), reason && reason.stack);
+});
+app.on("render-process-gone", (_e, _wc, d) => {
+  if (d && d.reason !== "clean-exit" && d.reason !== "killed") crash.record("renderer-gone", String(d.reason) + " (exit code " + d.exitCode + ")");
+});
+app.on("child-process-gone", (_e, d) => {
+  if (d && d.reason !== "clean-exit" && d.reason !== "killed") crash.record("child-gone", String(d.type) + " " + String(d.reason) + " (exit code " + d.exitCode + ")");
+});
+const RUNNING_FLAG = path.join(DATA_DIR, "running.flag"); // present while the app is open: if it is still there at the next start, the app didn't close normally
 const FILES = {
   data: path.join(DATA_DIR, "data.json"),
   wall: path.join(DATA_DIR, "wall.json"),
@@ -221,44 +251,43 @@ async function loadJson(file, valid) {
 
 let backupCheckedFor = null;
 let backupNote = ""; // shown in Control Panel if the chosen folder couldn't be used
-/** If the newest daily backup is older than today, copy data.json to <backup folder>/YYYY-MM-DD.json, then prune. */
+const backups = makeBackups({
+  fsp: fsp,
+  atomicWrite: (f, d) => atomicWrite(f, d),
+  readData: async () => {
+    try {
+      return await fsp.readFile(FILES.data);
+    } catch (e) {
+      if (e.code === "ENOENT") return null;
+      throw e;
+    }
+  },
+  dir: () => backupDir(),
+  fallbackDir: BACKUP_DIR_DEFAULT,
+  keep: () => dprefs.backupKeep, // 0 = keep everything
+  today: () => ymd(new Date()),
+  now: () => Date.now(),
+  log: (msg) => logLine(msg),
+});
+/** Makes sure today has a backup (once per day it also saves the old file before the first change of the day replaces it). */
 async function ensureDailyBackup() {
   const today = ymd(new Date());
   if (backupCheckedFor === today) return;
-  backupCheckedFor = today; // one attempt per calendar day, success or not
-  const keep = dprefs.backupKeep; // 0 = keep everything
-  const attempt = async (dir) => {
-    await fsp.mkdir(dir, { recursive: true });
-    const list = async () => (await fsp.readdir(dir)).filter((n) => /^\d{4}-\d{2}-\d{2}\.json$/.test(n)).sort();
-    let names = await list();
-    const latest = names[names.length - 1];
-    if (!latest || latest.slice(0, 10) < today) {
-      let raw = null;
-      try {
-        raw = await fsp.readFile(FILES.data);
-      } catch (e) {
-        if (e.code !== "ENOENT") throw e;
-      }
-      if (raw) await atomicWrite(path.join(dir, today + ".json"), raw);
-    }
-    names = await list();
-    if (keep > 0) while (names.length > keep) await fsp.unlink(path.join(dir, names.shift())).catch(() => {});
-  };
-  try {
-    await attempt(backupDir());
-    backupNote = "";
-  } catch (e) {
-    console.error("[focusdesk] daily backup failed:", e);
-    if (dprefs.backupPath) {
-      // e.g. an unplugged drive or a Dropbox folder that moved: fall back so today is still protected
-      try {
-        await attempt(BACKUP_DIR_DEFAULT);
-        backupNote = "Couldn't reach your backup folder, so today's backup went to the default folder.";
-      } catch (e2) {
-        backupNote = "Couldn't write a backup today.";
-      }
-    }
-  }
+  backupCheckedFor = today; // one attempt per calendar day here; backupTick() keeps today's file current after that
+  const s = await backups.run();
+  backupNote = s.error || s.note || "";
+}
+/** Back up right now (the Back up now button, and when the app closes). */
+async function backupNow() {
+  const s = await backups.run({ force: true });
+  backupNote = s.error || s.note || "";
+  return s;
+}
+/** Every few minutes: start a new day's file, or refresh today's if the data changed (backup.js decides if it is time). */
+function backupTick() {
+  backups.run().then((s) => {
+    backupNote = s.error || s.note || "";
+  }).catch(() => {});
 }
 
 /** Remove half-written temp files left behind by a crash or power cut (single-instance, so none are live). */
@@ -298,6 +327,7 @@ function bootPayload() {
     corrupt,
     dirs: { data: DATA_DIR, backups: backupDir(), backupsDefault: BACKUP_DIR_DEFAULT, migrate: MIGRATE_DIR },
     backupNote: backupNote,
+    crash: crash.info(),
     platform: process.platform,
     appVersion: app.getVersion(),
     dprefs: dprefs,
@@ -597,7 +627,7 @@ function tagsFromName(name) {
     if (["MAJOR", "MINOR", "STABILITY", "HOTFIX"].indexOf(w) >= 0 && out.indexOf(w) < 0) out.push(w);
     return m;
   });
-  return out;
+  return ["MAJOR", "MINOR", "STABILITY", "HOTFIX"].filter((k) => out.indexOf(k) >= 0); // always in the same order
 }
 /* the newest FINISHED release in GitHub's release feed: a [BETA] pre-release is never offered as an update */
 function latestFromFeed(xml) {
@@ -1562,6 +1592,15 @@ function registerDesktopIpc() {
     openClipyChat(p && typeof p.question === "string" ? p.question.slice(0, 2000) : "");
     return { ok: true };
   });
+  /* "Continue with Clipy" from a popped-out app: the main window opens Clipy's own pop-out with the search or answer */
+  ipcMain.handle("focusdesk:openClipySeed", (e, p) => {
+    assertTrusted(e);
+    const topic = p && typeof p.topic === "string" ? p.topic.slice(0, 300) : "";
+    const text = p && typeof p.text === "string" ? p.text.slice(0, 12000) : "";
+    if (!topic.trim() && !text.trim()) return { ok: false };
+    sendCmd("clipyseed:" + JSON.stringify({ topic: topic, text: text }));
+    return { ok: true };
+  });
   ipcMain.on("focusdesk:dueCounts", (e, d) => {
     if (!trusted(e) || !d) return;
     const n = (v) => Math.max(0, Math.min(9999, Math.floor(Number(v) || 0)));
@@ -1598,7 +1637,7 @@ function registerDesktopIpc() {
     await atomicWrite(FILES.desktop, JSON.stringify(dprefs, null, 2));
     backupCheckedFor = null;
     await ensureDailyBackup();
-    return { ok: true, path: dir, prefs: dprefs, note: backupNote };
+    return { ok: true, path: dir, prefs: dprefs, note: backupNote, backup: backups.status() };
   });
   ipcMain.handle("focusdesk:resetBackupFolder", async (e) => {
     assertTrusted(e);
@@ -1607,6 +1646,53 @@ function registerDesktopIpc() {
     backupCheckedFor = null;
     await ensureDailyBackup();
     return { ok: true, path: backupDir(), prefs: dprefs };
+  });
+  ipcMain.handle("focusdesk:backupNow", async (e) => {
+    assertTrusted(e);
+    return { ok: true, status: await backupNow() };
+  });
+  ipcMain.handle("focusdesk:backupStatus", (e) => {
+    assertTrusted(e);
+    return { ok: true, status: backups.status() };
+  });
+  /* ---- the crash log (everything here is local; "send" only opens a draft in the browser for the person to read and submit) ---- */
+  const crashFile = path.join(DATA_DIR, "crash.log");
+  let pageErrors = 0;
+  ipcMain.handle("focusdesk:crashInfo", (e) => {
+    assertTrusted(e);
+    return Object.assign({ ok: true }, crash.info());
+  });
+  ipcMain.handle("focusdesk:crashReport", (e) => {
+    assertTrusted(e);
+    return { ok: true, text: crash.report(6000) };
+  });
+  ipcMain.handle("focusdesk:crashSeen", (e) => {
+    assertTrusted(e);
+    crash.markSeen();
+    return { ok: true };
+  });
+  ipcMain.handle("focusdesk:crashClear", (e) => {
+    assertTrusted(e);
+    crash.clear();
+    return { ok: true };
+  });
+  ipcMain.handle("focusdesk:crashOpen", async (e) => {
+    assertTrusted(e);
+    if (fs.existsSync(crashFile)) shell.showItemInFolder(crashFile);
+    else await shell.openPath(DATA_DIR);
+    return { ok: true };
+  });
+  ipcMain.handle("focusdesk:crashSend", async (e) => {
+    assertTrusted(e);
+    const url = crash.issueUrl(REPO_URL, "Crash report: FocusDesk 96 " + app.getVersion());
+    await shell.openExternal(url); // only ever the project's own issue page, and nothing is sent until the person presses Submit there
+    return { ok: true };
+  });
+  ipcMain.handle("focusdesk:logCrash", (e, p) => {
+    assertTrusted(e);
+    if (!p || typeof p !== "object" || ++pageErrors > 20) return { ok: false };
+    crash.record("page-error", typeof p.message === "string" ? p.message.slice(0, 600) : "", typeof p.stack === "string" ? p.stack.slice(0, 2000) : "");
+    return { ok: true };
   });
   ipcMain.handle("focusdesk:openBackupDir", async (e) => {
     assertTrusted(e);
@@ -1878,6 +1964,30 @@ function openPopout(id, near) {
     if (pl.max) win.maximize(); // maximize when it is shown (doing it before can be ignored on Windows)
     win.show();
     shown = true;
+    settle();
+  };
+  /* A pop-out loads while its window is still hidden, and then appears at its final size without any "resize" ever happening,
+     so the app inside never re-measures itself and sits at the wrong size until you drag a corner. Once the window is really
+     on screen, put it at its size once more and tell the page to re-measure (a few times, as a Mac can take a moment). */
+  const settle = () => {
+    [60, 300, 900].forEach((ms, i) =>
+      setTimeout(() => {
+        if (win.isDestroyed()) return;
+        try {
+          if (!win.isMaximized() && !win.isFullScreen() && !win.isMinimized()) {
+            win.setBounds({ x: pl.x, y: pl.y, width: pl.width, height: pl.height });
+            if (process.platform === "darwin" && i === 0) {
+              // the same small nudge dragging a corner gives: one pixel wider and straight back
+              win.setSize(pl.width + 1, pl.height);
+              setTimeout(() => {
+                if (!win.isDestroyed() && !win.isMaximized() && !win.isFullScreen()) win.setSize(pl.width, pl.height);
+              }, 40);
+            }
+          }
+          win.webContents.executeJavaScript("window.dispatchEvent(new Event('resize'))").catch(() => {});
+        } catch (_) {}
+      }, ms)
+    );
   };
   win.once("ready-to-show", showNow);
   const showT = setTimeout(showNow, 6000); // if the page is slow to say it is ready, the window still appears
@@ -1944,6 +2054,7 @@ function createWindow(hidden) {
     },
   });
   mainWindow = win;
+  win.on("unresponsive", () => crash.record("unresponsive", "the main window stopped responding"));
   win.on("closed", () => {
     for (const p of [...popouts]) if (!p.isDestroyed()) p.close(); // pop-outs belong to this window
   });
@@ -2174,6 +2285,11 @@ if (!app.requestSingleInstanceLock()) {
   app.on("before-quit", () => {
     isQuitting = true;
   });
+  app.on("quit", () => {
+    try {
+      fs.rmSync(RUNNING_FLAG, { force: true }); // a normal close: the next start knows nothing went wrong
+    } catch (_) {}
+  });
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
   });
@@ -2183,10 +2299,10 @@ if (!app.requestSingleInstanceLock()) {
   app.on("will-quit", (e) => {
     globalShortcut.unregisterAll();
     // The page's last save can land just as the final window closes: let it finish.
-    if (!quitFlushed && !installingUpdate && (writing > 0 || Object.keys(dirty).some((k) => dirty[k]) || (dprefs.mirrorLatest && Date.now() - lastMirror > 5000))) {
+    if (!quitFlushed && !installingUpdate) {
       e.preventDefault();
       // save everything, then quit again the normal way (so an update waiting to install gets its turn)
-      flushDirty().catch(() => {}).then(() => mirrorLatest(true)).catch(() => {}).then(() => {
+      flushDirty().catch(() => {}).then(() => mirrorLatest(true)).catch(() => {}).then(() => backupNow()).catch(() => {}).then(() => {
         quitFlushed = true;
         app.quit();
       });
@@ -2206,8 +2322,13 @@ if (!app.requestSingleInstanceLock()) {
         app.exit(1);
         return;
       }
+      try {
+        if (fs.existsSync(RUNNING_FLAG)) crash.record("unclean-exit", "FocusDesk didn't close normally last time (it may have crashed, been force-quit, or lost power)");
+        fs.writeFileSync(RUNNING_FLAG, String(Date.now()));
+      } catch (_) {}
       registerIpc();
       registerDesktopIpc();
+      setInterval(backupTick, 10 * 60 * 1000).unref(); // keeps today's backup current (and starts a new day's file if the app stays open past midnight)
       buildMenu();
       applyDesktopPrefs();
       createWindow();

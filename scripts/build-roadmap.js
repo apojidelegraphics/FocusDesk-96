@@ -27,6 +27,8 @@ const SITE = "https://apojidelegraphics.github.io/FocusDesk-96/";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const KINDS = { major: "MAJOR", minor: "MINOR", stability: "STABILITY", hotfix: "HOTFIX" };
+/* an entry can carry more than one kind: "kind" is the main one and the optional "kinds" list adds the rest (a Major released again with a fix is major + hotfix) */
+const kindsOf = (x) => ["major", "minor", "stability", "hotfix"].filter((k) => x && (x.kind === k || (Array.isArray(x.kinds) && x.kinds.indexOf(k) >= 0)));
 /* an item in an update's list is plain text, or { "text": "...", "tags": ["BETA"] } to put a tag beside that one feature */
 const FEATURE_TAGS = ["BETA"];
 const itemOf = (i) => (typeof i === "string" ? { text: i, tags: [] } : { text: i && i.text, tags: (i && i.tags) || [] });
@@ -59,10 +61,20 @@ function parseTags(name) {
   });
   return out;
 }
-function kindFromTags(tags) {
-  for (const k of ["HOTFIX", "STABILITY", "MAJOR", "MINOR"]) if (tags.indexOf(k) >= 0) return k.toLowerCase();
-  return "";
+const KIND_ORDER = ["major", "minor", "stability", "hotfix"];
+/* every kind in a list of tags (BETA is not a kind), once each, in a fixed order: an update can have more than one,
+   like a Major that was released again with a fix under the same number (major + hotfix) */
+function kindsFromTags(tags) {
+  const low = (Array.isArray(tags) ? tags : []).map((t) => String(t).toLowerCase());
+  return KIND_ORDER.filter((k) => low.indexOf(k) >= 0);
 }
+/* the main kind of an update (the first that isn't a hotfix, else hotfix): used where one word is needed */
+function kindFromTags(tags) {
+  const ks = kindsFromTags(tags);
+  return ks.find((k) => k !== "hotfix") || ks[0] || "";
+}
+/* an update only counts toward the five Minors if it is a Minor or a Stability update (a hotfix on its own doesn't) */
+const countsTowardCycle = (tags) => kindsFromTags(tags).some((k) => k === "minor" || k === "stability");
 /* the first plain sentence of a release's notes (skips the title, headings, lists and tables) */
 function firstLine(body) {
   const lines = String(body || "").replace(/\r\n/g, "\n").split("\n");
@@ -109,9 +121,9 @@ function mergeReleases(d, releases) {
   if (finals.length) {
     const top = finals[0];
     out.current = { desktop: verStr(top.v), browser: top.browser || (out.current && out.current.browser) || "" };
-    out.currentTags = kindFromTags(top.tags) ? [kindFromTags(top.tags).toUpperCase()] : [];
+    out.currentTags = kindsFromTags(top.tags).map((k) => k.toUpperCase());
     if (out.cycle) {
-      const shipped = finals.filter((p) => p.v[0] === top.v[0] && p.v[1] === top.v[1] && p.v[2] >= 1 && kindFromTags(p.tags) !== "hotfix").length;
+      const shipped = finals.filter((p) => p.v[0] === top.v[0] && p.v[1] === top.v[1] && p.v[2] >= 1 && countsTowardCycle(p.tags)).length;
       out.cycle = { major: top.v[0] + "." + top.v[1], minors: out.cycle.minors, shipped: Math.min(shipped, out.cycle.minors), nextMajor: top.v[0] + "." + (top.v[1] + 1) };
     }
   }
@@ -122,7 +134,7 @@ function mergeReleases(d, releases) {
   };
   const list = finals.map((p) => {
     const h = hand.find((x) => handVer(x) && cmp(handVer(x), p.v) === 0);
-    return { version: verStr(p.v) + (p.browser ? " / " + p.browser : ""), kind: kindFromTags(p.tags) || (h && h.kind) || "", date: monthYear(p.date) || (h && h.date) || "", summary: (h && h.summary) || firstLine(p.body) || p.name };
+    return { version: verStr(p.v) + (p.browser ? " / " + p.browser : ""), kind: kindFromTags(p.tags) || (h && h.kind) || "", kinds: kindsFromTags(p.tags).length ? kindsFromTags(p.tags) : undefined, date: monthYear(p.date) || (h && h.date) || "", summary: (h && h.summary) || firstLine(p.body) || p.name };
   });
   hand.forEach((h) => {
     const v = handVer(h);
@@ -147,21 +159,23 @@ if (!Array.isArray(data.upcoming)) fail("schedule.json needs an upcoming list (i
 data.upcoming.forEach((u) => {
   if (!STATUS[u.status]) fail("unknown status: " + u.status);
   if (!KINDS[u.kind]) fail("update " + u.version + " needs a kind: major, minor, stability or hotfix");
+  if (u.kinds !== undefined && (!Array.isArray(u.kinds) || u.kinds.some((k) => !KINDS[k]))) fail("update " + u.version + ": kinds must be a list made of major, minor, stability and hotfix");
   if (u.beta !== undefined && typeof u.beta !== "boolean") fail("update " + u.version + ": beta must be true or false");
   (u.items || []).forEach((raw) => {
     const it = itemOf(raw);
     if (typeof it.text !== "string" || !it.text.trim()) fail("update " + u.version + ": every item needs some text");
     if (!Array.isArray(it.tags) || it.tags.some((t) => FEATURE_TAGS.indexOf(t) < 0)) fail("update " + u.version + ': a feature tag must be one of ' + FEATURE_TAGS.join(", ") + " (in: " + it.text.slice(0, 40) + ")");
   });
-  const okNumber = u.kind === "major" ? /^\d+\.\d+$/ : /^\d+\.\d+\.\d+$/;
-  if (!okNumber.test(u.version)) fail("update " + u.version + " doesn't look like a " + u.kind + " version number");
+  const isMajor = kindsOf(u).indexOf("major") >= 0;
+  const okNumber = isMajor ? /^\d+\.\d+$/ : /^\d+\.\d+\.\d+$/;
+  if (!okNumber.test(u.version)) fail("update " + u.version + " doesn't look like a " + kindsOf(u).join(" + ") + " version number");
   day(u.target);
 });
 const cyc = data.cycle;
 if (cyc && !(cyc.major && cyc.minors > 0 && cyc.shipped >= 0 && cyc.nextMajor)) fail("schedule.json cycle needs major, minors, shipped and nextMajor");
 const cycleText = cyc ? "This cycle (" + cyc.major + "): " + cyc.shipped + " of " + cyc.minors + " Minor updates shipped. The fifth Minor update is the stability update. The next Major update is " + cyc.nextMajor + "." : "";
 const next = data.upcoming.find((u) => u.status !== "shipped" && u.status !== "unplanned") || data.upcoming[0] || null;
-const tagList = (u) => (u && KINDS[u.kind] ? [KINDS[u.kind]] : []).concat(u && u.beta ? ["BETA"] : []);
+const tagList = (u) => kindsOf(u).map((k) => KINDS[k]).concat(u && u.beta ? ["BETA"] : []);
 
 /* ---------- Markdown (shown on GitHub) ---------- */
 const mdTags = (u) => tagList(u).map((t) => "`" + t + "`").join(" ");
@@ -191,7 +205,7 @@ data.upcoming.forEach((u) => {
 });
 md.push("Dates are targets. If something isn't ready or hasn't been tested, it moves, and this page says so.", "");
 md.push("## Recently released", "", "| Version | Tag | When | What |", "| --- | --- | --- | --- |");
-data.released.forEach((r) => md.push("| " + r.version + " | " + (KINDS[r.kind] ? "`" + KINDS[r.kind] + "`" : "") + " | " + r.date + " | " + r.summary.replace(/\|/g, "/") + " |"));
+data.released.forEach((r) => md.push("| " + r.version + " | " + kindsOf(r).map((k) => "`" + KINDS[k] + "`").join(" ") + " | " + r.date + " | " + r.summary.replace(/\|/g, "/") + " |"));
 md.push("", "## Stay in the loop", "");
 data.policy.notified.forEach((n) => md.push("- " + n));
 md.push("- [All releases](" + REPO + "/releases), [releases feed](" + REPO + "/releases.atom)");
@@ -218,7 +232,7 @@ const itemList = (items) =>
     .join("") +
   "</ul>";
 const chips = (u) =>
-  (u && KINDS[u.kind] ? '<span class="badge kind ' + esc(u.kind) + '">' + esc(KINDS[u.kind]) + "</span>" : "") + (u && u.beta ? '<span class="badge beta">BETA</span>' : "");
+  kindsOf(u).map((k) => '<span class="badge kind ' + esc(k) + '">' + esc(KINDS[k]) + "</span>").join("") + (u && u.beta ? '<span class="badge beta">BETA</span>' : "");
 const cards = data.upcoming.length
   ? data.upcoming
       .map(
@@ -242,7 +256,7 @@ const cards = data.upcoming.length
       )
       .join("")
   : '<p class="card">Nothing is scheduled yet. The next cycle is being planned.</p>';
-const rows = data.released.map((r) => "<tr><td><b>" + esc(r.version) + "</b> " + chips({ kind: r.kind }) + "</td><td>" + esc(r.date) + "</td><td>" + esc(r.summary) + "</td></tr>").join("");
+const rows = data.released.map((r) => "<tr><td><b>" + esc(r.version) + "</b> " + chips({ kind: r.kind, kinds: r.kinds }) + "</td><td>" + esc(r.date) + "</td><td>" + esc(r.summary) + "</td></tr>").join("");
 const nextHtml = next
   ? '<div class="big">Next update: ' + esc(next.when || day(next.target)) + "</div><div>Version " + esc(next.version) + " " + chips(next) + " &mdash; " + esc(next.title) + "</div>"
   : '<div class="big">Next update: being planned</div><div>The next updates will be listed here soon.</div>';
