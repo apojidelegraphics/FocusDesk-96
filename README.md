@@ -253,7 +253,7 @@ aside as `*.corrupt-<timestamp>`, starts fresh, and tells you.
 
 FocusDesk has no servers of its own and sends nothing to us. It only reaches out when you use a feature that needs it:
 
-- your **AI assistant**, if you add a key (or your own computer, if you use Ollama or LM Studio)
+- your **AI assistant**, if you add a key (or your own computer, if you use Apples Foundational models, Ollama or LM Studio)
 - **Research** lookups (Wikipedia, Crossref, Open Library, Datamuse, DuckDuckGo)
 - the **Citation Maker**, when you press Fill in with a DOI, an ISBN or (desktop app) a web link
 - the **update check**, which asks GitHub for the latest version number (and, if GitHub is busy, a small file on the FocusDesk website)
