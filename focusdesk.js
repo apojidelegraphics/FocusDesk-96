@@ -27,8 +27,8 @@ window.addEventListener("error", function (e) {
 (function () {
   "use strict";
 
-  var VERSION_BROWSER = "3.0.2";
-  var VERSION_DESKTOP = "1.4.2";
+  var VERSION_BROWSER = "3.0.3";
+  var VERSION_DESKTOP = "1.4.3";
   /* set when this window is an app popped out of the main window (the desktop app) */
   var POP = (function () {
     try {
@@ -122,6 +122,22 @@ window.addEventListener("error", function (e) {
       ],
     },
     {
+      v: "1.4.3",
+      bv: "3.0.3",
+      tags: ["MINOR"],
+      date: "2026-10-27",
+      tagline: "Find things faster",
+      apps: [],
+      features: [
+        { t: "Search shortcuts: tag:bio, folder:Notes, @today, @tomorrow, @week, @overdue, is:open, type:task and more, in the search (Ctrl or Cmd + K) and in Find. Mix them with words, like tag:bio @week exam.", scope: "both" },
+        { t: "Ask Clipy \u201cWhat did I do this week?\u201d (the My week chip). It looks at what FocusDesk recorded over the last 7 days. Tasks and assignments are timestamped from now on.", scope: "both" },
+        { t: "A keyboard shortcut list (Ctrl or Cmd + /), the apps you used most recently in the Start menu, and one key, T, that starts a 25-minute focus timer.", scope: "both" },
+        { t: "Clipy no longer adds events or tasks unless you ask, and a request that came out broken is never shown in the chat.", scope: "both" },
+        { t: "Shut Down on the Start menu now closes the app.", scope: "desktop" },
+        { t: "These update notes now show the tagline, tags, BETA and date, and only the features for the version you are using.", scope: "both" },
+      ],
+    },
+    {
       v: "3.0.0",
       tag: "MAJOR",
       date: "October 2026",
@@ -180,7 +196,7 @@ window.addEventListener("error", function (e) {
       title: "Clipy can add things, and a storage bar that tells the truth",
       apps: [],
       notes: [
-        "Ask Clipy to add something and it will: \"remind me to call mum tomorrow at 9\", \"add a study group on Friday at 3\", \"put my lab report due on the 14th\". Clipy shows what it wants to add and you press Add or Skip. Clipy's menu has Add things without asking if you'd rather skip the question.",
+        "Ask Clipy to add something and it will: \"remind me to call mum tomorrow at 9\", \"add a study group on Friday at 3\", \"put my lab report due on the 14th\". Clipy only adds things when you ask it to (it won't add anything while you're just chatting or studying), and if it thinks something would help it asks first. Clipy shows what it wants to add and you press Add or Skip. Clipy's menu has Add things without asking if you'd rather skip the question.",
         "Clipy's tips and fun facts no longer come back to back: they're at least a few minutes apart.",
         "The storage bar in Control Panel now measures how much your browser really allows instead of guessing, so it's accurate in Chrome, Firefox, Safari and Edge.",
       ],
@@ -564,6 +580,49 @@ window.addEventListener("error", function (e) {
       ],
     },
   ];
+  /* An update note can describe a whole release in the same shape as a release plan: a tagline, tags, BETA, a date, and features that say
+     which version they are for ("both", "browser" or "desktop"). One entry with `v` (the desktop number) and `bv` (the browser number) becomes
+     the two notes each version shows. Older entries (a `title` and a list of plain `notes`) still work. */
+  function expandPatches(list) {
+    var out = [];
+    list.forEach(function (p) {
+      if (!p || !p.bv) return out.push(p);
+      var d = Object.assign({}, p, { bv: "", _with: "Includes browser version " + p.bv + "." }),
+        b = Object.assign({}, p, { v: p.bv, bv: "", _browser: true, _with: "Comes with desktop version " + p.v + "." });
+      out.push(d, b);
+    });
+    return out;
+  }
+  PATCHES = expandPatches(PATCHES);
+  function patchDate(d) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(d || ""))) {
+      var x = new Date(d + "T12:00:00");
+      if (isFinite(x.getTime())) return x.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    }
+    return String(d || "");
+  }
+  /* the text of one update note: version and tags, then the tagline and date, then what's new (only what applies to the version being used) */
+  function patchBody(p, desktop) {
+    var tg = allTags(p.tags || p.tag),
+      tl = String(p.tagline || p.title || ""),
+      dt = patchDate(p.date),
+      lines = ["Version " + p.v + (tg.length ? "  " + tg.map(function (t) { return "[" + t + "]"; }).join(" ") : "") + (p.beta ? "  [BETA]" : "")];
+    if (tl || dt) lines.push((tl ? "\u201c" + tl + "\u201d" : "") + (tl && dt ? "  \u2014  " : "") + dt);
+    var items = Array.isArray(p.features)
+      ? p.features
+          .filter(function (f) {
+            return f && isStr(f.t) && (!f.scope || f.scope === "both" || f.scope === (desktop ? "desktop" : "browser"));
+          })
+          .map(function (f) {
+            return f.t + (f.beta ? "  [BETA]" : "");
+          })
+      : (Array.isArray(p.notes) ? p.notes : []).filter(isStr);
+    items.forEach(function (n) {
+      lines.push("  \u2022 " + n);
+    });
+    if (p._with) lines.push("  " + p._with);
+    return lines.join("\n") + "\n";
+  }
   /* Desktop has its own 1.x version line; the browser's 2.x notes aren't "new" there. */
   if (window.__focusdeskIsDesktop)
     PATCHES = PATCHES.filter(function (p) {
@@ -623,6 +682,9 @@ window.addEventListener("error", function (e) {
       "**Click the clock** to see a mini calendar.",
       "",
       "**Keyboard shortcuts:**",
+      "- `Ctrl+/` (Cmd+/ on a Mac) \u2014 the full list of keyboard shortcuts",
+      "- `T` \u2014 start, pause or carry on a 25-minute focus timer (when you aren't typing)",
+      "- `Ctrl+Z` (Cmd+Z) \u2014 take back the last delete, while the Undo bar shows",
       "- `Alt+1` through `Alt+9` \u2014 jump to the Nth open window",
       "- `Alt+Enter` \u2014 full screen",
       "- `Ctrl+K` (Cmd+K on a Mac) \u2014 the command palette",
@@ -676,7 +738,7 @@ window.addEventListener("error", function (e) {
       "A reminder and a chime will pop up when it's time. Quick-add buttons for 10 min, 1 hour or tomorrow morning. Repeats (daily, weekdays, weekly, monthly) are supported.",
       "",
       "### Focus Timer",
-      "Classic Pomodoro. Work in focused blocks separated by short breaks. Type what you're working on and it gets logged to your stats. Every 4 focus sessions earns a long break. Background sound options: brown noise, white noise, or rain.",
+      "Press **T** anywhere (when you aren't typing) to start a 25-minute focus session at once; press it again to pause, and again to carry on. Classic Pomodoro. Work in focused blocks separated by short breaks. Type what you're working on and it gets logged to your stats. Every 4 focus sessions earns a long break. Background sound options: brown noise, white noise, or rain.",
       "",
       "### Calendar Link",
       "Import a `.ics` file from Canvas, Infinite Campus, Google Calendar, iCloud or any other calendar app. Assignments show up in Tasks, Calendar and Grades. Duplicates are skipped automatically on re-import.",
@@ -708,7 +770,7 @@ window.addEventListener("error", function (e) {
       "- In a note, type `[@key]` for an in-text citation and `{{works-cited}}` for the list of what that note cites. Tap **[@]** on a source to copy its marker",
       "",
       "### Find",
-      "Search everything at once \u2014 notes, tasks, assignments, events, reminders, classes, cards, courses, habits, countdowns, citations, folders.",
+      "Search everything at once \u2014 notes, tasks, assignments, events, reminders, classes, cards, courses, habits, countdowns, citations, folders. Search shortcuts work here and in the command palette: `tag:bio`, `folder:Notes`, `course:ENG` (or `@ENG`), `@today`, `@tomorrow`, `@week`, `@overdue`, `is:open`, `is:done` and `type:task`. Mix them with words, like `tag:bio @week exam`, and put quotes around a name with spaces, like `folder:\"Biology 101\"`.",
       "",
       "### Command palette",
       "Press **Ctrl+K** (Cmd+K on a Mac) anywhere to search everything and open any app or action. Type `#tag` for everything with that tag, `@course` for everything in a course, or `>` for actions only. Tags work everywhere: type `#biology` in a note, a task or a flash card.",
@@ -716,8 +778,11 @@ window.addEventListener("error", function (e) {
       "### Pop out an app (desktop app)",
       "Press the small arrow button in an app's title bar, or use File > Pop Out App, to move it into its own window, for example Notepad on one screen and your reading on the other. Changes in either window appear in the other. Closing the main window closes the pop-outs.",
       "",
+      "### What did I do this week?",
+      "Press the **My week** chip in Clipy's panel (or choose it from the command palette). Clipy looks at what FocusDesk recorded over the last 7 days \u2014 focus time and labels, habits, notes you wrote, tasks and assignments you finished, and events that took place \u2014 and writes you a short recap. With no assistant chosen, you still get the facts. Finish times for tasks and assignments are only recorded from version 1.4.3 on, and flash card reviews aren't counted by day.",
+      "",
       "### Clipy can add things",
-      "Ask Clipy to add something, like \"remind me to call mum tomorrow at 9\" or \"add a study group on Friday at 3\". Clipy shows what it wants to add and you press Add or Skip. Say it in the chat; Clipy asks if it needs a date or time. In Clipy's menu, Add things without asking skips the question. Clipy can also make flash cards, and after it adds something an Undo button takes it back. On a Mac you can also send what Clipy adds to Apple Calendar (Calendar Link).",
+      "Ask Clipy to add something, like \"remind me to call mum tomorrow at 9\" or \"add a study group on Friday at 3\". Clipy only adds things when you ask it to (it won't add anything while you're just chatting or studying), and if it thinks something would help it asks first. Clipy shows what it wants to add and you press Add or Skip. Say it in the chat; Clipy asks if it needs a date or time. In Clipy's menu, Add things without asking skips the question. Clipy can also make flash cards, and after it adds something an Undo button takes it back. On a Mac you can also send what Clipy adds to Apple Calendar (Calendar Link).",
       "",
       "### Habit Tracker",
       "Daily habits with 7, 14, 30 or 90-day views. **Right-click any day cell** to attach a note. Shows current and best streaks.",
@@ -895,11 +960,7 @@ window.addEventListener("error", function (e) {
       new Date().toLocaleDateString() +
       "\n\n";
     fresh.forEach(function (p) {
-      body += "Version " + p.v + " \u2014 " + p.title + (allTags(p.tag).length ? "  " + allTags(p.tag).map(function (t) { return "[" + t + "]"; }).join(" ") : "") + "  (" + p.date + ")\n";
-      p.notes.forEach(function (n) {
-        body += "  \u2022 " + n + "\n";
-      });
-      body += "\n";
+      body += patchBody(p, !!window.__focusdeskIsDesktop) + "\n";
     });
     body += "This note stays in Notepad so you can read it any time.\n";
     S.notes.unshift({
@@ -1110,6 +1171,8 @@ window.addEventListener("error", function (e) {
         appleClipy: false,
         clipyMade: {},
         bakFolderAuto: false,
+        recentApps: [],
+        quickTimerKey: true,
         bakFolderName: "",
         bakKind: "" /* "dir" or "file": what the backup source is */,
         bakFolderLoaded: 0,
@@ -1206,6 +1269,7 @@ window.addEventListener("error", function (e) {
           due: a.due,
           allDay: !!a.allDay,
           done: !!a.done,
+          doneAt: isNum(a.doneAt) ? a.doneAt : a.done ? -1 : undefined, /* when it was finished (-1: finished before FocusDesk kept track) */
           src: a.src === "canvas" ? "canvas" : "manual",
           url:
             isStr(a.url) && /^https?:\/\//i.test(a.url) ? clip(a.url, 600) : "",
@@ -1259,6 +1323,7 @@ window.addEventListener("error", function (e) {
           id: isStr(t.id) ? t.id : uid(),
           text: clip(t.text, 300),
           done: !!t.done,
+          doneAt: isNum(t.doneAt) ? t.doneAt : t.done ? -1 : undefined,
           pri: ["high", "normal", "low"].indexOf(t.pri) >= 0 ? t.pri : "normal",
           due: isNum(t.due) ? t.due : null,
           created: isNum(t.created) ? t.created : Date.now(),
@@ -1796,6 +1861,8 @@ window.addEventListener("error", function (e) {
           if (/^[a-z]{2}:[A-Za-z0-9_\-]{1,60}$/.test(k)) o.prefs.clipyMade[k] = 1;
         });
     o.prefs.bakFolderAuto = pp.bakFolderAuto === true;
+    o.prefs.quickTimerKey = pp.quickTimerKey !== false;
+    o.prefs.recentApps = (Array.isArray(pp.recentApps) ? pp.recentApps : []).filter(function (x) { return isStr(x) && /^[a-z0-9]{1,24}$/.test(x); }).slice(0, 8);
     o.prefs.bakFolderName = isStr(pp.bakFolderName) ? clip(pp.bakFolderName, 80) : "";
     o.prefs.bakKind = pp.bakKind === "file" || pp.bakKind === "dir" ? pp.bakKind : "";
     o.prefs.bakFolderLoaded = isNum(pp.bakFolderLoaded) ? pp.bakFolderLoaded : 0;
@@ -2163,7 +2230,19 @@ window.addEventListener("error", function (e) {
       }
     }
   }
+  /* tasks and assignments remember when they were finished, for "What did I do this week?". Done here, once, so every place that ticks one is covered. */
+  function stampDone() {
+    var now = Date.now();
+    [S.tasks, S.assign].forEach(function (list) {
+      list.forEach(function (x) {
+        if (x.done) {
+          if (!isNum(x.doneAt)) x.doneAt = now;
+        } else if (x.doneAt !== undefined) delete x.doneAt;
+      });
+    });
+  }
   function save() {
+    stampDone();
     clearTimeout(saveT);
     saveT = setTimeout(flush, 200);
     dirtySince = true;
@@ -6410,6 +6489,14 @@ window.addEventListener("error", function (e) {
   }
 
   function restoreSession() {
+    suspendRecent = true; /* putting last time's windows back isn't "recently used" */
+    try {
+      restoreSessionInner();
+    } finally {
+      suspendRecent = false;
+    }
+  }
+  function restoreSessionInner() {
     if (S.prefs.restoreSession === false) return;
     var sess = S.session;
     if (!sess || !Array.isArray(sess.open) || !sess.open.length) return;
@@ -6479,10 +6566,19 @@ window.addEventListener("error", function (e) {
         if (w && w.jumpTo) w.jumpTo(section);
       }, 0);
   }
+  var suspendRecent = false;
+  function noteRecent(id) {
+    if (suspendRecent || POP) return;
+    var r = S.prefs.recentApps || [];
+    if (r[0] === id) return;
+    S.prefs.recentApps = [id].concat(r.filter(function (x) { return x !== id; })).slice(0, 8);
+    save();
+  }
   function openApp(id) {
     var app = APPS[id];
     if (!app) return;
     markAppSeen(id);
+    noteRecent(id);
     if (wins[id]) {
       var w0 = wins[id];
       if (w0.min) restoreWin(w0);
@@ -8900,12 +8996,13 @@ window.addEventListener("error", function (e) {
     if (T.mode === "focus") {
       var k = ymd(new Date()),
         d = S.stats[k] || (S.stats[k] = { sessions: 0, minutes: 0 });
+      var mins = Math.max(1, Math.round(T.total / 60)); /* the length this session really was (the one-key timer is always 25) */
       d.sessions++;
-      d.minutes += S.prefs.dur.focus;
+      d.minutes += mins;
       var lb = clip((T.label || "").trim() || "(no subject)", 40);
       d.by = d.by || {};
-      d.by[lb] = (d.by[lb] || 0) + S.prefs.dur.focus;
-      S.sessions.push({ t: Date.now(), m: S.prefs.dur.focus, l: lb });
+      d.by[lb] = (d.by[lb] || 0) + mins;
+      S.sessions.push({ t: Date.now(), m: mins, l: lb });
       if (S.sessions.length > 3000) S.sessions.splice(0, S.sessions.length - 3000);
       T.cycle++;
       save();
@@ -12766,6 +12863,7 @@ window.addEventListener("error", function (e) {
   function inDueWindow(due, ms) {
     var sod = dayStart();
     if (due === "today") return ms >= sod && ms < sod + 86400000;
+    if (due === "tomorrow") return ms >= sod + 86400000 && ms < sod + 2 * 86400000;
     if (due === "week") return ms >= sod && ms < sod + 7 * 86400000;
     if (due === "overdue") return ms < sod;
     return true;
@@ -12873,6 +12971,9 @@ window.addEventListener("error", function (e) {
       ["Check for updates", function () { checkUpdate(true); }],
       ["Show the taskbar calendar", function () { showClockFlyout(); }],
       ["Ask Clipy", function () { if (typeof openClipyPanel === "function") openClipyPanel(); }],
+      ["Keyboard shortcuts", function () { showShortcuts(); }],
+      ["Start a 25-minute focus timer", function () { quickTimer(); }],
+      ["Clipy: What did I do this week?", function () { openClipyPanel(); setTimeout(function () { if (clipyController && clipyController.week) clipyController.week(); }, 120); }],
     ];
     if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.popOut && !POP)
       POPOUT_OK.forEach(function (id) {
@@ -12891,29 +12992,30 @@ window.addEventListener("error", function (e) {
     });
   }
   function paletteIndex() {
-    var out = paletteActions();
+    var out = paletteActions(),
+      fm = folderMap();
     Object.keys(APPS).forEach(function (id) {
       var a = APPS[id];
       out.push({ kind: "App", title: a.title, run: function () { openApp(id); } });
     });
     S.notes.forEach(function (n) {
       var t = String(n.text || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "(untitled)";
-      out.push({ kind: "Note", title: clip(t, 80), hay: String(n.text || "").slice(0, 4000) + " " + (n.course || ""), tags: tagsOfText(n.text), course: n.course || "", run: function () { openNote(n.id); } });
+      out.push({ kind: "Note", title: clip(t, 80), hay: String(n.text || "").slice(0, 4000) + " " + (n.course || ""), tags: tagsOfText(n.text), course: n.course || "", run: function () { openNote(n.id); } , attr: searchAttr("Note", n, fm) });
     });
     S.tasks.forEach(function (t) {
-      out.push({ kind: "Task", title: clip(t.text, 80), hay: t.text, tags: tagsOfText(t.text), done: t.done, run: function () { openApp("tasks"); } });
+      out.push({ kind: "Task", title: clip(t.text, 80), hay: t.text, tags: tagsOfText(t.text), done: t.done, run: function () { openApp("tasks"); } , attr: searchAttr("Task", t, fm) });
     });
     S.cards.forEach(function (c) {
-      out.push({ kind: "Card", title: clip(String(c.q).replace(/\{\{c\d+::|\}\}/g, ""), 80), hay: c.q + " " + c.a + " " + c.deck + " " + (c.course || ""), tags: tagsOfText(c.q + " " + c.a), course: c.course || "", run: function () { openApp("cards"); } });
+      out.push({ kind: "Card", title: clip(String(c.q).replace(/\{\{c\d+::|\}\}/g, ""), 80), hay: c.q + " " + c.a + " " + c.deck + " " + (c.course || ""), tags: tagsOfText(c.q + " " + c.a), course: c.course || "", run: function () { openApp("cards"); } , attr: searchAttr("Card", c, fm) });
     });
     S.assign.forEach(function (a) {
-      out.push({ kind: "Assignment", title: clip(a.title, 80) + (a.course ? " (" + a.course + ")" : ""), hay: a.title + " " + (a.course || ""), tags: tagsOfText(a.title), course: a.course || "", done: a.done, run: function () { openApp("planner"); } });
+      out.push({ kind: "Assignment", title: clip(a.title, 80) + (a.course ? " (" + a.course + ")" : ""), hay: a.title + " " + (a.course || ""), tags: tagsOfText(a.title), course: a.course || "", done: a.done, run: function () { openApp("planner"); } , attr: searchAttr("Assignment", a, fm) });
     });
     S.events.forEach(function (e) {
-      out.push({ kind: "Event", title: clip(e.title, 80) + "  " + e.date, hay: e.title, tags: tagsOfText(e.title), run: function () { openApp("calendar"); } });
+      out.push({ kind: "Event", title: clip(e.title, 80) + "  " + e.date, hay: e.title, tags: tagsOfText(e.title), run: function () { openApp("calendar"); } , attr: searchAttr("Event", e, fm) });
     });
     S.reminders.forEach(function (r) {
-      out.push({ kind: "Reminder", title: clip(r.text, 80), hay: r.text, tags: tagsOfText(r.text), run: function () { openApp("reminders"); } });
+      out.push({ kind: "Reminder", title: clip(r.text, 80), hay: r.text, tags: tagsOfText(r.text), run: function () { openApp("reminders"); } , attr: searchAttr("Reminder", r, fm) });
     });
     S.folders.forEach(function (f) {
       out.push({ kind: f.kind === "course" ? "Course" : f.kind === "smart" ? "Smart folder" : "Folder", title: f.name, hay: f.name + " " + (f.course || ""), course: f.course || "", run: function () { openFolder(f.id); } });
@@ -12927,33 +13029,237 @@ window.addEventListener("error", function (e) {
     });
     return out;
   }
+  /* ---- search shortcuts (the command palette and the Find app both use these) ----
+     tag:bio  #bio  folder:Biology  folder:"Biology 101"  course:ENG  @ENG  @today  @tomorrow  @week  @overdue  due:today  is:open  is:done  type:task
+     Words that aren't a shortcut are searched for as text. Several shortcuts can be mixed with text: tag:bio @week exam */
+  var SEARCH_WHEN = ["today", "tomorrow", "week", "overdue"];
+  var SEARCH_TYPE_ALIAS = { assign: "assignment", hw: "assignment", homework: "assignment", flashcard: "card" };
+  function parseSearch(raw) {
+    var f = { tokens: [], tags: [], folders: [], courses: [], when: "", state: "", types: [], filtered: false };
+    var words = String(raw == null ? "" : raw).match(/(?:[^\s"]|"[^"]*"?)+/g) || [];
+    words.forEach(function (w) {
+      var low = w.toLowerCase().replace(/"/g, ""),
+        m;
+      if (low.charAt(0) === "@" && low.length > 1) {
+        if (SEARCH_WHEN.indexOf(low.slice(1)) >= 0) f.when = low.slice(1);
+        else f.courses.push(low.slice(1));
+      } else if (low.charAt(0) === "#" && low.length > 1) f.tags.push(low.slice(1));
+      else if ((m = /^(tag|folder|course|is|type|due|in):(.+)$/.exec(low))) {
+        var k = m[1],
+          v = m[2].trim();
+        if (k === "tag") f.tags.push(v.replace(/^#/, ""));
+        else if (k === "folder") f.folders.push(v);
+        else if (k === "course") f.courses.push(v);
+        else if (k === "due" && SEARCH_WHEN.indexOf(v) >= 0) f.when = v;
+        else if (k === "is" && (v === "done" || v === "open")) f.state = v;
+        else if (k === "type" || k === "in") {
+          v = v.replace(/s$/, "");
+          f.types.push(SEARCH_TYPE_ALIAS[v] || v);
+        } else {
+          f.tokens.push(low); /* not a shortcut we know (due:soon, is:blue): searched for as text */
+          return;
+        }
+      } else {
+        f.tokens.push(low);
+        return;
+      }
+      f.filtered = true;
+    });
+    return f;
+  }
+  /* does an item (described by `a`: kind, tags, course, due, done, folders) pass every shortcut? */
+  function searchMatches(f, a) {
+    var i;
+    if (f.types.length && f.types.indexOf(String(a.kind || "").toLowerCase()) < 0) return false;
+    for (i = 0; i < f.tags.length; i++) if ((a.tags || []).indexOf(f.tags[i]) < 0) return false;
+    for (i = 0; i < f.folders.length; i++) {
+      var want = f.folders[i];
+      if (
+        !(a.folders || []).some(function (n) {
+          return n.indexOf(want) >= 0;
+        })
+      )
+        return false;
+    }
+    for (i = 0; i < f.courses.length; i++) if (!a.course || String(a.course).toLowerCase().indexOf(f.courses[i]) < 0) return false;
+    if (f.when) {
+      if (!a.due) return false;
+      if (f.when === "overdue" && (a.done || a.kind === "Event")) return false; /* only things you could still do are "overdue" */
+      if (!inDueWindow(f.when, a.due)) return false;
+    }
+    if (f.state === "done" && !a.done) return false;
+    if (f.state === "open" && a.done) return false;
+    return true;
+  }
+  /* which folders hold each note and assignment (folder names, lower case), looked up once per search */
+  function folderMap() {
+    var m = { notes: {}, assign: {}, course: {} };
+    S.folders.forEach(function (f) {
+      var nm = String(f.name || "").toLowerCase();
+      (Array.isArray(f.note) ? f.note : []).forEach(function (id) {
+        (m.notes[id] = m.notes[id] || []).push(nm);
+      });
+      (Array.isArray(f.assign) ? f.assign : []).forEach(function (id) {
+        (m.assign[id] = m.assign[id] || []).push(nm);
+      });
+      if (f.kind === "course" && f.course) (m.course[String(f.course).trim().toLowerCase()] = m.course[String(f.course).trim().toLowerCase()] || []).push(nm);
+    });
+    return m;
+  }
+  function eventMs(e) {
+    var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(e.date || "")),
+      t = /^(\d{1,2}):(\d{2})$/.exec(String(e.time || ""));
+    return d ? new Date(+d[1], +d[2] - 1, +d[3], t ? +t[1] : 0, t ? +t[2] : 0).getTime() : 0;
+  }
+  function searchAttr(kind, it, fm) {
+    var a = { kind: kind, tags: [], course: "", due: 0, done: false, folders: [] };
+    if (kind === "Note") {
+      a.tags = tagsOfText(it.text);
+      a.course = it.course || "";
+      a.folders = (fm.notes[it.id] || []).concat(fm.course[String(it.course || "").trim().toLowerCase()] || []);
+    } else if (kind === "Task") {
+      a.tags = tagsOfText(it.text);
+      a.due = it.due || 0;
+      a.done = !!it.done;
+    } else if (kind === "Card") {
+      a.tags = tagsOfText(it.q + " " + it.a);
+      a.course = it.course || "";
+      a.due = it.dueAt || 0;
+    } else if (kind === "Assignment") {
+      a.tags = tagsOfText(it.title);
+      a.course = it.course || "";
+      a.due = it.due || 0;
+      a.done = !!it.done;
+      a.folders = (fm.assign[it.id] || []).concat(fm.course[String(it.course || "").trim().toLowerCase()] || []);
+    } else if (kind === "Event") {
+      a.tags = tagsOfText(it.title);
+      a.due = eventMs(it);
+    } else if (kind === "Reminder") {
+      a.tags = tagsOfText(it.text);
+      a.due = it.at || 0;
+      a.done = !!it.done;
+    }
+    return a;
+  }
+  /* ---- one key starts a 25-minute focus session: T (when you're not typing); T again pauses it, and again resumes ---- */
+  var QUICK_MIN = 25;
+  function quickTimer() {
+    if (T.running) {
+      startPause();
+      showUndoBar("Focus timer paused. Press T to carry on.", function () {
+        T.running = false;
+        T.left = T.total;
+        saveTimer();
+        updTimer();
+      }, "Reset");
+      return;
+    }
+    var midway = T.mode === "focus" && T.left > 0 && T.left < T.total;
+    if (!midway) {
+      T.mode = "focus";
+      T.total = T.left = QUICK_MIN * 60;
+    }
+    startPause();
+    showUndoBar(midway ? "Focus timer carrying on." : "Focus timer started: " + QUICK_MIN + " minutes. Press T to pause.", function () {
+      T.running = false;
+      T.left = T.total;
+      saveTimer();
+      updTimer();
+    }, "Stop");
+  }
+  function showShortcuts() {
+    var open = document.getElementById("fdShortcuts");
+    if (open) {
+      var x = open.closest(".win");
+      if (x) {
+        var cb = x.querySelector(".title .xbtn, .title button");
+        if (cb) cb.click();
+        return;
+      }
+    }
+    var mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent),
+      mod = mac ? "Cmd" : "Ctrl";
+    var groups = [
+      ["Everywhere", [
+        [mod + "+K", "Search everything and run actions (try tag:, folder:, @today, @overdue)"],
+        [mod + "+/", "Show this list"],
+        [mac ? "Cmd+Enter" : "Alt+Enter", "Full screen on or off"],
+        [(mac ? "Cmd" : "Alt") + "+1 to 9", "Jump to the 1st to 9th most recent window"],
+        ["Esc", "Close a menu, a dialog, the search or Clipy"],
+        [mod + "+Z", "Undo the last delete (while the Undo bar shows and you aren't typing)"],
+        ["T", "Start a " + QUICK_MIN + "-minute focus timer; press again to pause and resume (when you aren't typing)"],
+      ]],
+      ["Notepad", [[mod + "+B", "Bold"], [mod + "+I", "Italic"], ["F5", "Put in the date and time"]]],
+      ["Tasks", [["Shift+click", "Select a range"], [mod + "+click", "Add or remove one from the selection"]]],
+      ["Sketch Pad", [[mod + "+Z / " + mod + "+Y", "Undo and redo"], ["Delete", "Remove the selection"], ["Space + drag", "Move around"], [mod + "+ + or - (and " + mod + "+0)", "Zoom in, out, and back to normal"]]],
+      ["Clipy", [["Enter", "Send"], ["Shift+Enter", "New line"]]],
+      ["In the search", [["Up and Down, Enter", "Choose and open"], [">", "Show only actions"]]],
+    ];
+    if (window.__focusdeskIsDesktop) groups.push(["Desktop app", [["Quick capture hotkey", "The key you chose in Control Panel \u2192 Desktop works from any program"]]]);
+    var box = el("div", { id: "fdShortcuts", style: "max-height:56vh;overflow:auto;text-align:left;padding-right:4px" });
+    groups.forEach(function (g) {
+      box.append(el("div", { style: "font-weight:bold;margin:8px 0 3px" }, g[0]));
+      g[1].forEach(function (r) {
+        box.append(el("div", { style: "display:flex;gap:10px;align-items:baseline;margin:2px 0" }, el("span", { class: "kbd", style: "min-width:128px;flex:none" }, r[0]), el("span", null, r[1])));
+      });
+    });
+    var tk = el("input", { type: "checkbox", id: "fdQuickTimerKey" });
+    tk.checked = S.prefs.quickTimerKey !== false;
+    tk.addEventListener("change", function () {
+      S.prefs.quickTimerKey = tk.checked;
+      save();
+    });
+    box.append(el("label", { style: "display:flex;gap:6px;align-items:center;margin-top:10px" }, tk, "Pressing T starts the 25-minute timer"));
+    msgBox({ title: "Keyboard shortcuts", icon: "info", width: 520, text: "", extra: box, buttons: [{ label: "Close" }] });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.defaultPrevented) return;
+    var k = String(e.key || "");
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (k === "/" || k === "?")) {
+      e.preventDefault();
+      showShortcuts();
+      return;
+    }
+    /* the one-key timer: only when nothing that uses letters has the keyboard (not a text box, a note, a game or the drawing board) */
+    if (POP || e.repeat || e.ctrlKey || e.metaKey || e.altKey || k.toLowerCase() !== "t" || S.prefs.quickTimerKey === false) return;
+    var t = e.target,
+      tag = (t && t.tagName) || "";
+    if (t && t.isContentEditable) return;
+    if (!(t === document.body || t === document.documentElement || tag === "BUTTON" || tag === "A")) return;
+    if (palEl) return;
+    e.preventDefault();
+    quickTimer();
+  });
   function paletteSearch(index, q) {
     q = q.trim().toLowerCase();
     var KIND_ORDER = { Action: 0, App: 1, Course: 2, "Smart folder": 3, Folder: 3, Note: 4, Task: 5, Assignment: 5, Card: 6, Event: 7, Reminder: 7, Tag: 8 };
     if (!q) return index.filter(function (x) { return x.kind === "Action" || x.kind === "App"; }).slice(0, 14);
-    var only = null,
-      tag = "",
-      course = "";
+    var only = null;
     if (q.charAt(0) === ">") {
       only = "Action";
       q = q.slice(1).trim();
-    } else if (q.charAt(0) === "#" && q.length > 1 && q.indexOf(" ") < 0) tag = q.slice(1);
-    else if (q.charAt(0) === "@") {
-      course = q.slice(1).trim();
-      q = "";
     }
-    var tokens = q.split(/\s+/).filter(Boolean);
+    var f = only ? { tokens: q.split(/\s+/).filter(Boolean), tags: [], folders: [], courses: [], when: "", state: "", types: [], filtered: false } : parseSearch(q);
+    var soloTag = f.filtered && f.tags.length === 1 && !f.folders.length && !f.courses.length && !f.when && !f.state && !f.types.length && !f.tokens.length;
+    var tokens = f.tokens;
     var res = [];
     index.forEach(function (x) {
       if (only && x.kind !== only) return;
-      if (tag) {
-        if (x.kind === "Tag" ? x.title.toLowerCase().indexOf("#" + tag) !== 0 : (x.tags || []).indexOf(tag) < 0) return;
-        res.push({ x: x, s: x.kind === "Tag" ? 0 : 5 });
-        return;
-      }
-      if (course) {
-        if (!x.course || x.course.toLowerCase().indexOf(course) < 0) return;
-        res.push({ x: x, s: 1 });
+      if (f.filtered) {
+        if (x.kind === "Tag") {
+          if (soloTag && x.title.toLowerCase().indexOf("#" + f.tags[0]) === 0) res.push({ x: x, s: 0 });
+          return;
+        }
+        var at = x.attr || (x.course ? { kind: x.kind, course: x.course, tags: [], folders: [], due: 0, done: false } : null);
+        if (!at || !searchMatches(f, at)) return;
+        var hay2 = String(x.title).toLowerCase() + " " + String(x.hay || "").toLowerCase(),
+          sc = f.tags.length ? 5 : 1,
+          ok2 = true;
+        tokens.forEach(function (t) {
+          if (hay2.indexOf(t) < 0) ok2 = false;
+          else sc += String(x.title).toLowerCase().indexOf(t) === 0 ? 4 : 2;
+        });
+        if (ok2) res.push({ x: x, s: sc });
         return;
       }
       var title = x.title.toLowerCase(),
@@ -12979,9 +13285,9 @@ window.addEventListener("error", function (e) {
     var index = paletteIndex(),
       results = [],
       sel = 0;
-    var input = el("input", { class: "in pal-in", placeholder: "Type to search or run an action...  (#tag, @course, > for actions)", "aria-label": "Command palette", autocomplete: "off", spellcheck: "false" });
+    var input = el("input", { class: "in pal-in", placeholder: "Type to search or run an action...  (tag:, folder:, @today, @overdue, > for actions)", "aria-label": "Command palette", autocomplete: "off", spellcheck: "false" });
     var list = el("div", { class: "pal-list", role: "listbox" });
-    var hint = el("div", { class: "pal-hint dim" }, "Up and Down to choose, Enter to open, Esc to close");
+    var hint = el("div", { class: "pal-hint dim" }, "Up and Down to choose, Enter to open, Esc to close. Shortcuts: tag:bio  folder:Notes  @today  @overdue  @week  is:open  type:task");
     palEl = el("div", { class: "pal-back", onmousedown: function (e) { if (e.target === palEl) closePalette(); } }, el("div", { class: "pal-box" }, input, list, hint));
     document.body.append(palEl);
     function paint() {
@@ -22975,22 +23281,26 @@ window.addEventListener("error", function (e) {
     }
     function run() {
       list.textContent = "";
-      var n = q.value.trim().toLowerCase();
-      if (n.length < 2) {
+      var f = parseSearch(q.value),
+        n = f.tokens.join(" "),
+        fm = folderMap();
+      if (!f.filtered && n.length < 2) {
         list.append(
-          el(
-            "div",
-            { class: "dim" },
-            "Type at least two letters to search everything in FocusDesk 96."
-          )
+          el("div", { class: "dim" }, "Type at least two letters to search everything in FocusDesk 96."),
+          el("div", { class: "dim", style: "margin-top:6px" }, "Shortcuts: tag:bio   folder:Notes   course:ENG   @today   @tomorrow   @week   @overdue   is:open   is:done   type:task. Mix them with words, like  tag:bio @week exam.")
         );
         w.status("");
         return;
       }
       var res = [];
+      /* an item is kept if it passes every shortcut typed (a kind of item that has no date, tags and so on can't pass one) */
+      function add(kind, item, r) {
+        if (f.filtered && !searchMatches(f, searchAttr(kind, item, fm))) return;
+        res.push(r);
+      }
       S.notes.forEach(function (x) {
         if (hit(x.text, n))
-          res.push({
+          add("Note", x, {
             t: "Note",
             s: snip(x.text, n),
             go: function () {
@@ -23000,7 +23310,7 @@ window.addEventListener("error", function (e) {
       });
       S.tasks.forEach(function (x) {
         if (hit(x.text, n))
-          res.push({
+          add("Task", x, {
             t: "Task",
             s: x.text + (x.done ? " (done)" : ""),
             go: function () {
@@ -23010,7 +23320,7 @@ window.addEventListener("error", function (e) {
       });
       S.assign.forEach(function (x) {
         if (hit(x.title, n) || hit(x.course, n))
-          res.push({
+          add("Assignment", x, {
             t: "Assignment",
             s:
               (x.course ? "[" + x.course + "] " : "") +
@@ -23024,7 +23334,7 @@ window.addEventListener("error", function (e) {
       });
       S.events.forEach(function (x) {
         if (hit(x.title, n))
-          res.push({
+          add("Event", x, {
             t: "Event",
             s: x.title + " \u2013 " + x.date,
             go: function () {
@@ -23034,7 +23344,7 @@ window.addEventListener("error", function (e) {
       });
       S.reminders.forEach(function (x) {
         if (hit(x.text, n))
-          res.push({
+          add("Reminder", x, {
             t: "Reminder",
             s: x.text + " \u2013 " + whenStr(x.at),
             go: function () {
@@ -23044,7 +23354,7 @@ window.addEventListener("error", function (e) {
       });
       S.classes.forEach(function (x) {
         if (hit(x.name, n) || hit(x.room, n))
-          res.push({
+          add("Class", x, {
             t: "Class",
             s: x.name + (x.room ? " (" + x.room + ")" : ""),
             go: function () {
@@ -23054,7 +23364,7 @@ window.addEventListener("error", function (e) {
       });
       S.cards.forEach(function (x) {
         if (hit(x.q, n) || hit(x.a, n))
-          res.push({
+          add("Card", x, {
             t: "Card",
             s: x.q + "  \u2192  " + x.a,
             go: function () {
@@ -23064,7 +23374,7 @@ window.addEventListener("error", function (e) {
       });
       S.grades.forEach(function (x) {
         if (hit(x.name, n))
-          res.push({
+          add("Course", x, {
             t: "Course",
             s: x.name,
             go: function () {
@@ -23074,7 +23384,7 @@ window.addEventListener("error", function (e) {
       });
       S.habits.forEach(function (x) {
         if (hit(x.name, n))
-          res.push({
+          add("Habit", x, {
             t: "Habit",
             s: x.name,
             go: function () {
@@ -23084,7 +23394,7 @@ window.addEventListener("error", function (e) {
       });
       S.countdowns.forEach(function (x) {
         if (hit(x.name, n))
-          res.push({
+          add("Countdown", x, {
             t: "Countdown",
             s: x.name + " \u2013 " + x.date,
             go: function () {
@@ -23094,7 +23404,7 @@ window.addEventListener("error", function (e) {
       });
       S.bib.forEach(function (x) {
         if (hit(x.text, n))
-          res.push({
+          add("Citation", x, {
             t: "Citation",
             s: citePlain(x.text).slice(0, 120),
             go: function () {
@@ -23104,7 +23414,7 @@ window.addEventListener("error", function (e) {
       });
       S.folders.forEach(function (x) {
         if (hit(x.name, n))
-          res.push({
+          add("Folder", x, {
             t: "Folder",
             s: x.name,
             go: function () {
@@ -31667,6 +31977,115 @@ window.addEventListener("error", function (e) {
     var day = Math.floor(d.getTime() / 86400000);
     return TIPS[(((day * 11 + 5) % TIPS.length) + TIPS.length) % TIPS.length];
   }
+  /* ---- "What did I do this week?": what FocusDesk recorded over the last 7 days (today and the six days before) ---- */
+  function weekSummary(nowMs) {
+    var now = new Date(nowMs || Date.now()),
+      nowT = now.getTime(),
+      days = [],
+      i;
+    for (i = 6; i >= 0; i--) days.push(ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)));
+    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime(),
+      sod = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var line = function (s, n) {
+      return clip(String(s == null ? "" : s).replace(/\s+/g, " ").trim(), n);
+    };
+    var list = function (items) {
+      return { n: items.length, items: items.slice(0, 10) };
+    };
+    var out = { from: days[0], to: days[6], focus: { minutes: 0, sessions: 0, days: 0, labels: [] }, habits: [], notes: null, tasks: null, assign: null, events: null, overdue: { tasks: 0, assign: 0 } };
+    days.forEach(function (k) {
+      var d = S.stats[k];
+      if (d && (d.minutes || d.sessions)) {
+        out.focus.minutes += d.minutes || 0;
+        out.focus.sessions += d.sessions || 0;
+        out.focus.days++;
+      }
+    });
+    var by = {};
+    (S.sessions || []).forEach(function (s) {
+      var l = s && line(s.l, 50);
+      if (l && isNum(s.t) && s.t >= start && s.t <= nowT + 60000) by[l] = (by[l] || 0) + (isNum(s.m) ? s.m : 0);
+    });
+    out.focus.labels = Object.keys(by)
+      .map(function (l) {
+        return { label: l, minutes: by[l] };
+      })
+      .sort(function (p, q) {
+        return q.minutes - p.minutes;
+      })
+      .slice(0, 5);
+    S.habits.forEach(function (h) {
+      var n = days.filter(function (k) {
+        return h.log && h.log[k];
+      }).length;
+      if (n) out.habits.push({ name: line(h.name, 40), days: n });
+    });
+    out.notes = list(
+      S.notes
+        .filter(function (n) {
+          return !n.locked && isNum(n.updated) && n.updated >= start && n.updated <= nowT + 60000; /* (locked notes are the ones FocusDesk made itself, like the guide and the update notes) */
+        })
+        .sort(function (p, q) {
+          return q.updated - p.updated;
+        })
+        .map(function (n) {
+          return line(String(n.text || "").split("\n")[0].replace(/^#+\s*/, ""), 60) || "(untitled)";
+        })
+    );
+    var finished = function (x) {
+      return x.done && isNum(x.doneAt) && x.doneAt >= start && x.doneAt <= nowT + 60000;
+    };
+    out.tasks = list(S.tasks.filter(finished).map(function (t) { return line(t.text, 60); }));
+    out.assign = list(S.assign.filter(finished).map(function (a) { return line(a.title, 60) + (a.course ? " [" + line(a.course, 20) + "]" : ""); }));
+    out.events = list(
+      S.events
+        .filter(function (e) {
+          var t = eventMs(e);
+          return t && days.indexOf(e.date) >= 0 && t <= nowT;
+        })
+        .map(function (e) {
+          return line(e.title, 60) + " (" + e.date + ")";
+        })
+    );
+    out.overdue.tasks = S.tasks.filter(function (t) { return !t.done && t.due && t.due < sod; }).length;
+    out.overdue.assign = S.assign.filter(function (a) { return !a.done && a.due && a.due < sod; }).length;
+    return out;
+  }
+  function weekSummaryText(s) {
+    var L = ["Period: " + s.from + " to " + s.to + " (the last 7 days, today included)"],
+      any = false,
+      names = function (g) {
+        return g.items.join(", ") + (g.n > g.items.length ? ", and " + (g.n - g.items.length) + " more" : "");
+      };
+    if (s.focus.minutes || s.focus.sessions) {
+      any = true;
+      L.push("Focus timer: " + s.focus.minutes + " min in " + s.focus.sessions + " session" + (s.focus.sessions === 1 ? "" : "s") + " on " + s.focus.days + " of 7 days" + (s.focus.labels.length ? ". By label: " + s.focus.labels.map(function (l) { return l.label + " " + l.minutes + " min"; }).join(", ") : ""));
+    }
+    if (s.habits.length) {
+      any = true;
+      L.push("Habits: " + s.habits.map(function (h) { return h.name + " (" + h.days + " of 7 days)"; }).join(", "));
+    }
+    if (s.notes.n) {
+      any = true;
+      L.push("Notes written or edited (" + s.notes.n + "): " + names(s.notes));
+    }
+    if (s.tasks.n) {
+      any = true;
+      L.push("Tasks finished (" + s.tasks.n + "): " + names(s.tasks));
+    }
+    if (s.assign.n) {
+      any = true;
+      L.push("Assignments finished (" + s.assign.n + "): " + names(s.assign));
+    }
+    if (s.events.n) {
+      any = true;
+      L.push("Calendar events that took place (" + s.events.n + "): " + names(s.events));
+    }
+    if (!any) L.push("Nothing was recorded in the last 7 days.");
+    if (s.overdue.tasks || s.overdue.assign) L.push("Still overdue right now: " + (s.overdue.tasks ? s.overdue.tasks + " task" + (s.overdue.tasks === 1 ? "" : "s") : "") + (s.overdue.tasks && s.overdue.assign ? " and " : "") + (s.overdue.assign ? s.overdue.assign + " assignment" + (s.overdue.assign === 1 ? "" : "s") : ""));
+    L.push("(FocusDesk records when a task or assignment was finished only from version 1.4.3 on, and it does not record flash card reviews day by day, so those aren't counted.)");
+    return L.join("\n");
+  }
   function clipyContext() {
     var now = new Date(),
       td = ymd(now),
@@ -31822,12 +32241,13 @@ window.addEventListener("error", function (e) {
     bubbleT: null,
   };
   /* ===== Clipy can add things (events, reminders, tasks, assignments) when you ask ===== */
-  var CLIPY_ACTION_RE = /\[\[\s*ACTION\s*(\{[\s\S]*?\})\s*\]\]/g;
+  var CLIPY_ACTION_RE = /\[\[\s*ACTION\s*(\{[\s\S]*?\})\s*\]{1,2}/g; /* (a missing last bracket is forgiven) */
+  var CLIPY_ACTION_LEFTOVER = /^.*\[\[\s*ACTION.*$/gim; /* a request that came out too broken to read: its line is removed, never shown */
   function clipyActionPrompt() {
     var d = new Date(),
       names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     return (
-      "You can also ADD things for the user. Only when the user clearly asks you to add, schedule, remind or create something, answer in one short sentence and then add one line per item at the very end of your reply, exactly like these examples (valid JSON inside double square brackets):\n" +
+      "You can also ADD things for the user, but ONLY when the user's own last message clearly asks you to (for example \"remind me to...\", \"add a task...\", \"put it in my calendar\", \"make flash cards from this\"). While you are explaining, answering, helping with study material or continuing a topic, add NOTHING, and never suggest a task, event or reminder on your own: if you think one would help, say so in a sentence and ask \"Want me to add that?\" with no ACTION line. When the user does ask, answer in one short sentence and then add one line per item at the very end of your reply, exactly like these examples (valid JSON inside double square brackets):\n" +
       '[[ACTION {"do":"event","title":"Study group","date":"2030-01-15","time":"15:00","minutes":60}]]\n' +
       '[[ACTION {"do":"reminder","text":"Call mum","date":"2030-01-15","time":"09:00"}]]\n' +
       '[[ACTION {"do":"task","text":"Read chapter 3","date":"2030-01-15"}]] (the date is optional for a task)\n' +
@@ -31869,14 +32289,36 @@ window.addEventListener("error", function (e) {
   }
   function extractClipyActions(text, refs) {
     var acts = [],
+      seen = 0,
       clean = String(text || "").replace(CLIPY_ACTION_RE, function (all, json) {
+        seen++;
         try {
           var a = cleanClipyAction(JSON.parse(json), refs);
           if (a && acts.length < 8) acts.push(a);
         } catch (e) {}
         return "";
       });
-    return { text: clean.replace(/\n{3,}/g, "\n\n").trim(), actions: acts };
+    clean = clean.replace(CLIPY_ACTION_LEFTOVER, function () {
+      seen++;
+      return "";
+    });
+    return { text: clean.replace(/\n{3,}/g, "\n\n").trim(), actions: acts, seen: seen };
+  }
+  /* Did the person actually ask for something to be added or changed? Clipy only acts on what was asked for: a reply that adds things during
+     ordinary conversation is thrown away. A short "yes" counts when Clipy's last message offered to add something. */
+  var CLIPY_ASKS_ADD = /\b(remind(?:er)?s?\b|schedule\b|add (?:a|an|the|it|this|that|these|those|them|another|one|two|three|some|my)\b|add\b.{0,60}\b(?:to|on|in|into) my\b|put (?:it|this|that|them)?\s?(?:in|on|into) my\b|create (?:a|an|the|new|some)\b|set (?:a|an|up)\b|book (?:a|an|me)\b|block (?:out|off)\b|new (?:task|event|reminder|card|assignment)\b|(?:make|turn|create|generate).{0,40}\b(?:task|event|reminder|flash ?cards?|assignment|to-?do)s?\b|(?:to-?do list|calendar)\b.{0,30}\badd|\bsave (?:it|this|that) (?:as|to|in)\b)/i;
+  var CLIPY_ASKS_EDIT = /\b(?:mark|tick|check|cross)\b.{0,40}\b(?:done|complete|completed|finished|off)\b|\b(?:i(?:\u2019|')?ve |i have |i )?(?:finished|completed)\b|\bdone with\b|\b(?:move|reschedule|push|postpone|shift|rename|change|update)\b/i;
+  var CLIPY_OFFERED = /\b(?:want me to|shall i|should i|would you like me to|do you want me to|i can) (?:add|schedule|set|put|create|remind|make)\b/i;
+  var CLIPY_YES = /^\s*(?:yes|yeah|yep|yup|sure|ok(?:ay)?|please|do it|go ahead|yes please|sounds good|that works|please do)\b/i;
+  function clipyIntent(userText, lastAssistant) {
+    var t = String(userText || ""),
+      yes = CLIPY_YES.test(t) && t.length < 60 && CLIPY_OFFERED.test(String(lastAssistant || ""));
+    return { create: yes || CLIPY_ASKS_ADD.test(t), edit: yes || CLIPY_ASKS_EDIT.test(t) };
+  }
+  function clipyGate(acts, intent) {
+    return acts.filter(function (a) {
+      return isEditAct(a) ? intent.edit : intent.create;
+    });
   }
   function clipyDescribe(a, past) {
     if (a.kind === "complete") return (past ? "Marked done: " : "Mark done: ") + a.label;
@@ -32702,6 +33144,7 @@ window.addEventListener("error", function (e) {
                     label: "Yes",
                     fn: function () {
                       S.clipy.msgs = [];
+                      pendingActs = null; /* an offer waiting from the old conversation doesn't carry over */
                       save();
                       paintMsgs();
                     },
@@ -33039,15 +33482,15 @@ window.addEventListener("error", function (e) {
       msgs.scrollTop = msgs.scrollHeight;
     }
     var RETRY_MSG = "Something came up while Clipy was answering. Never fear, he's trying again right now!";
-    function send(text, contextPrefix) {
+    function send(text, contextPrefix, ctxLabel) {
       var v = String(text || "").trim();
       if (!v || busy) return;
       inp.value = "";
       pushMsg("user", v);
-      answer(v, contextPrefix);
+      answer(v, contextPrefix, ctxLabel);
     }
     /* Ask the assistant for an answer to the last user message; quietly retries if the reply is a safety label. */
-    function answer(v, contextPrefix) {
+    function answer(v, contextPrefix, ctxLabel) {
       var m = clipyAssistant();
       if (m === "off") {
         pushMsg(
@@ -33089,7 +33532,7 @@ window.addEventListener("error", function (e) {
           clipyActionPrompt() +
           (refs.count ? "\n\n" + refs.text + "\n" + clipyEditPrompt() : "") +
           (contextPrefix
-            ? "\n\nEarlier, in the Research window:\n---\n" +
+            ? "\n\n" + (ctxLabel || "Earlier, in the Research window:") + "\n---\n" +
               clipTextForPrompt(contextPrefix) +
               "\n---"
             : "") +
@@ -33112,9 +33555,20 @@ window.addEventListener("error", function (e) {
             if (looksBroken(t))
               pushMsg("sys", "Clipy's answer didn't come through properly. Press Try again, or ask a different way.");
             else {
-              var ex = extractClipyActions(t, refs.map);
-              pushMsg("assistant", ex.text || (ex.actions.length ? (ex.actions.some(isEditAct) ? "Okay, here's what I'd change." : "Okay, here's what I'd add.") : t));
-              if (ex.actions.length) offerClipyActions(ex.actions);
+              var ex = extractClipyActions(t, refs.map),
+                prevA = "";
+              for (var pi = S.clipy.msgs.length - 2; pi >= 0; pi--)
+                if (S.clipy.msgs[pi].role === "assistant") {
+                  prevA = S.clipy.msgs[pi].text;
+                  break;
+                } else if (S.clipy.msgs[pi].role === "user") break;
+              var intent = clipyIntent(v, prevA),
+                acts = clipyGate(ex.actions, intent);
+              /* things Clipy tried to add that nobody asked for are dropped; if the whole reply was only that, say something kind instead */
+              var plain = ex.text || (acts.length ? (acts.some(isEditAct) ? "Okay, here's what I'd change." : "Okay, here's what I'd add.") : ex.seen ? "Okay! Just say the word if you'd like me to add that." : t);
+              if (ex.seen && !acts.length && intent.create && !ex.actions.length) plain += "\n\n(That didn't come out in a form I could add, so nothing was added. Please ask me again.)";
+              pushMsg("assistant", plain);
+              if (acts.length) offerClipyActions(acts);
             }
           },
           function (e) {
@@ -33138,10 +33592,27 @@ window.addEventListener("error", function (e) {
       paintMsgs();
       if (lastUser && lastUser.role === "user") answer(lastUser.text);
     }
+    /* "What did I do this week?" : the facts FocusDesk recorded go to the assistant with the question; with no assistant, the facts are shown as they are */
+    function clipyWeek() {
+      if (busy) return;
+      var txt = weekSummaryText(weekSummary());
+      if (clipyAssistant() === "off") {
+        pushMsg("user", "What did I do this week?");
+        pushMsg("assistant", "Here is what FocusDesk recorded over the last 7 days:\n\n" + txt);
+        pushMsg("sys", "Pick an assistant in Control Panel \u2192 Assistant and I can turn this into a proper recap.");
+        return;
+      }
+      send(
+        "What did I do this week?",
+        "Write a friendly recap of the user's week in 4 to 6 short sentences: what went well, and (gently) what still needs attention. Use only the facts below. If something isn't listed, it wasn't recorded, so don't guess or invent anything. Don't add tasks or events.\n\n" + txt,
+        "What FocusDesk recorded for the user over the last 7 days:"
+      );
+    }
     clipyController = {
       ask: function (t) {
         send(t);
       },
+      week: clipyWeek,
       seed: function (s) {
         if (!s || (!s.topic && !s.text)) return;
         var greeting = s.topic
@@ -33390,6 +33861,16 @@ window.addEventListener("error", function (e) {
           },
         },
         "Plan my week"
+      ),
+      el(
+        "button",
+        {
+          title: "A recap of the last 7 days, from what FocusDesk recorded",
+          onclick: function () {
+            clipyWeek();
+          },
+        },
+        "My week"
       )
     );
     body.append(
@@ -34879,6 +35360,33 @@ window.addEventListener("error", function (e) {
       );
       smItems.append(row);
     }
+    var recent = (S.prefs.recentApps || []).filter(function (id) { return APPS[id]; }).slice(0, 4);
+    if (recent.length) {
+      smItems.append(el("div", { class: "msep" }));
+      recent.forEach(function (id) {
+        var it = appItem(id);
+        smItems.append(
+          el(
+            "div",
+            {
+              class: "mi",
+              "data-recent": id,
+              onclick: function (e) {
+                e.stopPropagation();
+                hideStart();
+                it.fn();
+              },
+              onmouseenter: function () {
+                closePop(0);
+              },
+            },
+            pix(it.ic, 16),
+            el("span", { class: "ml" }, it.label)
+          )
+        );
+      });
+      smItems.append(el("div", { class: "msep" }));
+    }
     big("programs", "Programs", null, function () {
       return GROUPS.map(function (g) {
         return {
@@ -34973,7 +35481,7 @@ window.addEventListener("error", function (e) {
       msgBox({
         title: "Shut Down FocusDesk 96",
         icon: "q",
-        text: "Are you sure you want to shut down?",
+        text: window.__focusdeskIsDesktop ? "Are you sure you want to shut down? FocusDesk 96 will close." : "Are you sure you want to shut down?",
         buttons: [{ label: "Yes", fn: shutDown }, { label: "No" }],
       });
     });
@@ -35022,13 +35530,17 @@ window.addEventListener("error", function (e) {
     saveTimer();
     updTimer();
     flush();
-    var s = $("#shutdown");
+    var s = $("#shutdown"),
+      quitT = 0;
     s.style.display = "flex";
     s.onclick = function () {
+      clearTimeout(quitT); /* a click while the screen is up changes your mind */
       s.style.display = "none";
       s.onclick = null;
       boot();
     };
+    /* the desktop app really closes (the browser version can't close its own tab) */
+    if (window.__focusdeskIsDesktop && window.focusdesk && window.focusdesk.quitApp) quitT = setTimeout(function () { window.focusdesk.quitApp(); }, 1400);
   }
 
   /* ================= CLOCK ================= */

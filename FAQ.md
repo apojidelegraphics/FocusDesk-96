@@ -78,6 +78,21 @@ The desktop app makes a backup file for every day. Today's file is kept up to da
 
 The browser version keeps up to seven daily snapshots inside the browser, which doesn't replace a backup file. Use **Save backup file** or **Copy backup**.
 
+### What can I type in the search?
+Press Ctrl/Cmd+K (or open Find) and use shortcuts alongside ordinary words: `tag:bio` (or `#bio`), `folder:Notes`, `course:ENG` (or `@ENG`), `@today`, `@tomorrow`, `@week`, `@overdue`, `is:open`, `is:done` and `type:task` (also note, card, event, assignment, reminder). They combine: `tag:bio @week is:open` finds open things tagged bio that are due in the next 7 days. Put quotes around a name with spaces: `folder:"Biology 101"`. `@overdue` means something not finished that was due before today; events are never overdue.
+
+### What does "What did I do this week?" use?
+The **My week** chip in Clipy looks at the last 7 days: focus timer time and labels, habits, notes you wrote or edited, tasks and assignments you finished, and events that took place. Tasks and assignments only have finish times from version 1.4.3 on, and flash card reviews aren't counted by day, so those parts are missing for older weeks. With an assistant chosen, the facts (titles, not note contents) go to it with your question so it can write a recap; with none, you see the facts as a list and nothing is sent.
+
+### What's the T key?
+When you aren't typing, **T** starts a 25-minute focus timer. Press it again to pause, and again to carry on. You can switch it off with the box in the shortcut list (Ctrl/Cmd+/).
+
+### Why did Clipy stop suggesting things to add?
+Clipy now only adds events, reminders, tasks and cards when your own message asks for it ("remind me...", "add a task..."). If it thinks something would help, it asks "Want me to add that?" and a short "yes" then counts. Anything it tries to add on its own is thrown away.
+
+### Does Shut Down close the app?
+On the desktop app, yes: Start, Shut Down, Yes shows the "safe to turn off" screen and then closes FocusDesk (click the screen quickly to change your mind). Your data is saved and a last backup is made first. A browser can't close its own tab, so there it only shows the screen.
+
 ### Can I undo a delete?
 Yes. Right after you delete something, a small bar offers **Undo** for about ten seconds (or press Ctrl/Cmd+Z when you're not typing). It puts the item back where it was, in its folders too. After that, it is still in the Recycle Bin until you empty it.
 

@@ -3967,3 +3967,6 @@ body.popout .fd-undo { bottom: 8px; }
 #offlineSign.ok { color: #006000; }
 #offlineSign:hover { text-decoration: underline; }
 @media (max-width: 760px) { #offlineSign { display: none; } }
+
+/* ===== keyboard shortcut list ===== */
+.kbd { display: inline-block; padding: 0 5px; background: #c0c0c0; color: #000; border: 1px solid; border-color: #fff #404040 #404040 #fff; font: 11px "Courier New", monospace; white-space: nowrap; }

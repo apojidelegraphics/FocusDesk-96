@@ -112,9 +112,12 @@
       "desktop": "1.4.3",
       "browser": "3.0.3",
       "items": [
-        "Search shortcuts such as tag:, folder:, @overdue and @today",
-        "\"What did I do this week?\", answered by Clipy",
-        "A keyboard shortcut list (Ctrl or Cmd and /), recent apps in the Start menu, and a one-key 25-minute timer"
+        "Search shortcuts: tag:, folder:, course:, @today, @tomorrow, @week, @overdue, is:open, type:task, in the search and in Find",
+        "\"What did I do this week?\", answered by Clipy (finish times for tasks and assignments are recorded from now on)",
+        "A keyboard shortcut list (Ctrl or Cmd and /), recent apps in the Start menu, and a one-key 25-minute timer (T)",
+        "Clipy no longer adds events or tasks unless you ask, and a broken request is never shown in the chat",
+        "Desktop: Shut Down on the Start menu closes the app",
+        "The in-app update notes show the tagline, tags, BETA and date, and only the features for the version you use"
       ],
       "note": ""
     },

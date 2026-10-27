@@ -57,6 +57,15 @@ accounts and no cloud. Everything runs on your computer.
 
 ## What's new in the desktop version
 
+### New in 1.4.3 (find things faster)
+
+- 🔎 **Search shortcuts** in the command palette (Ctrl/Cmd+K) and in Find: `tag:bio`, `folder:Notes`, `course:ENG`, `@today`, `@tomorrow`, `@week`, `@overdue`, `is:open`, `is:done`, `type:task`. Mix them with words (`tag:bio @week exam`).
+- 🗓️ **"What did I do this week?"**, answered by Clipy: press the **My week** chip. It uses what FocusDesk recorded over the last 7 days. With no assistant chosen you still get the facts.
+- ⌨️ **A keyboard shortcut list** (Ctrl/Cmd+/), **recent apps** in the Start menu, and **T**, one key that starts a 25-minute focus timer (press again to pause).
+- 🤐 **Clipy stops adding things you didn't ask for**, and a request that came out broken is never shown in the chat.
+- ⏻ **Shut Down** on the Start menu now closes the desktop app.
+- 📝 **Update notes** show the tagline, tags, BETA and date, and only the features for the version you use.
+
 ### New in 1.4.2 (safety net)
 
 - ↩️ **Undo for deleting things.** A small bar offers Undo right after a delete (or press Ctrl/Cmd+Z), and puts the item back where it was. A heads-up appears if you add something you already have.

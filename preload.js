@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld("focusdesk", {
   resetBackupFolder: () => ipcRenderer.invoke("focusdesk:resetBackupFolder"),
   openBackupDir: () => ipcRenderer.invoke("focusdesk:openBackupDir"),
   backupNow: () => ipcRenderer.invoke("focusdesk:backupNow"),
+  quitApp: () => ipcRenderer.invoke("focusdesk:quitApp"),
   backupStatus: () => ipcRenderer.invoke("focusdesk:backupStatus"),
   crashInfo: () => ipcRenderer.invoke("focusdesk:crashInfo"),
   crashReport: () => ipcRenderer.invoke("focusdesk:crashReport"),

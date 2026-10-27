@@ -1647,6 +1647,12 @@ function registerDesktopIpc() {
     await ensureDailyBackup();
     return { ok: true, path: backupDir(), prefs: dprefs };
   });
+  /* Start > Shut Down: close the app (after the page has saved; will-quit then makes the last backup) */
+  ipcMain.handle("focusdesk:quitApp", (e) => {
+    assertTrusted(e);
+    setTimeout(() => app.quit(), 50);
+    return { ok: true };
+  });
   ipcMain.handle("focusdesk:backupNow", async (e) => {
     assertTrusted(e);
     return { ok: true, status: await backupNow() };
